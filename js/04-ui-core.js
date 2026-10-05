@@ -941,10 +941,14 @@ renderCuadernoDocente() {
             <option value="full">📋 Exportar Todo</option>
             <option value="resumen">📊 Solo Unidades y Totales</option>
           </select>
+          <select id="select-formato-cuaderno" class="form-control" style="width: 165px;" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará (Excel o PDF)">
+            <option value="xlsx">📊 Formato: Excel</option>
+            <option value="pdf">📄 Formato: PDF</option>
+          </select>
           <button type="button" class="btn-secondary" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
             <i class="ri-settings-3-line"></i> Configurar responsables
           </button>
-          <button type="button" class="btn-primary-soft" onclick="CuadernoEngine.exportarCuadernosListosParaImprimir()" title="Descarga un cuaderno por grupo, en Legal horizontal, blanco y negro y sin rellenos">
+          <button type="button" class="btn-primary-soft" onclick="CuadernoEngine.exportarCuadernosListosParaImprimir()" title="Descarga un cuaderno por grupo, en Legal horizontal, blanco y negro y sin rellenos, en el formato elegido">
             <i class="ri-printer-line"></i> Exportar cuadernos para imprimir
           </button>
           <select id="select-jefe-cuadernos-impresion" class="form-control" aria-label="Filtrar cuadernos por jefe de departamento">
@@ -953,10 +957,10 @@ renderCuadernoDocente() {
           <button type="button" class="btn-primary-soft" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Exporta solo los cuadernos de los turnos cubiertos por el jefe seleccionado">
             <i class="ri-user-settings-line"></i> Exportar por jefe
           </button>
-          <button class="btn-primary" onclick="CuadernoEngine.exportarCuadernoOficialExcel()">
-            <i class="ri-file-download-line"></i> Exportar Excel Oficial (Firmado)
+          <button class="btn-primary" onclick="CuadernoEngine.exportarCuadernoOficial()" title="Descarga el cuaderno del grupo en el formato elegido (Excel o PDF), con firmas y estadísticas">
+            <i class="ri-file-download-line"></i> Exportar Cuaderno Oficial (Firmado)
           </button>
-          <button class="btn-primary-soft" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un .xlsx por cada grupo registrado">
+          <button class="btn-primary-soft" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un archivo por cada grupo registrado, en el formato elegido">
             <i class="ri-folder-download-line"></i> Exportar TODOS los Cuadernos
           </button>
         </div>

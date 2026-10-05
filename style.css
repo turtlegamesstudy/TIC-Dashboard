@@ -1645,6 +1645,7 @@ details.cuaderno-step[open] > .cuaderno-step-title { border-bottom: 1px solid va
 .cuaderno-actions .cuaderno-actions-spacer { display: none; }
 
 .cuaderno-actions #select-export-mode { margin-left: auto; }
+.cuaderno-actions #select-formato-cuaderno { margin-left: 0; }
 
 .cuaderno-actions .btn-delete-action {
   color: var(--neon-red);
@@ -2770,6 +2771,7 @@ textarea.form-control,
 #select-grupo-cuaderno,
 #select-modulo-cuaderno,
 #select-export-mode,
+#select-formato-cuaderno,
 #select-modo-notas {
   width: auto;
   min-width: 200px;
@@ -2780,6 +2782,7 @@ textarea.form-control,
 #select-grupo-cuaderno   { min-width: 250px; }
 #select-modulo-cuaderno  { min-width: 260px; }
 #select-export-mode      { min-width: 190px; }
+#select-formato-cuaderno { min-width: 165px; }
 #select-modo-notas       { min-width: 240px; }
 
 /* El input numérico NO lleva chevron: es texto, no desplegable */
@@ -2822,6 +2825,7 @@ textarea.form-control,
   #select-grupo-cuaderno,
   #select-modulo-cuaderno,
   #select-export-mode,
+  #select-formato-cuaderno,
   #select-modo-notas {
     width: 100%;
   }
@@ -3173,6 +3177,7 @@ textarea.form-control,
   #select-grupo-cuaderno,
   #select-modulo-cuaderno,
   #select-export-mode,
+  #select-formato-cuaderno,
   #select-modo-notas {
     width: 100% !important;
     min-width: 0;
@@ -3188,7 +3193,8 @@ textarea.form-control,
     align-items: stretch;
     gap: var(--s-2);
   }
-  .cuaderno-actions #select-export-mode { margin-left: 0; }
+  .cuaderno-actions #select-export-mode,
+  .cuaderno-actions #select-formato-cuaderno { margin-left: 0; }
   .cuaderno-actions > button,
   .cuaderno-actions > select.form-control {
     width: 100%;

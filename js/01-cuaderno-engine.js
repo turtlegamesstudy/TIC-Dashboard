@@ -27,6 +27,7 @@
           modoNotas: 'real',
           umbral: 60,
           exportMode: 'full',
+          formato: 'xlsx',
           modulos: MODULOS_TRANSVERSALES,
           jefeImpresion: '',
           grupoId: '',
@@ -65,6 +66,8 @@
         const umbral = Number(document.getElementById('input-umbral')?.value);
         preferencias.umbral = Number.isFinite(umbral) && umbral >= 0 ? umbral : preferencias.umbral;
         preferencias.exportMode = document.getElementById('select-export-mode')?.value || preferencias.exportMode;
+        const formato = document.getElementById('select-formato-cuaderno')?.value;
+        if (formato) preferencias.formato = formato === 'pdf' ? 'pdf' : 'xlsx';
         preferencias.modulos = [...document.querySelectorAll('.chk-modulo-export:checked')].map(check => check.value);
         preferencias.grupoId = document.getElementById('select-grupo-cuaderno')?.value || '';
         preferencias.moduloId = document.getElementById('select-modulo-cuaderno')?.value || 'ALL';
@@ -94,6 +97,7 @@
         restaurarSelect('select-filtro-estudiantes', preferencias.filtroEstudiantes);
         restaurarSelect('select-modo-notas', preferencias.modoNotas);
         restaurarSelect('select-export-mode', preferencias.exportMode);
+        restaurarSelect('select-formato-cuaderno', preferencias.formato);
         restaurarSelect('select-grupo-cuaderno', preferencias.grupoId);
         restaurarSelect('select-modulo-cuaderno', preferencias.moduloId);
         const umbral = document.getElementById('input-umbral');
@@ -119,7 +123,8 @@
         [
           'chk-incluir-resumen', 'select-filtro-turno', 'select-filtro-estudiantes',
           'select-modo-notas', 'input-umbral', 'select-export-mode',
-          'select-grupo-cuaderno', 'select-modulo-cuaderno', 'select-jefe-cuadernos-impresion'
+          'select-formato-cuaderno', 'select-grupo-cuaderno', 'select-modulo-cuaderno',
+          'select-jefe-cuadernos-impresion'
         ].forEach(id => {
           const control = document.getElementById(id);
           if (control) {
@@ -1368,7 +1373,29 @@
       },
 
 
-      exportarCuadernoOficialExcel() {
+      obtenerFormatoExportacion() {
+        const selector = document.getElementById('select-formato-cuaderno');
+        return selector?.value === 'pdf' ? 'pdf' : 'xlsx';
+      },
+
+      descargarBlob(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+
+      exportarWorkbookEnXlsx(wb, fileName, mensajeExito) {
+        wb.xlsx.writeBuffer().then(buffer => {
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          this.descargarBlob(blob, fileName);
+          UI.showToast(mensajeExito);
+        });
+      },
+
+      exportarCuadernoOficial() {
         const grupoId = document.getElementById('select-grupo-cuaderno')?.value;
         if (!grupoId) { UI.showToast("⚠️ Seleccione un grupo para exportar el cuaderno docente."); return; }
 
@@ -1386,18 +1413,383 @@
         if (!wb) { UI.showToast("⚠️ El grupo no contiene estudiantes que cumplan el filtro seleccionado."); return; }
 
         const grupo = DataEngine.getGrupoById(grupoId);
-        const fileName = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}.xlsx`;
+        const nombreBase = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}`;
 
-        wb.xlsx.writeBuffer().then(buffer => {
-          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link); link.click(); document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          UI.showToast("📄 Cuaderno Docente exportado en XLSX con diseño completo.");
+        if (this.obtenerFormatoExportacion() === 'pdf') {
+          if (this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`)) UI.showToast("📄 Cuaderno Docente exportado en PDF.");
+          return;
+        }
+
+        this.exportarWorkbookEnXlsx(wb, `${nombreBase}.xlsx`,
+          "📄 Cuaderno Docente exportado en XLSX con diseño completo.");
+      },
+
+      // Alias: mantiene el comportamiento anterior (hoy respeta el formato elegido).
+      exportarCuadernoOficialExcel() {
+        return this.exportarCuadernoOficial();
+      },
+
+      // ═══════════════════════════════════════════════════════════════
+      // EXPORTACIÓN PDF — se dibuja el mismo workbook de ExcelJS con jsPDF
+      // ═══════════════════════════════════════════════════════════════
+
+      pdfDisponible() {
+        return typeof window.jspdf !== 'undefined' && !!(window.jspdf.jsPDF);
+      },
+
+      papelEnMm(paperSize) {
+        const papeles = {
+          1: [215.9, 279.4],  // Carta
+          3: [279.4, 431.8],  // Tabloid
+          4: [279.4, 431.8],  // Ledger
+          5: [215.9, 355.6],  // Legal
+          8: [297, 420],      // A3
+          9: [210, 297],      // A4
+          11: [148, 210]      // A5
+        };
+        return papeles[paperSize] || papeles[9];
+      },
+
+      anchoColumnaPdf(anchoColumna) {
+        // El ancho de columna de Excel está en caracteres → se pasa a px y luego a mm.
+        const caracteres = Number(anchoColumna) > 0 ? Number(anchoColumna) : 8.43;
+        return ((caracteres * 7) + 5) * 25.4 / 96;
+      },
+
+      rangoAMatriz(rango) {
+        const match = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.exec(String(rango || '').trim());
+        if (!match) return null;
+        const columnaANumero = (letras) => {
+          let numero = 0;
+          for (const caracter of letras.toUpperCase()) numero = (numero * 26) + (caracter.charCodeAt(0) - 64);
+          return numero;
+        };
+        const c1 = columnaANumero(match[1]), c2 = columnaANumero(match[3]);
+        const r1 = Number(match[2]), r2 = Number(match[4]);
+        if (!Number.isFinite(r1) || !Number.isFinite(r2)) return null;
+        return { r1: Math.min(r1, r2), c1: Math.min(c1, c2), r2: Math.max(r1, r2), c2: Math.max(c1, c2) };
+      },
+
+      mergesDeHoja(ws) {
+        let rangos = [];
+        try { rangos = (ws.model && ws.model.merges) || []; } catch (error) { rangos = []; }
+        if (!Array.isArray(rangos)) rangos = Object.keys(rangos || {});
+        return rangos.map(rango => this.rangoAMatriz(rango)).filter(Boolean);
+      },
+
+      textoDeCelda(celda) {
+        const valor = celda ? celda.value : null;
+        if (valor === null || valor === undefined) return '';
+        if (typeof valor === 'string') return valor;
+        if (typeof valor === 'number') return String(valor);
+        if (valor instanceof Date) return valor.toLocaleDateString('es-NI');
+        if (Array.isArray(valor.richText)) return valor.richText.map(parte => parte.text || '').join('');
+        if (valor.text !== undefined && valor.text !== null) return String(valor.text);
+        if (valor.result !== undefined && valor.result !== null) return String(valor.result);
+        if (valor.error) return String(valor.error);
+        return String(valor);
+      },
+
+      argbAComponentes(argb, porDefecto = [0, 0, 0]) {
+        if (typeof argb !== 'string') return porDefecto;
+        const limpio = argb.replace('#', '').toUpperCase();
+        const hex = limpio.length === 8 ? limpio.slice(2) : limpio;
+        if (hex.length !== 6 || /[^0-9A-F]/.test(hex)) return porDefecto;
+        return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+      },
+
+      familiaPdf(nombre) {
+        const n = String(nombre || '').toLowerCase();
+        if (n.includes('times')) return 'times';
+        if (n.includes('courier') || n.includes('consol') || n.includes('mono')) return 'courier';
+        return 'helvetica';
+      },
+
+      dibujarCeldaEnPdf(doc, celda, x, y, w, h, escala) {
+        if (!(w > 0) || !(h > 0)) return;
+        const estilo = celda || {};
+
+        // 1) Relleno de fondo
+        const relleno = estilo.fill;
+        if (relleno && relleno.type === 'pattern' && relleno.pattern === 'solid' && relleno.fgColor) {
+          const [r, g, b] = this.argbAComponentes(relleno.fgColor.argb);
+          doc.setFillColor(r, g, b);
+          doc.rect(x, y, w, h, 'F');
+        }
+
+        // 2) Contenido de texto
+        const texto = this.textoDeCelda(estilo);
+        if (texto) {
+          const fuente = estilo.font || {};
+          const puntos = Math.max(4, Math.min(72, (Number(fuente.size) || 10) * escala));
+          doc.setFont(
+            this.familiaPdf(fuente.name),
+            fuente.bold && fuente.italic ? 'bolditalic'
+              : fuente.bold ? 'bold'
+                : fuente.italic ? 'italic' : 'normal'
+          );
+          doc.setFontSize(puntos);
+          const [tr, tg, tb] = this.argbAComponentes(fuente.color && fuente.color.argb);
+          doc.setTextColor(tr, tg, tb);
+
+          const alineacion = estilo.alignment || {};
+          const pad = Math.min(1.5, Math.max(0.3, w * 0.05));
+          const anchoUtil = Math.max(0.4, w - pad * 2);
+          const lineas = [];
+          String(texto).split(/\r?\n/).forEach(parte => {
+            const ajustadas = doc.splitTextToSize(parte, anchoUtil);
+            (Array.isArray(ajustadas) ? ajustadas : [ajustadas]).forEach(linea => {
+              if (linea !== null && linea !== undefined && String(linea).length > 0) lineas.push(String(linea));
+            });
+          });
+
+          if (lineas.length > 0) {
+            const tamano = puntos * (25.4 / 72);      // alto de fuente en mm
+            const altoLinea = tamano * 1.16;
+            const maxLineas = Math.max(1, Math.floor((h - 0.3) / altoLinea));
+            const recortadas = lineas.slice(0, maxLineas);
+            if (lineas.length > maxLineas) {
+              let ultima = recortadas[recortadas.length - 1];
+              while (ultima.length > 1 && doc.getTextWidth(`${ultima}…`) > anchoUtil) ultima = ultima.slice(0, -1);
+              recortadas[recortadas.length - 1] = `${ultima}…`;
+            }
+
+            const altoBloque = recortadas.length * altoLinea;
+            const vertical = alineacion.vertical || 'bottom';
+            let topeBloque = vertical === 'middle'
+              ? y + Math.max(0, (h - altoBloque) / 2)
+              : vertical === 'top'
+                ? y + Math.min(pad, Math.max(0, (h - altoBloque) / 2))
+                : y + h - altoBloque;
+            topeBloque = Math.max(y, topeBloque);
+            const primeraLinea = topeBloque + (altoLinea * 0.5) + (tamano * 0.35);
+
+            const horizontal = alineacion.horizontal || 'left';
+            recortadas.forEach((linea, indice) => {
+              const anchoLinea = doc.getTextWidth(linea);
+              let lx = horizontal === 'center'
+                ? x + ((w - anchoLinea) / 2)
+                : horizontal === 'right'
+                  ? x + w - pad - anchoLinea
+                  : x + pad;
+              const minimo = x + pad * 0.5;
+              lx = Math.min(Math.max(lx, minimo), Math.max(minimo, x + w - anchoLinea - pad * 0.5));
+              doc.text(linea, lx, primeraLinea + (indice * altoLinea));
+            });
+          }
+        }
+
+        // 3) Bordes
+        const borde = estilo.border || {};
+        const grosorBase = { hair: 0.1, dotted: 0.16, dashed: 0.2, thin: 0.26, medium: 0.35, thick: 0.5, double: 0.5 };
+        const factorLinea = Math.max(0.6, Math.min(2, escala));
+        [
+          ['top', x, y, x + w, y],
+          ['bottom', x, y + h, x + w, y + h],
+          ['left', x, y, x, y + h],
+          ['right', x + w, y, x + w, y + h]
+        ].forEach(([lado, x1, y1, x2, y2]) => {
+          const bordeLado = borde[lado];
+          if (!bordeLado) return;
+          const [r, g, b] = this.argbAComponentes(bordeLado.color && bordeLado.color.argb);
+          doc.setDrawColor(r, g, b);
+          doc.setLineWidth(Math.max(0.07, (grosorBase[bordeLado.style] || 0.26) * factorLinea));
+          doc.line(x1, y1, x2, y2);
         });
+      },
+
+      dibujarHojaEnPdf(doc, ws, estado) {
+        const ps = ws.pageSetup || {};
+        const papel = this.papelEnMm(ps.paperSize);
+        const apaisado = (ps.orientation || 'portrait') === 'landscape';
+        const pw = apaisado ? Math.max(papel[0], papel[1]) : Math.min(papel[0], papel[1]);
+        const ph = apaisado ? Math.min(papel[0], papel[1]) : Math.max(papel[0], papel[1]);
+
+        const mg = ps.margins || {};
+        const ml = Number.isFinite(mg.left)   ? mg.left   * 25.4 : 17.8;
+        const mr = Number.isFinite(mg.right)  ? mg.right  * 25.4 : 17.8;
+        const mt = Number.isFinite(mg.top)    ? mg.top    * 25.4 : 19;
+        const mb = Number.isFinite(mg.bottom) ? mg.bottom * 25.4 : 19;
+        const utilW = Math.max(4, pw - ml - mr);
+        const utilH = Math.max(4, ph - mt - mb);
+
+        // ── Columnas y filas medidas en mm (sin escalar) ──
+        const totalColumnas = Math.max(1, ws.columnCount || 1);
+        const inicio = [0];
+        for (let c = 1; c <= totalColumnas; c++) {
+          inicio[c] = inicio[c - 1] + this.anchoColumnaPdf(ws.getColumn(c).width);
+        }
+        const contenidoW = inicio[totalColumnas];
+
+        const altoFila = [0];
+        let contenidoH = 0;
+        for (let r = 1; r <= ws.rowCount; r++) {
+          const altoPt = Number(ws.getRow(r).height) > 0 ? Number(ws.getRow(r).height) : 15;
+          altoFila[r] = altoPt * (25.4 / 72);
+          contenidoH += altoFila[r];
+        }
+
+        // ── Escala: respeta "ajustar a 1 página" o la escala manual ──
+        let escala = 1;
+        if (ps.fitToPage !== false) {
+          escala = contenidoW > 0 ? utilW / contenidoW : 1;
+          if (Number(ps.fitToHeight) === 1 && contenidoH > 0) {
+            escala = Math.min(escala, utilH / contenidoH);
+          }
+        } else {
+          const escalaGuardada = Number(ps.scale);
+          escala = escalaGuardada > 0 ? escalaGuardada / 100 : 1;
+        }
+        escala = Math.max(0.05, Math.min(4, escala));
+
+        // ── Bandas de columnas (paginación horizontal si el contenido no cabe) ──
+        const bandas = [];
+        let columnaDesde = 1, anchoAcumulado = 0;
+        for (let c = 1; c <= totalColumnas; c++) {
+          const ancho = (inicio[c] - inicio[c - 1]) * escala;
+          if (c > columnaDesde && anchoAcumulado + ancho > utilW + 0.05) {
+            bandas.push({ desde: columnaDesde, hasta: c - 1 });
+            columnaDesde = c;
+            anchoAcumulado = 0;
+          }
+          anchoAcumulado += ancho;
+        }
+        bandas.push({ desde: columnaDesde, hasta: totalColumnas });
+
+        // ── Filas repartidas en páginas verticales (y relativa a la página) ──
+        const filas = [];
+        const altoPaginas = [0];
+        let pagina = 0, yRelativa = 0;
+        for (let r = 1; r <= ws.rowCount; r++) {
+          const h = altoFila[r] * escala;
+          if (yRelativa > 0 && yRelativa + h > utilH + 0.05) {
+            altoPaginas[pagina] = yRelativa;
+            pagina += 1;
+            yRelativa = 0;
+            altoPaginas[pagina] = 0;
+          }
+          filas[r] = { pagina, y: yRelativa, h };
+          yRelativa += h;
+        }
+        altoPaginas[pagina] = yRelativa;
+        const totalPaginas = Math.max(1, pagina + 1);
+
+        // ── Celdas combinadas ──
+        const maestros = new Map();
+        const cubiertas = new Map();
+        this.mergesDeHoja(ws).forEach(rango => {
+          maestros.set(`${rango.r1},${rango.c1}`, rango);
+          for (let r = rango.r1; r <= rango.r2; r++) {
+            for (let c = rango.c1; c <= rango.c2; c++) {
+              if (r !== rango.r1 || c !== rango.c1) cubiertas.set(`${r},${c}`, rango);
+            }
+          }
+        });
+
+        const centrarX = ps.horizontalCentered === true;
+        const centrarY = ps.verticalCentered === true;
+        const agregarPagina = () => {
+          if (estado.primeraPagina) { estado.primeraPagina = false; return; }
+          doc.addPage([pw, ph], apaisado ? 'landscape' : 'portrait');
+        };
+
+        bandas.forEach(banda => {
+          const offsetBanda = inicio[banda.desde - 1] * escala;
+          const anchoBanda = Math.min(utilW, (inicio[banda.hasta] - inicio[banda.desde - 1]) * escala);
+          const xBase = ml + (centrarX ? Math.max(0, (utilW - anchoBanda) / 2) : 0);
+
+          for (let p = 0; p < totalPaginas; p++) {
+            const yBase = mt + (centrarY ? Math.max(0, (utilH - (altoPaginas[p] || 0)) / 2) : 0);
+            agregarPagina();
+
+            for (let r = 1; r <= ws.rowCount; r++) {
+              const info = filas[r];
+              if (!info || info.pagina !== p) continue;
+
+              ws.getRow(r).eachCell({ includeEmpty: true }, (celda, c) => {
+                if (c < 1 || c > totalColumnas) return;
+
+                const clave = `${r},${c}`;
+                let rango = maestros.get(clave);
+                let filaOrigen = r, infoOrigen = info, colInicio = c;
+
+                if (!rango) {
+                  rango = cubiertas.get(clave);
+                  if (!rango) return;
+                  // La continuación de una combinación solo se dibuja si el maestro
+                  // está en esta página y empezó fuera de la banda actual.
+                  const infoMaestro = filas[rango.r1];
+                  if (!infoMaestro || infoMaestro.pagina !== p) return;
+                  if (rango.c1 >= banda.desde && rango.c1 <= banda.hasta) return;
+                  filaOrigen = rango.r1;
+                  infoOrigen = infoMaestro;
+                  colInicio = rango.c1;
+                }
+
+                const colFin = Math.min(rango.c2, totalColumnas);
+                const filaFin = rango.r2;
+                if (colFin < banda.desde || colInicio > banda.hasta) return;
+
+                const bordeIzq = Math.max(0, (inicio[colInicio - 1] * escala) - offsetBanda);
+                const bordeDer = Math.min(anchoBanda, (inicio[colFin] * escala) - offsetBanda);
+                const w = bordeDer - bordeIzq;
+                if (!(w > 0)) return;
+
+                let h = infoOrigen.h;
+                if (filaFin > filaOrigen) {
+                  const fin = filas[filaFin];
+                  h = (fin && fin.pagina === infoOrigen.pagina)
+                    ? (fin.y + fin.h - infoOrigen.y)
+                    : Math.max(0.5, utilH - infoOrigen.y);
+                }
+
+                const celdaOrigen = (filaOrigen === r && colInicio === c)
+                  ? celda
+                  : ws.getCell(filaOrigen, colInicio);
+                this.dibujarCeldaEnPdf(doc, celdaOrigen, xBase + bordeIzq, yBase + infoOrigen.y, w, h, escala);
+              });
+            }
+          }
+        });
+      },
+
+      exportarWorkbookAPDF(wb, fileName) {
+        if (!this.pdfDisponible()) {
+          UI.showToast('❌ No se pudo cargar el módulo de PDF.');
+          return false;
+        }
+        const hojas = (wb && wb.worksheets) || [];
+        if (hojas.length === 0) {
+          UI.showToast('⚠️ No hay contenido para exportar en PDF.');
+          return false;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const ps = hojas[0].pageSetup || {};
+        const papel = this.papelEnMm(ps.paperSize);
+        const apaisado = (ps.orientation || 'portrait') === 'landscape';
+        const ancho = apaisado ? Math.max(papel[0], papel[1]) : Math.min(papel[0], papel[1]);
+        const alto  = apaisado ? Math.min(papel[0], papel[1]) : Math.max(papel[0], papel[1]);
+
+        const doc = new jsPDF({
+          orientation: apaisado ? 'landscape' : 'portrait',
+          unit: 'mm',
+          format: [ancho, alto],
+          compress: true
+        });
+        doc.setProperties({ title: fileName.replace(/\.pdf$/i, ''), creator: 'TIC Dashboard' });
+
+        const estado = { primeraPagina: true };
+        hojas.forEach(hoja => {
+          try {
+            this.dibujarHojaEnPdf(doc, hoja, estado);
+          } catch (error) {
+            console.error(`No se pudo dibujar la hoja "${hoja.name}" en PDF:`, error);
+          }
+        });
+
+        doc.save(fileName);
+        return true;
       },
 
       exportarCuadernosListosParaImprimir() {
@@ -1415,7 +1807,12 @@
         return this.exportarTodosLosCuadernos(true, jefes[indice]);
       },
 
-      async exportarTodosLosCuadernos(listoParaImprimir = false, jefeSeleccionado = null) {
+      async exportarTodosLosCuadernos(listoParaImprimir = false, jefeSeleccionado = null, formato = null) {
+        const formatoFinal = formato === 'xlsx' || formato === 'pdf' ? formato : this.obtenerFormatoExportacion();
+        if (formatoFinal === 'pdf' && !this.pdfDisponible()) {
+          UI.showToast('❌ No se pudo cargar el módulo de PDF.');
+          return;
+        }
         const filtroTurno = this.obtenerFiltroTurno();
         let grupos = DataEngine.getGrupos();
         if (jefeSeleccionado) {
@@ -1459,25 +1856,27 @@
             ? `_Jefe_${jefeSeleccionado.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '')}`
             : '';
           const suffix = `${listoParaImprimir ? '_Legal_Impresion' : ''}${jefeSuffix}`;
-          const fileName = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}${suffix}.xlsx`;
-          const buffer = await wb.xlsx.writeBuffer();
-          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link); link.click(); document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+          const nombreBase = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}${suffix}`;
+          const esPdf = formatoFinal === 'pdf';
 
-          exportados++;
+          if (esPdf) {
+            if (this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`)) exportados++;
+          } else {
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            this.descargarBlob(blob, `${nombreBase}.xlsx`);
+            exportados++;
+          }
+
           await new Promise(r => setTimeout(r, 400));
         }
 
+        const detalleFormato = formatoFinal === 'pdf' ? 'en PDF' : 'en XLSX';
         UI.showToast(jefeSeleccionado
-          ? `🖨️ ${exportados} cuaderno(s) exportado(s) para ${jefeSeleccionado.nombre}, según sus turnos.`
+          ? `🖨️ ${exportados} cuaderno(s) exportado(s) ${detalleFormato} para ${jefeSeleccionado.nombre}, según sus turnos.`
           : listoParaImprimir
-            ? `🖨️ ${exportados} cuaderno(s) exportado(s) en Legal horizontal, blanco y negro y sin rellenos.`
-            : `📦 ${exportados} grupo(s) exportado(s) en XLSX con diseño completo.`);
+            ? `🖨️ ${exportados} cuaderno(s) exportado(s) ${detalleFormato} en Legal horizontal, blanco y negro y sin rellenos.`
+            : `📦 ${exportados} grupo(s) exportado(s) ${detalleFormato} con diseño completo.`);
       },
 
       aplicarConfigImpresion(ws, cfg, listoParaImprimir = false) {
@@ -1485,7 +1884,7 @@
           ? { left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, header: 0.1, footer: 0.1 }
           : (ConfigExport.MARGIN_PRESETS[cfg.printMargin] || ConfigExport.MARGIN_PRESETS.estrecho);
         ws.pageSetup.orientation = listoParaImprimir ? 'landscape' : (cfg.printOrientation || 'landscape');
-        ws.pageSetup.paperSize = listoParaImprimir ? 5 : 9;
+        ws.pageSetup.paperSize = listoParaImprimir ? 5 : (Number(cfg.printPaperSize) || 9);
         if (listoParaImprimir) {
           ws.pageSetup.horizontalCentered = false;
           ws.pageSetup.verticalCentered = false;

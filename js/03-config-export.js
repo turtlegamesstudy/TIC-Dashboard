@@ -33,6 +33,7 @@
 
         // Impresión
         printOrientation: 'landscape',   // 'landscape' | 'portrait'
+        printPaperSize: 9,               // 9 A4 · 1 Carta · 5 Legal · 8 A3 · 11 A5 · 3 Tabloid
         printFitToPage: true,            // ajustar ancho y alto a 1 página
         printCentered: true,             // centrar horizontal y verticalmente
         printMargin: 'estrecho'          // 'estrecho' | 'normal' | 'ancho'
@@ -96,6 +97,7 @@
         document.getElementById('cfg-title-reporte').value = cfg.titleReporte;
 
         document.getElementById('cfg-print-orientation').value = cfg.printOrientation;
+        document.getElementById('cfg-print-paper').value = String(cfg.printPaperSize || 9);
         document.getElementById('cfg-print-fit').checked = cfg.printFitToPage;
         document.getElementById('cfg-print-centered').checked = cfg.printCentered;
         document.getElementById('cfg-print-margin').value = cfg.printMargin;
@@ -124,6 +126,7 @@
           titleReporte: parseInt(document.getElementById('cfg-title-reporte').value) || 15,
 
           printOrientation: document.getElementById('cfg-print-orientation').value,
+          printPaperSize: parseInt(document.getElementById('cfg-print-paper').value, 10) || 9,
           printFitToPage: document.getElementById('cfg-print-fit').checked,
           printCentered: document.getElementById('cfg-print-centered').checked,
           printMargin: document.getElementById('cfg-print-margin').value
