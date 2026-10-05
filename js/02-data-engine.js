@@ -285,6 +285,50 @@
         return JSON.stringify(value);
       },
 
+      // [OPT] Comparación barata de dos objetos. Primero se usa el
+      // serializador nativo de JavaScript (C++, muy rápido); solo si las
+      // claves están en otro orden se cae al análisis estable recursivo.
+      _iguales(a, b) {
+        if (a === b) return true;
+        if (a === null || a === undefined || b === null || b === undefined) return false;
+        try {
+          if (JSON.stringify(a) === JSON.stringify(b)) return true;
+        } catch (error) {
+          // Objeto circular: se compara de forma estable más abajo.
+        }
+        return this._stable(a) === this._stable(b);
+      },
+
+      // [OPT] ¿El estado local coincide con lo último sincronizado?
+      // Antes este chequeo se hacía de forma estable DOS veces por cada
+      // evento remoto (recorrido completo de toda la base con construcción
+      // de cadenas). Ahora se intenta con JSON nativo y el "hash" estable
+      // del snapshot se memoriza mientras no cambie de referencia.
+      _localLimpio() {
+        if (!this._syncSnapshot) return true;
+        const local = this._serializeDatabase(this.db);
+        try {
+          if (JSON.stringify(local) === JSON.stringify(this._syncSnapshot)) return true;
+        } catch (error) {
+          // Si no se puede serializar, se recurre al análisis estable.
+        }
+        if (this._syncStableFor !== this._syncSnapshot) {
+          this._syncStableFor = this._syncSnapshot;
+          this._syncStableValue = this._stable(this._syncSnapshot);
+        }
+        return this._stable(local) === this._syncStableValue;
+      },
+
+      // [OPT] Las actualizaciones remotas llegan en ráfaga (un evento por
+      // registro). En lugar de reconstruir la vista en cada una, se agrupan
+      // en un único render diferido y sin pantalla de carga.
+      _notificarCambio() {
+        if (typeof UI === 'undefined') return;
+        if (!document.getElementById('workspace')?.children.length) return;
+        if (typeof UI.programarRender === 'function') UI.programarRender();
+        else if (typeof UI.renderCurrentModule === 'function') UI.renderCurrentModule();
+      },
+
       _subscribeToChanges(database) {
         this._listeners.forEach(({ reference, event, callback }) => reference.off(event, callback));
         this._listeners = [];
@@ -318,58 +362,58 @@
       },
 
       _applyRemoteSettings(key, value) {
-        const local = this._serializeDatabase(this.db);
-        if (this._syncSnapshot && this._stable(local) !== this._stable(this._syncSnapshot)) return;
         if (this._keyEncodingVersion === 1 && value !== null) value = this._decodeFirebaseKeys(value);
-        if (this._stable(this.db[key] ?? null) === this._stable(value ?? null)) return;
+        // [OPT] Si el valor remoto es idéntico al local no se recorre toda la base.
+        if (this._iguales(this.db[key] ?? null, value ?? null)) return;
+        if (!this._localLimpio()) return;
         if (value === null) delete this.db[key];
         else this.db[key] = value;
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
-        if (typeof UI !== 'undefined' && document.getElementById('workspace')?.children.length) {
-          UI.renderCurrentModule();
-        }
+        this._notificarCambio();
       },
 
       _applyRemoteOrder(collection, order) {
-        const local = this._serializeDatabase(this.db);
-        if (this._syncSnapshot && this._stable(local) !== this._stable(this._syncSnapshot)) return;
         const records = this.db[collection] || [];
         const ordered = this._orderedRecords(
           Object.fromEntries(records.map(record => [String(record.id), record])),
           order
         );
-        if (this._stable(records) === this._stable(ordered)) return;
+        // [OPT] Si el orden remoto no altera nada, salimos sin serializar la base.
+        if (this._iguales(records, ordered)) return;
+        if (!this._localLimpio()) return;
         this.db[collection] = ordered;
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
-        if (typeof UI !== 'undefined' && document.getElementById('workspace')?.children.length) {
-          UI.renderCurrentModule();
-        }
+        this._notificarCambio();
       },
 
       _applyRemoteRecord(collection, snapshot, removed) {
         const collectionName = collection === 'grupos' ? 'grupos' : 'equipos';
-        const local = this._serializeDatabase(this.db);
-        if (this._syncSnapshot && this._stable(local) !== this._stable(this._syncSnapshot)) return;
-
         const records = this.db[collectionName];
         const storedRecord = snapshot.val();
         const record = this._keyEncodingVersion === 1 ? this._decodeFirebaseKeys(storedRecord) : storedRecord;
         const recordId = String(record?.id || snapshot.key);
         const index = records.findIndex(item => String(item.id) === recordId);
+
+        // [OPT] Si el registro remoto ya coincide con el local no hay nada
+        // que aplicar. Al arrancar Firebase emite un child_added por cada
+        // registro: antes eso disparaba un recorrido completo de la base
+        // (dos veces) por cada evento; ahora sale por el camino corto.
+        if (!removed && index >= 0 && this._iguales(records[index], record)) return;
+        if (removed && index < 0) return;
+        // Solo cuando el registro realmente cambió se verifica si hay
+        // cambios locales sin guardar que deban protegerse.
+        if (!this._localLimpio()) return;
+
         if (removed) {
-          if (index >= 0) records.splice(index, 1);
+          records.splice(index, 1);
         } else if (index >= 0) {
-          if (this._stable(records[index]) === this._stable(record)) return;
           records[index] = record;
         } else {
           records.push(record);
         }
 
-        const serialized = this._serializeDatabase(this.db);
-        this._syncSnapshot = this._clone(serialized);
-        if (typeof UI !== 'undefined' && document.getElementById('workspace')?.children.length) {
-          UI.renderCurrentModule();
-        }
+        this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
+        this._notificarCambio();
       },
 
       // [NUEVO] Garantiza que las bases de datos antiguas (guardadas antes del
@@ -425,7 +469,7 @@
           const oldRecords = previous[collection] || {};
           const newRecords = beforeAttribution[collection] || {};
           for (const [key, record] of Object.entries(newRecords)) {
-            if (this._stable(oldRecords[key] ?? null) === this._stable(record)) continue;
+            if (this._iguales(oldRecords[key] ?? null, record)) continue;
             const sourceRecord = (this.db[collection] || []).find(item => String(item.id) === key);
             if (sourceRecord) {
               sourceRecord.updatedAt = this.db.lastUpdated;
@@ -443,10 +487,10 @@
             for (const key of keys) {
               const oldValue = oldRecords[key] ?? null;
               const newValue = newRecords[key] ?? null;
-              if (this._stable(oldValue) === this._stable(newValue)) continue;
+              if (this._iguales(oldValue, newValue)) continue;
               const result = await reference.child(`${collection}/${key}`).transaction(current => {
                 const currentValue = current ?? null;
-                if (this._stable(currentValue) !== this._stable(oldValue)) return;
+                if (!this._iguales(currentValue, oldValue)) return;
                 return newValue;
               }, undefined, false);
               if (!result.committed) {
@@ -458,9 +502,9 @@
           for (const collection of ['gruposOrden', 'equiposOrden']) {
             const oldValue = previous[collection] || [];
             const newValue = next[collection] || [];
-            if (this._stable(oldValue) === this._stable(newValue)) continue;
+            if (this._iguales(oldValue, newValue)) continue;
             const result = await reference.child(collection).transaction(current => {
-              if (this._stable(current || []) !== this._stable(oldValue)) return;
+              if (!this._iguales(current || [], oldValue)) return;
               return newValue;
             }, undefined, false);
             if (!result.committed) {
@@ -477,9 +521,9 @@
             if (/[.#$\[\]/]/.test(key)) throw new Error(`El campo "${key}" no es válido para Firebase Realtime Database.`);
             const oldValue = previous[key] ?? null;
             const newValue = next[key] ?? null;
-            if (this._stable(oldValue) === this._stable(newValue)) continue;
+            if (this._iguales(oldValue, newValue)) continue;
             const result = await reference.child(key).transaction(current => {
-              if (this._stable(current ?? null) !== this._stable(oldValue)) return;
+              if (!this._iguales(current ?? null, oldValue)) return;
               return newValue;
             }, undefined, false);
             if (!result.committed) {
@@ -501,9 +545,7 @@
             this.db = this._deserializeDatabase(latest.val() || {});
             this._migrarEsquema();
             this._syncSnapshot = this._serializeDatabase(this.db);
-            if (typeof UI !== 'undefined' && document.getElementById('workspace')?.children.length) {
-              UI.renderCurrentModule();
-            }
+            this._notificarCambio();
           }
           console.error('Falló el guardado en Firebase Realtime Database:', error);
           UI?.showToast(`❌ ${error.message || 'No se pudieron guardar los cambios en Firebase.'}`);
@@ -697,10 +739,14 @@
         const selectEst = document.getElementById('select-estudiante-convalidar');
         const selectMod = document.getElementById('select-modulo-convalidar');
         if (!selectEst || !selectMod) { console.error("No se encontraron los elementos select del modal."); return; }
-        selectEst.innerHTML = '<option value="">-- Seleccionar Estudiante --</option>';
-        estudiantes.forEach(e => { selectEst.innerHTML += `<option value="${e.id}">${e.apellidos}, ${e.nombres}</option>`; });
-        selectMod.innerHTML = '<option value="">-- Seleccionar Módulo --</option>';
-        MODULOS_TRANSVERSALES.forEach(m => { selectMod.innerHTML += `<option value="${m}">${m}</option>`; });
+        // [OPT] Construir el HTML por concatenación interna en vez de
+        // re-analizar el <select> completo en cada iteración.
+        const opcionesEst = ['<option value="">-- Seleccionar Estudiante --</option>'];
+        estudiantes.forEach(e => { opcionesEst.push(`<option value="${e.id}">${e.apellidos}, ${e.nombres}</option>`); });
+        selectEst.innerHTML = opcionesEst.join('');
+        const opcionesMod = ['<option value="">-- Seleccionar Módulo --</option>'];
+        MODULOS_TRANSVERSALES.forEach(m => { opcionesMod.push(`<option value="${m}">${m}</option>`); });
+        selectMod.innerHTML = opcionesMod.join('');
         this.renderTablaConvalidaciones(grupoId);
         const modal = document.getElementById('modal-convalidaciones');
         if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }

@@ -119,7 +119,7 @@ const EquiposEngine = {
             <i class="ri-search-line" style="color:var(--text-muted);"></i>
             <input type="text" id="equipos-buscador" class="form-control" placeholder="Buscar por equipo, proyecto o integrante..."
                    value="${this._busqueda.replace(/"/g, '&quot;')}"
-                   oninput="EquiposEngine._busqueda = this.value; EquiposEngine.refrescarLista();">
+                   oninput="EquiposEngine._busqueda = this.value; EquiposEngine._programarRefresco();">
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
             <label class="tb-label"><i class="ri-filter-3-line"></i> Categoría:</label>
@@ -137,6 +137,17 @@ const EquiposEngine = {
         </div>
       </div>
     `;
+  },
+
+  // [OPT] La búsqueda de equipos repinta la lista completa (todas las
+  // fichas con sus integrantes y archivos). Al agrupar las teclas se
+  // evita reconstruir ese HTML en cada pulsación.
+  _programarRefresco() {
+    clearTimeout(this._timerRefresco);
+    this._timerRefresco = setTimeout(() => {
+      this._timerRefresco = null;
+      this.refrescarLista();
+    }, 140);
   },
 
   refrescarLista() {

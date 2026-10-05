@@ -30,7 +30,9 @@
         workspace?.setAttribute('aria-busy', 'true');
       },
 
-      hideLoading(minimumDuration = 900) {
+      // [OPT] Antes cada navegación esperaba 900 ms + 240 ms de relleno,
+      // lo que hacía sentir lenta incluso cuando el render era instantáneo.
+      hideLoading(minimumDuration = 380) {
         const loading = document.getElementById('app-loading');
         if (!loading) return;
         clearTimeout(this.loadingTimer);
@@ -41,7 +43,7 @@
           loading.setAttribute('aria-hidden', 'true');
           const workspace = document.getElementById('workspace');
           workspace?.removeAttribute('aria-busy');
-          this.contentTimer = setTimeout(() => workspace?.classList.add('content-ready'), 240);
+          this.contentTimer = setTimeout(() => workspace?.classList.add('content-ready'), 140);
         }, delay);
       },
 
@@ -129,22 +131,31 @@ initBuscadorGlobal() {
 
   const cerrarDropdown = () => { dropdown.style.display = 'none'; };
 
+  let timerBusqueda = null;
   input.addEventListener('input', (e) => {
-    try {
-      const query = CuadernoEngine.normalizarTexto(e.target.value);
-      if (query.length < 2) { cerrarDropdown(); return; }
+    const valor = e.target.value || '';
+    const query = CuadernoEngine.normalizarTexto(valor);
+    if (query.length < 2) { clearTimeout(timerBusqueda); cerrarDropdown(); return; }
 
-      const resultados = this.buscarGlobal(query);
-      this.renderResultadosBusqueda(resultados, dropdown, query);
-      
-      posicionarDropdown();
-      dropdown.style.display = 'block';
-    } catch (err) {
-      // [NUEVO] Red de seguridad: un error inesperado ya no deja el
-      // buscador "muerto" para el resto de la sesión.
-      console.error('Error en buscador global:', err);
-      cerrarDropdown();
-    }
+    // [OPT] Se espera 120 ms a que el usuario termine de escribir. Antes
+    // cada tecla recorría y normalizaba toda la base (grupos, estudiantes
+    // y equipos) y repintaba el desplegable de inmediato.
+    clearTimeout(timerBusqueda);
+    timerBusqueda = setTimeout(() => {
+      timerBusqueda = null;
+      try {
+        const resultados = this.buscarGlobal(query);
+        this.renderResultadosBusqueda(resultados, dropdown, query);
+
+        posicionarDropdown();
+        dropdown.style.display = 'block';
+      } catch (err) {
+        // [NUEVO] Red de seguridad: un error inesperado ya no deja el
+        // buscador "muerto" para el resto de la sesión.
+        console.error('Error en buscador global:', err);
+        cerrarDropdown();
+      }
+    }, 120);
   });
 
   // Reposicionar si la ventana cambia de tamaño o se hace scroll
@@ -164,13 +175,19 @@ initBuscadorGlobal() {
 
 buscarGlobal(query) {
   const resultados = [];
+  const limite = 15; // Máximo 15 resultados
+  // [OPT] normalizarTexto() corre dos expresiones regulares y una
+  // normalización Unicode por cada texto; con cientos de estudiantes eso
+  // se repetía en cada tecla. Ahora se memoiza por texto original (es una
+  // función pura, así que el resultado nunca queda obsoleto).
+  const norm = texto => this.normalizarParaBusqueda(texto);
   const grupos = DataEngine.getGrupos();
 
   // Buscar grupos
-  grupos.forEach(g => {
-    if (CuadernoEngine.normalizarTexto(g.nombre).includes(query) ||
-        CuadernoEngine.normalizarTexto(g.carrera || '').includes(query) ||
-        CuadernoEngine.normalizarTexto(g.turno || '').includes(query)) {
+  for (const g of grupos) {
+    if (norm(g.nombre).includes(query) ||
+        norm(g.carrera || '').includes(query) ||
+        norm(g.turno || '').includes(query)) {
       resultados.push({
         tipo: 'grupo',
         titulo: g.nombre,
@@ -179,16 +196,17 @@ buscarGlobal(query) {
         icono: 'ri-team-line',
         color: 'var(--primary-blue, #14578b)'
       });
+      if (resultados.length >= limite) return resultados;
     }
-  });
+  }
 
   // Buscar estudiantes
-  grupos.forEach(g => {
-    (g.estudiantes || []).forEach(est => {
-      if (CuadernoEngine.normalizarTexto(est.nombres).includes(query) ||
-          CuadernoEngine.normalizarTexto(est.apellidos).includes(query) ||
-          CuadernoEngine.normalizarTexto(est.correo).includes(query) ||
-          CuadernoEngine.normalizarTexto(`${est.nombres} ${est.apellidos}`).includes(query)) {
+  for (const g of grupos) {
+    for (const est of (g.estudiantes || [])) {
+      if (norm(est.nombres).includes(query) ||
+          norm(est.apellidos).includes(query) ||
+          norm(est.correo).includes(query) ||
+          norm(`${est.nombres} ${est.apellidos}`).includes(query)) {
         resultados.push({
           tipo: 'estudiante',
           titulo: `${est.apellidos}, ${est.nombres}`,
@@ -198,18 +216,19 @@ buscarGlobal(query) {
           icono: est.estado === 'Retirado' ? 'ri-user-unfollow-line' : 'ri-user-line',
           color: est.estado === 'Retirado' ? '#ef4444' : '#10b981'
         });
+        if (resultados.length >= limite) return resultados;
       }
-    });
-  });
+    }
+  }
 
   // Buscar equipos Innovatec / Hackathon
-  (DataEngine.getEquipos ? DataEngine.getEquipos() : []).forEach(eq => {
-    const coincideEquipo = CuadernoEngine.normalizarTexto(eq.nombreEquipo || '').includes(query) ||
-      CuadernoEngine.normalizarTexto(eq.nombreProyecto || '').includes(query) ||
-      CuadernoEngine.normalizarTexto(eq.categoria || '').includes(query);
+  for (const eq of (DataEngine.getEquipos ? DataEngine.getEquipos() : [])) {
+    const coincideEquipo = norm(eq.nombreEquipo || '').includes(query) ||
+      norm(eq.nombreProyecto || '').includes(query) ||
+      norm(eq.categoria || '').includes(query);
     const coincideIntegrante = (eq.integrantes || []).some(i =>
-      CuadernoEngine.normalizarTexto(`${i.nombres} ${i.apellidos}`).includes(query) ||
-      CuadernoEngine.normalizarTexto(i.correo || '').includes(query)
+      norm(`${i.nombres} ${i.apellidos}`).includes(query) ||
+      norm(i.correo || '').includes(query)
     );
     if (coincideEquipo || coincideIntegrante) {
       resultados.push({
@@ -220,10 +239,23 @@ buscarGlobal(query) {
         icono: 'ri-trophy-line',
         color: eq.categoria === 'Hackathon' ? 'var(--neon-purple, #e10b7b)' : 'var(--neon-cyan, #01a5e4)'
       });
+      if (resultados.length >= limite) return resultados;
     }
-  });
+  }
 
-  return resultados.slice(0, 15); // Máximo 15 resultados
+  return resultados;
+},
+
+normalizarParaBusqueda(texto) {
+  const clave = typeof texto === 'string' ? texto
+    : (texto === null || texto === undefined ? '' : String(texto));
+  let cache = this._cacheBusqueda;
+  if (!cache) { cache = new Map(); this._cacheBusqueda = cache; }
+  else if (cache.size > 8000) cache.clear();
+  if (cache.has(clave)) return cache.get(clave);
+  const normalizado = CuadernoEngine.normalizarTexto(clave);
+  cache.set(clave, normalizado);
+  return normalizado;
 },
 
 renderResultadosBusqueda(resultados, dropdown, query) {
@@ -701,11 +733,26 @@ actualizarNavActivo(modulo) {
         this.renderCurrentModule();
       },
 
-      renderCurrentModule() {
+      // [OPT] Agrupa las actualizaciones remotas en un solo render
+      // diferido: Firebase emite varios eventos seguidos y antes cada uno
+      // reconstruía toda la vista (y encendía la pantalla de carga).
+      programarRender(delay = 110) {
+        clearTimeout(this._renderTimer);
+        this._renderTimer = setTimeout(() => {
+          this._renderTimer = null;
+          if (!document.getElementById('workspace')?.children.length) return;
+          this.renderCurrentModule({ background: true });
+        }, delay);
+      },
+
+      // options.background: refresco de datos. No muestra la pantalla de
+      // carga ni reinicia la animación de entrada del contenido.
+      renderCurrentModule(options = {}) {
+        const enBackground = Boolean(options && options.background);
         const workspace = document.getElementById('workspace');
         if (!workspace) return;
         const navLabel = document.querySelector(`.nav-item[data-module="${this.currentModule}"] span`)?.textContent.trim();
-        this.showLoading(`Cargando ${navLabel || 'contenido'}...`);
+        if (!enBackground) this.showLoading(`Cargando ${navLabel || 'contenido'}...`);
         try {
           switch (this.currentModule) {
             case 'dashboard': workspace.innerHTML = this.renderDashboardView(); break;
@@ -734,7 +781,8 @@ actualizarNavActivo(modulo) {
             default: workspace.innerHTML = `<div class="module-fade-enter"><h1>Módulo: ${this.currentModule}</h1></div>`;
           }
           this.mountSectionSettings();
-          this.hideLoading();
+          if (enBackground) workspace.classList.add('content-ready');
+          else this.hideLoading();
         } catch (error) {
           this.showLoadingError('No se pudo cargar esta sección. Recarga la página para intentarlo de nuevo.');
           console.error(`Error al cargar el módulo "${this.currentModule}":`, error);
@@ -1061,6 +1109,11 @@ renderCuadernoDocente() {
         toast.className = 'toast';
         toast.innerHTML = `<i class="ri-check-line"></i> <span>${msg}</span>`;
         container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3200);
+        // [UI] Se desvanece con animación (.saliendo) y recién entonces
+        // se retira del DOM, en lugar de desaparecer de golpe a los 3,2 s.
+        setTimeout(() => {
+          toast.classList.add('saliendo');
+          setTimeout(() => toast.remove(), 260);
+        }, 3000);
       }
     };

@@ -1056,13 +1056,17 @@ body {
 .topbar {
   height: var(--topbar-h);
   background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* [OPT] El desenfoque se recalcula en cada cuadro de scroll; con 16px
+     y un fondo al 94% de opacidad apenas se nota, así que baja a 6px. */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border-default);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 var(--s-6);
   position: sticky; top: 0; z-index: 90;
-  transition: all var(--t-base);
+  /* [OPT] "transition: all" llegaba a animar el propio backdrop-filter
+     (costosísimo) cada vez que aparecía la sombra al hacer scroll. */
+  transition: background-color var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
 }
 
 /* Franja tricolor de la paleta principal: azul → rosado → verde */
@@ -2243,9 +2247,22 @@ textarea.form-control,
   align-items: center; justify-content: center;
   padding: var(--s-6);
   animation: fadeIn 0.25s ease;
+  /* [UI] Los modales ahora también se despiden con animación: el valor
+     de "display" se retrasa hasta que termina el fundido de salida. En
+     navegadores sin soporte de transition-behavior se comporta igual
+     que antes (cierre instantáneo). */
+  opacity: 1;
+  transition-property: opacity, display;
+  transition-duration: 200ms, 200ms;
+  transition-timing-function: ease, ease;
+  transition-behavior: normal, allow-discrete;
 }
 
-.modal-overlay.hidden { display: none !important; }
+@starting-style {
+  .modal-overlay { opacity: 0; }
+}
+
+.modal-overlay.hidden { display: none !important; opacity: 0; }
 
 .modal-content {
   background: linear-gradient(145deg, var(--bg-card), var(--bg-elevated));
@@ -2313,6 +2330,17 @@ textarea.form-control,
   border-left-width: 3px;
   position: relative;
   overflow: hidden;
+}
+
+/* [UI] El aviso se despide con animación en lugar de desaparecer de golpe:
+   el JS agrega la clase .saliendo y recién después lo retira del DOM. */
+@keyframes toastOut {
+  to { opacity: 0; transform: translateX(28px) scale(0.96); }
+}
+
+.toast.saliendo {
+  animation: toastOut 0.24s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
 }
 
 .toast::before {
@@ -2605,6 +2633,12 @@ textarea.form-control,
 /* ===== UTILIDADES ===== */
 .module-fade-enter {
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* [UI] El interior de los acordeones (grupos, pasos del cuaderno) entra
+   con el mismo fundido cada vez que se despliega. */
+details[open] > *:not(summary) {
+  animation: fadeInUp 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hidden { display: none !important; }

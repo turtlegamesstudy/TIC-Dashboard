@@ -1390,10 +1390,19 @@
       },
 
       exportarWorkbookEnXlsx(wb, fileName, mensajeExito) {
+        // [OPT] El usuario ve "generando…" en lugar de una ventana que
+        // parece congelada mientras ExcelJS serializa el libro completo.
+        UI.showLoading('Generando el archivo de Excel…');
         wb.xlsx.writeBuffer().then(buffer => {
           const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
           this.descargarBlob(blob, fileName);
+          UI.hideLoading(240);
           UI.showToast(mensajeExito);
+        }).catch(error => {
+          // Antes un fallo de serialización quedaba silencioso.
+          console.error('No se pudo generar el archivo XLSX:', error);
+          UI.hideLoading(240);
+          UI.showToast(`❌ No se pudo generar el archivo: ${error.message || error}`);
         });
       },
 
@@ -1418,7 +1427,21 @@
         const nombreBase = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}`;
 
         if (this.obtenerFormatoExportacion() === 'pdf') {
-          if (this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`)) UI.showToast("📄 Cuaderno Docente exportado en PDF.");
+          // [OPT] El PDF se dibuja de forma síncrona: sin ceder el hilo la
+          // pantalla de carga nunca llegaba a pintarse y la ventana quedaba
+          // congelada. Se espera un instante, se genera y se libera.
+          UI.showLoading('Generando el PDF del cuaderno…');
+          setTimeout(() => {
+            let listo = false;
+            try {
+              listo = this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`);
+            } catch (error) {
+              console.error('No se pudo generar el PDF:', error);
+              UI.showToast(`❌ No se pudo generar el PDF: ${error.message || error}`);
+            }
+            UI.hideLoading(260);
+            if (listo) UI.showToast("📄 Cuaderno Docente exportado en PDF.");
+          }, 40);
           return;
         }
 
@@ -1848,32 +1871,47 @@
         }
 
         let exportados = 0;
-        for (const grupo of grupos) {
-          const estudiantes = DataEngine.getEstudiantesByGrupo(grupo.id);
-          if (!estudiantes || estudiantes.length === 0) continue;
+        // [OPT] Con muchos grupos la exportación tarda varios segundos: se
+        // muestra el avance por grupo en la pantalla de carga para que la
+        // ventana no parezca congelada.
+        UI.showLoading(`Preparando ${grupos.length} cuaderno(s)…`);
+        try {
+          let indice = 0;
+          for (const grupo of grupos) {
+            indice++;
+            const etiqueta = document.getElementById('app-loading-message');
+            if (etiqueta) etiqueta.textContent = `Generando cuaderno ${indice} de ${grupos.length}: ${grupo.nombre || grupo.id}`;
 
-          const wb = this.buildWorkbookForGroup(
-            grupo.id, modulosAExportar, conResumen, configNotas, filtroEstudiantes, listoParaImprimir
-          );
-          if (!wb) continue;
+            const estudiantes = DataEngine.getEstudiantesByGrupo(grupo.id);
+            if (!estudiantes || estudiantes.length === 0) continue;
 
-          const jefeSuffix = jefeSeleccionado
-            ? `_Jefe_${jefeSeleccionado.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '')}`
-            : '';
-          const suffix = `${listoParaImprimir ? '_Legal_Impresion' : ''}${jefeSuffix}`;
-          const nombreBase = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}${suffix}`;
-          const esPdf = formatoFinal === 'pdf';
+            const wb = this.buildWorkbookForGroup(
+              grupo.id, modulosAExportar, conResumen, configNotas, filtroEstudiantes, listoParaImprimir
+            );
+            if (!wb) continue;
 
-          if (esPdf) {
-            if (this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`)) exportados++;
-          } else {
-            const buffer = await wb.xlsx.writeBuffer();
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            this.descargarBlob(blob, `${nombreBase}.xlsx`);
-            exportados++;
+            const jefeSuffix = jefeSeleccionado
+              ? `_Jefe_${jefeSeleccionado.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '')}`
+              : '';
+            const suffix = `${listoParaImprimir ? '_Legal_Impresion' : ''}${jefeSuffix}`;
+            const nombreBase = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}${suffix}`;
+            const esPdf = formatoFinal === 'pdf';
+
+            if (esPdf) {
+              if (this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`)) exportados++;
+            } else {
+              const buffer = await wb.xlsx.writeBuffer();
+              const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+              this.descargarBlob(blob, `${nombreBase}.xlsx`);
+              exportados++;
+            }
+
+            // Cede el hilo para que el navegador procese la descarga
+            // (antes era una espera fija de 400 ms por grupo).
+            await new Promise(r => setTimeout(r, 250));
           }
-
-          await new Promise(r => setTimeout(r, 400));
+        } finally {
+          UI.hideLoading(300);
         }
 
         const detalleFormato = formatoFinal === 'pdf' ? 'en PDF' : 'en XLSX';
