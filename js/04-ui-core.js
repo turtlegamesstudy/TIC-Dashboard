@@ -6,10 +6,55 @@
       loadingStartedAt: 0,
 
       init() {
+        // El menú se pinta desde el registro de secciones (14-secciones.js)
+        // antes de enlazar los eventos: así una sección nueva aparece sola.
+        this.pintarNavegacion();
         this.bindEvents();
         this.initBuscadorGlobal();
         this.syncThemeIcon();
         this.renderCurrentModule();
+      },
+
+      /* Dibuja el menú lateral con las secciones visibles para el perfil
+         actual y marca la activa. */
+      pintarNavegacion() {
+        if (typeof Secciones === 'undefined') return;
+        Secciones.pintarNavegacion(AuthManager.profile, this.currentModule);
+        this.actualizarNavActivo(this.currentModule);
+      },
+
+      /* Expone el registro a los módulos externos: un archivo nuevo solo
+         necesita UI.registrarSeccion({ ... }) para entrar en el panel. */
+      registrarSeccion(def) {
+        return Secciones.registrar(def);
+      },
+
+      /* Sección registrada para `currentModule` (resuelve alias). Si el
+         perfil no tiene permiso, cae en la primera visible y reescribe la
+         navegación: un docente que abra #administracion acaba en Dashboard. */
+      seccionActual() {
+        if (typeof Secciones === 'undefined') return null;
+        const seccion = Secciones.obtener(this.currentModule);
+        if (!seccion) return null;
+        if (Secciones.puedeVer(seccion, AuthManager.profile)) return seccion;
+        const fallback = Secciones.primeraVisible(AuthManager.profile);
+        if (fallback) {
+          this.currentModule = fallback.id;
+          this.actualizarNavActivo(fallback.id);
+        }
+        return fallback || null;
+      },
+
+      /* Navega a una sección por id (o alias). Devuelve false si no existe
+         o si el perfil no puede verla. */
+      irA(id) {
+        const seccion = typeof Secciones === 'undefined' ? null : Secciones.obtener(id);
+        if (!seccion || !Secciones.puedeVer(seccion, AuthManager.profile)) return false;
+        this.closeSectionSettings(false);
+        this.currentModule = seccion.id;
+        this.actualizarNavActivo(seccion.id);
+        this.renderCurrentModule();
+        return true;
       },
 
       showLoading(message) {
@@ -337,9 +382,7 @@ navegarDesdeBusqueda(tipo, id, grupoId) {
   document.getElementById('global-search').value = '';
 
   if (tipo === 'grupo') {
-    this.currentModule = 'grupos';
-    this.actualizarNavActivo('grupos');
-    this.renderCurrentModule();
+    this.irA('grupos');
     // [CORREGIDO] `:contains()` no es un selector CSS válido y lanzaba una
     // excepción silenciosa; ahora se usa un atributo data-grupo-id real.
     setTimeout(() => {
@@ -347,18 +390,14 @@ navegarDesdeBusqueda(tipo, id, grupoId) {
       if (details) { details.open = true; details.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     }, 120);
   } else if (tipo === 'equipo') {
-    this.currentModule = 'equipos';
-    this.actualizarNavActivo('equipos');
-    this.renderCurrentModule();
+    this.irA('equipos');
     setTimeout(() => {
       const details = document.querySelector(`details[data-equipo-id="${id}"]`);
       if (details) { details.open = true; details.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     }, 120);
   } else {
     // Estudiante: ir a estudiantes o al grupo del estudiante
-    this.currentModule = 'estudiantes';
-    this.actualizarNavActivo('estudiantes');
-    this.renderCurrentModule();
+    this.irA('estudiantes');
     setTimeout(() => {
       const fila = document.querySelector(`tr[data-est-id="${id}"]`);
       if (fila) {
@@ -484,9 +523,16 @@ actualizarNavActivo(modulo) {
       },
 
       bindEvents() {
-        document.querySelectorAll('.nav-item').forEach(item => {
-          item.addEventListener('click', (e) => {
-            e.preventDefault();
+        // Un solo listener para todo el menú: los enlaces los genera el
+        // registro de secciones, así que las secciones nuevas (o las que
+        // aparecen tras cambiar de perfil) se enlazan solas.
+        const sidebarNav = document.getElementById('sidebar-nav');
+        if (sidebarNav) {
+          sidebarNav.addEventListener('click', (event) => {
+            const destino = event.target;
+            const item = destino && destino.closest ? destino.closest('.nav-item') : null;
+            if (!item || !item.getAttribute('data-module')) return;
+            event.preventDefault();
             this.closeSectionSettings(false);
             this.currentModule = item.getAttribute('data-module');
             this.actualizarNavActivo(this.currentModule);
@@ -495,7 +541,7 @@ actualizarNavActivo(modulo) {
             if (this.isMobileLayout()) this.closeSidebar();
             document.querySelector('.workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
           });
-        });
+        }
         const toggleBtn = document.getElementById('btn-toggle-sidebar');
         if (toggleBtn) toggleBtn.addEventListener('click', () => this.toggleSidebar());
         document.getElementById('workspace')?.addEventListener('click', (event) => {
@@ -777,34 +823,19 @@ actualizarNavActivo(modulo) {
         const enBackground = Boolean(options && options.background);
         const workspace = document.getElementById('workspace');
         if (!workspace) return;
-        const navLabel = document.querySelector(`.nav-item[data-module="${this.currentModule}"] span`)?.textContent.trim();
+        const seccion = this.seccionActual();
+        const navLabel = seccion ? seccion.etiqueta : '';
         if (!enBackground) this.showLoading(`Cargando ${navLabel || 'contenido'}...`);
         try {
-          switch (this.currentModule) {
-            case 'dashboard': workspace.innerHTML = this.renderDashboardView(); break;
-            case 'grupos': workspace.innerHTML = this.renderGruposView(); break;
-            case 'estudiantes': workspace.innerHTML = this.renderEstudiantesView(); break;
-            case 'cuaderno':
-            case 'cuaderno-docente': this.renderCuadernoDocente(); break;
-            case 'envio-mensajes':
-              workspace.innerHTML = MessageEngine.renderVistaMensajes();
-              break;
-            case 'estadisticas': workspace.innerHTML = StatsEngine.renderVistaEstadisticas(); break;
-            case 'Examenes-Reparacion': workspace.innerHTML = ExamenesEngine.renderVistaExamenesReparaciones(); break;
-            case 'informe-avance': workspace.innerHTML = InformeEngine.renderVista(); break;
-            case 'equipos': workspace.innerHTML = EquiposEngine.renderVista(); break;
-            case 'perfil': workspace.innerHTML = ProfileManager.renderVista(); break;
-            case 'administracion':
-              if (AuthManager.profile?.role !== 'admin') {
-                this.currentModule = 'dashboard';
-                this.actualizarNavActivo('dashboard');
-                workspace.innerHTML = this.renderDashboardView();
-                break;
-              }
-              workspace.innerHTML = AdminManager.renderVista();
-              AdminManager.cargarUsuarios();
-              break;
-            default: workspace.innerHTML = `<div class="module-fade-enter"><h1>Módulo: ${this.currentModule}</h1></div>`;
+          if (seccion) {
+            seccion.render(workspace);
+            if (typeof seccion.alMostrar === 'function') seccion.alMostrar(workspace);
+          } else {
+            // Id sin registrar: se pinta un marcador en lugar de romper.
+            const etiquetaId = (typeof Secciones !== 'undefined')
+              ? Secciones.escapar(this.currentModule)
+              : String(this.currentModule);
+            workspace.innerHTML = `<div class="module-fade-enter"><h1>Módulo: ${etiquetaId}</h1></div>`;
           }
           this.mountSectionSettings();
           if (enBackground) workspace.classList.add('content-ready');
@@ -938,6 +969,12 @@ renderCuadernoDocente() {
               <option value="ALL">📌 Todos los Módulos (Totales)</option>
               ${MODULOS_TRANSVERSALES.map(m => `<option value="${m}">${m}</option>`).join('')}
             </select>
+            <button type="button" class="btn-icon" onclick="CuadernoEngine.agregarModuloAcademico()" title="Agregar un módulo nuevo a la lista (ej. Inglés)" aria-label="Agregar un módulo nuevo a la lista"><i class="ri-add-line" aria-hidden="true"></i></button>
+            <button type="button" class="btn-icon" onclick="CuadernoEngine.quitarModuloAcademico()" title="Quitar el módulo seleccionado de la lista" aria-label="Quitar el módulo seleccionado de la lista"><i class="ri-subtract-line" aria-hidden="true"></i></button>
+          </div>
+          <div style="display:flex; align-items:center; font-size:0.72rem; color:var(--text-muted); gap:6px;">
+            <i class="ri-lightbulb-line" aria-hidden="true"></i>
+            <span>La lista es del centro: al agregar un módulo aparece en el Cuaderno, Estadísticas, Exámenes e Informe de todos.</span>
           </div>
         </div>
       </details>

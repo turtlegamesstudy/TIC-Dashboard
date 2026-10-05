@@ -119,10 +119,9 @@ const AuthManager = {
       document.querySelector('.avatar').textContent = displayName.trim().charAt(0).toLocaleUpperCase('es');
       const importTrigger = document.getElementById('admin-import-trigger');
       if (importTrigger) importTrigger.hidden = profile.role !== 'admin';
-      const adminNav = document.getElementById('admin-nav-item');
-      const adminNavSection = document.getElementById('admin-nav-section');
-      if (adminNav) adminNav.hidden = profile.role !== 'admin';
-      if (adminNavSection) adminNavSection.hidden = profile.role !== 'admin';
+      // El enlace de Administración ya no se oculta a mano: el menú se genera
+      // desde el registro de secciones (js/14-secciones.js) y solo incluye lo
+      // que el rol puede ver. UI.init() lo pinta más abajo.
 
       await DataEngine.init();
       if (typeof CuadernoEngine !== 'undefined' && CuadernoEngine.inicializarSelectoresExportacion) {

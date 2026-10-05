@@ -131,26 +131,9 @@
           <span id="sidebar-center-name">Centro tecnológico</span>
         </div>
       </div>
-      <nav class="sidebar-nav" aria-label="Secciones del panel">
-        <div class="nav-section">Principal</div>
-        <a href="#dashboard" class="nav-item active" data-module="dashboard" title="Dashboard" aria-current="page"><i class="ri-dashboard-3-line" aria-hidden="true"></i><span>Dashboard</span></a>
-        <a href="#estadisticas" class="nav-item" data-module="estadisticas" title="Estadísticas"><i class="ri-bar-chart-line" aria-hidden="true"></i><span>Estadísticas</span></a>
-
-        <div class="nav-section">Académico</div>
-        <a href="#grupos" class="nav-item" data-module="grupos" title="Grupos de Clase"><i class="ri-team-line" aria-hidden="true"></i><span>Grupos de Clase</span></a>
-        <a href="#estudiantes" class="nav-item" data-module="estudiantes" title="Estudiantes"><i class="ri-user-search-line" aria-hidden="true"></i><span>Estudiantes</span></a>
-        <a href="#cuaderno-docente" class="nav-item" data-module="cuaderno-docente" title="Cuaderno Docente"><i class="ri-file-excel-2-line" aria-hidden="true"></i><span>Cuaderno Docente</span></a>
-        <a href="#Examenes-Reparacion" class="nav-item" data-module="Examenes-Reparacion" title="Exámenes Programados"><i class="ri-file-edit-line" aria-hidden="true"></i><span>Exámenes</span></a>
-        <a href="#informe-avance" class="nav-item" data-module="informe-avance" title="Informe de Avance"><i class="ri-file-word-2-line" aria-hidden="true"></i><span>Informe de Avance</span></a>
-
-        <div class="nav-section">Comunicación e innovación</div>
-        <a href="#envio-mensajes" class="nav-item" data-module="envio-mensajes" title="Envío de Mensajes"><i class="ri-mail-line" aria-hidden="true"></i><span>Envío de Mensajes</span></a>
-        <a href="#equipos" class="nav-item" data-module="equipos" title="Equipos Innovatec / Hackathon"><i class="ri-trophy-line" aria-hidden="true"></i><span>Equipos Innovatec</span></a>
-        <div class="nav-section">Mi espacio</div>
-        <a href="#perfil" class="nav-item" data-module="perfil" title="Mi perfil"><i class="ri-user-settings-line" aria-hidden="true"></i><span>Mi perfil</span></a>
-        <div class="nav-section" id="admin-nav-section" hidden>Administración</div>
-        <a href="#administracion" class="nav-item" id="admin-nav-item" data-module="administracion" title="Administración" hidden><i class="ri-shield-user-line" aria-hidden="true"></i><span>Administración</span></a>
-      </nav>
+      <!-- El menú se genera desde el registro de secciones (js/14-secciones.js):
+           aquí solo vive el contenedor. -->
+      <nav class="sidebar-nav" id="sidebar-nav" aria-label="Secciones del panel"></nav>
     </aside>
     <!-- Fondo que cierra el menú al tocar fuera (móvil / tablet) -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="UI.closeSidebar()"></div>
@@ -603,6 +586,7 @@
   <script defer src="js/11-auth.js"></script>
   <script defer src="js/12-admin-manager.js"></script>
   <script defer src="js/13-profile-manager.js"></script>
+  <script defer src="js/14-secciones.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>
 </html>

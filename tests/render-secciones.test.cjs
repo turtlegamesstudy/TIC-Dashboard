@@ -148,7 +148,8 @@ function createHarness() {
     'js/08-informe-engine.js',
     'js/09-equipos-engine.js',
     'js/12-admin-manager.js',
-    'js/13-profile-manager.js'
+    'js/13-profile-manager.js',
+    'js/14-secciones.js'
   ];
   archivos.forEach(rel => {
     const source = fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
@@ -157,13 +158,15 @@ function createHarness() {
 
   vm.runInContext(
     'globalThis.__ui = (typeof UI !== "undefined") ? UI : null;' +
-    'globalThis.__dataEngine = (typeof DataEngine !== "undefined") ? DataEngine : null;',
+    'globalThis.__dataEngine = (typeof DataEngine !== "undefined") ? DataEngine : null;' +
+    'globalThis.__secciones = (typeof Secciones !== "undefined") ? Secciones : null;',
     context
   );
 
   assert.ok(context.__ui, 'UI debe quedar definido tras cargar los módulos');
   assert.ok(context.__dataEngine, 'DataEngine debe quedar definido tras cargar los módulos');
-  return { UI: context.__ui, DataEngine: context.__dataEngine, elements: elementos };
+  assert.ok(context.__secciones, 'Secciones debe quedar definido tras cargar los módulos');
+  return { UI: context.__ui, DataEngine: context.__dataEngine, Secciones: context.__secciones, elements: elementos };
 }
 
 const MODULOS = [
@@ -325,4 +328,89 @@ test('un registro que llega de la nube se normaliza antes de sustituir el local'
   assert.equal(DataEngine._normalizarGrupo(null), null);
   assert.equal(DataEngine._listaGuardada({ STU_1: estudiante() }).length, 1);
   assert.deepEqual(plain(DataEngine._listaGuardada('basura')), []);
+});
+
+/* ── Registro de secciones del panel (js/14-secciones.js) ─────── */
+
+test('el menú lateral se genera desde el registro y respeta el rol', () => {
+  const { Secciones, elements } = createHarness();
+
+  const admin = Secciones.htmlNavegacion({ role: 'admin' }, 'dashboard');
+  const docente = Secciones.htmlNavegacion({ role: 'docente' }, 'dashboard');
+
+  // Grupos del menú y enlaces oficiales
+  assert.match(admin, /<div class="nav-section">Principal<\/div>/);
+  assert.match(admin, /<div class="nav-section">Académico<\/div>/);
+  assert.match(docente, /data-module="grupos"/);
+  assert.match(docente, /<span>Exámenes<\/span>/);
+  // La sección activa lleva la clase y aria-current
+  assert.match(docente, /data-module="dashboard"[^>]*aria-current="page"/);
+
+  // Administración: solo para administradores, ni enlace ni encabezado
+  assert.match(admin, /data-module="administracion"/);
+  assert.ok(!docente.includes('data-module="administracion"'), 'un docente no debe ver Administración');
+  assert.ok(!docente.includes('Administración'), 'el grupo de administración no debe aparecer');
+
+  // El orden es el del registro, no el del DOM
+  assert.ok(docente.indexOf('data-module="dashboard"') < docente.indexOf('data-module="estadisticas"'));
+  assert.ok(docente.indexOf('data-module="cuaderno-docente"') < docente.indexOf('data-module="perfil"'));
+
+  // Se pinta de verdad en el contenedor del sidebar
+  assert.equal(Secciones.pintarNavegacion({ role: 'docente' }, 'dashboard'), true);
+  assert.match(elements.get('sidebar-nav').innerHTML, /data-module="informe-avance"/);
+
+  // Alias heredados del HTML anterior
+  assert.equal(Secciones.obtener('cuaderno').id, 'cuaderno-docente');
+  assert.equal(Secciones.obtener('no-existe'), null);
+});
+
+test('una sección nueva registrada en caliente entra en el menú y se pinta', () => {
+  const { UI, Secciones, elements } = createHarness();
+
+  const seccion = Secciones.registrar({
+    id: 'ingles',
+    etiqueta: 'Inglés',
+    titulo: 'Módulo de Inglés',
+    icono: 'ri-translate-2',
+    grupo: 'Académico',
+    orden: 55,
+    render: workspace => { workspace.innerHTML = '<div class="module-fade-enter">Módulo de Inglés</div>'; }
+  });
+  assert.equal(seccion.id, 'ingles');
+
+  // Aparece en el menú, en su grupo y en la posición de su `orden`
+  const html = Secciones.htmlNavegacion({ role: 'docente' }, 'ingles');
+  assert.match(html, /data-module="ingles"/);
+  assert.ok(html.indexOf('data-module="ingles"') < html.indexOf('data-module="envio-mensajes"'));
+  assert.ok(html.indexOf('data-module="cuaderno-docente"') < html.indexOf('data-module="ingles"'));
+
+  // Y se abre con UI.irA / renderCurrentModule sin tocar ningún switch
+  assert.equal(UI.irA('ingles'), true);
+  assert.equal(UI.currentModule, 'ingles');
+  assert.match(elements.get('workspace').innerHTML, /Módulo de Inglés/);
+
+  // Dos secciones no pueden compartir id
+  assert.throws(() => Secciones.registrar({ id: 'ingles', render: () => {} }), /ya existe/i);
+  assert.throws(() => Secciones.registrar({ id: '', render: () => {} }), /id/i);
+  assert.throws(() => Secciones.registrar({ id: 'sin-render' }), /render/i);
+});
+
+test('una sección restringida redirige y un id desconocido muestra el marcador', () => {
+  const { UI, Secciones, elements } = createHarness(); // perfil: docente
+
+  UI.currentModule = 'administracion';
+  UI.renderCurrentModule();
+  const workspace = elements.get('workspace');
+  assert.equal(UI.currentModule, 'dashboard', 'sin permiso se cae al primer módulo disponible');
+  assert.equal(Secciones.puedeVer(Secciones.obtener('administracion'), { role: 'docente' }), false);
+  assert.equal(Secciones.puedeVer(Secciones.obtener('administracion'), { role: 'admin' }), true);
+  assert.ok(!workspace.innerHTML.includes('Módulo:'));
+
+  // irA se niega en lugar de abrir lo que el rol no puede ver
+  assert.equal(UI.irA('administracion'), false);
+  assert.equal(UI.currentModule, 'dashboard');
+
+  UI.currentModule = 'seccion-sin-registrar';
+  UI.renderCurrentModule();
+  assert.match(workspace.innerHTML, /Módulo: seccion-sin-registrar/);
 });

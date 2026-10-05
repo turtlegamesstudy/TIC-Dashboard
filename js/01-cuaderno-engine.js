@@ -8,6 +8,121 @@
       "Identidad Histórica y Sociocultural de Nicaragua"
     ];
 
+    /* ── Catálogo de módulos académicos del centro ───────────────
+       MODULOS_TRANSVERSALES sigue siendo la lista que leen todas las vistas
+       (Cuaderno, Estadísticas, Exámenes, Informe, Mensajes…): este objeto la
+       actualiza in-place para que un módulo nuevo —el oficial que falte o uno
+       inventado como "Inglés"— se propague por toda la app sin tocar código.
+       La lista del centro viaja en la base como `modulosAcademicos`. */
+    const ModulosAcademicos = {
+      PREDETERMINADOS: Object.freeze([...MODULOS_TRANSVERSALES]),
+
+      normalizarNombre(nombre) {
+        return String(nombre === null || nombre === undefined ? '' : nombre)
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+      },
+
+      // Copia defensiva: modificar lo que devuelve nunca altera la lista viva.
+      listar() { return MODULOS_TRANSVERSALES.slice(); },
+
+      cantidad() { return MODULOS_TRANSVERSALES.length; },
+
+      contiene(nombre) {
+        const clave = this.normalizarNombre(nombre);
+        if (!clave) return false;
+        return MODULOS_TRANSVERSALES.some(modulo => this.normalizarNombre(modulo) === clave);
+      },
+
+      _unicos(lista) {
+        const vistos = new Set();
+        return lista.filter(nombre => {
+          const clave = this.normalizarNombre(nombre);
+          if (!clave || vistos.has(clave)) return false;
+          vistos.add(clave);
+          return true;
+        });
+      },
+
+      // Reescribe la lista en el MISMO array: todas las referencias que ya
+      // existen en la app ven el cambio sin volver a leer nada.
+      _aplicar(lista) {
+        MODULOS_TRANSVERSALES.splice(0, MODULOS_TRANSVERSALES.length, ...lista);
+      },
+
+      _esPredeterminado(lista) {
+        const normalizar = nombre => this.normalizarNombre(nombre);
+        const actual = lista.map(normalizar);
+        const base = this.PREDETERMINADOS.map(normalizar);
+        return actual.length === base.length && actual.every((nombre, i) => nombre === base[i]);
+      },
+
+      /* Lee el catálogo guardado en la base (o la lista oficial si no existe
+         todavía) y lo volca en MODULOS_TRANSVERSALES. */
+      sincronizar(db) {
+        const guardado = db && db.modulosAcademicos;
+        const lista = this._unicos(Array.isArray(guardado) ? guardado : []);
+        this._aplicar(lista.length ? lista : this.PREDETERMINADOS.slice());
+        return this.listar();
+      },
+
+      _persistir(db, lista) {
+        this._aplicar(lista);
+        if (!db || typeof db !== 'object') return;
+        // Si la lista vuelve a ser la oficial se borra la clave: la base queda
+        // como estaba y no se escribe ruido en Firebase.
+        if (this._esPredeterminado(lista)) delete db.modulosAcademicos;
+        else db.modulosAcademicos = lista.slice();
+      },
+
+      /* Valida y añade. Devuelve { ok, nombre, anterior, lista } o { error }. */
+      agregar(db, nombre) {
+        const limpio = String(nombre === null || nombre === undefined ? '' : nombre)
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!limpio) return { error: 'Escribe un nombre para el módulo.' };
+        if (limpio.length > 80) return { error: 'El nombre del módulo es demasiado largo (máx. 80 caracteres).' };
+        if (this.contiene(limpio)) return { error: `El módulo "${limpio}" ya está en la lista.` };
+        const anterior = this.listar();
+        const lista = [...anterior, limpio];
+        this._persistir(db, lista);
+        return { ok: true, nombre: limpio, anterior, lista };
+      },
+
+      /* Valida y quita. Nunca deja la lista vacía. */
+      quitar(db, nombre) {
+        const anterior = this.listar();
+        if (!this.contiene(nombre)) return { error: `El módulo "${nombre}" no está en la lista.` };
+        if (anterior.length <= 1) return { error: 'Debe quedar al menos un módulo en la lista.' };
+        const clave = this.normalizarNombre(nombre);
+        const lista = anterior.filter(modulo => this.normalizarNombre(modulo) !== clave);
+        this._persistir(db, lista);
+        return { ok: true, nombre, anterior, lista };
+      },
+
+      /* Reversión manual (p. ej. si Firebase rechaza la escritura). */
+      restaurar(db, lista) {
+        this._persistir(db, Array.isArray(lista) ? lista.slice() : this.PREDETERMINADOS.slice());
+      },
+
+      /* ¿El módulo ya tiene notas o convalidaciones registradas? Sirve para
+         avisar antes de ocultarlo (los datos no se borran, solo la columna). */
+      tieneNotas(nombre) {
+        if (typeof DataEngine === 'undefined' || !DataEngine.getEstudiantes) return false;
+        const clave = this.normalizarNombre(nombre);
+        if (!clave) return false;
+        const coincide = objeto => Object.keys(objeto || {}).some(
+          claveObjeto => this.normalizarNombre(claveObjeto) === clave
+        );
+        return DataEngine.getEstudiantes().some(estudiante =>
+          coincide(estudiante.evaluacionesPorModulo) || coincide(estudiante.convalidaciones)
+        );
+      }
+    };
+
     const CuadernoEngine = {
       EXPORT_PREFERENCES_KEY: 'TIC_CUADERNO_EXPORT_OPTIONS',
 
@@ -28,7 +143,10 @@
           umbral: 60,
           exportMode: 'full',
           formato: 'xlsx',
-          modulos: MODULOS_TRANSVERSALES,
+          // Copias, no el array vivo: si el centro añade un módulo después,
+          // estas preferencias no cambian de significado en silencio.
+          modulos: MODULOS_TRANSVERSALES.slice(),
+          catalogoModulos: MODULOS_TRANSVERSALES.slice(),
           jefeImpresion: '',
           grupoId: '',
           moduloId: 'ALL'
@@ -69,6 +187,9 @@
         const formato = document.getElementById('select-formato-cuaderno')?.value;
         if (formato) preferencias.formato = formato === 'pdf' ? 'pdf' : 'xlsx';
         preferencias.modulos = [...document.querySelectorAll('.chk-modulo-export:checked')].map(check => check.value);
+        // Catálogo vigente al guardar: al restaurar permite distinguir
+        // "lo desmarqué yo" de "ese módulo es nuevo y aún no lo he visto".
+        preferencias.catalogoModulos = [...MODULOS_TRANSVERSALES];
         preferencias.grupoId = document.getElementById('select-grupo-cuaderno')?.value || '';
         preferencias.moduloId = document.getElementById('select-modulo-cuaderno')?.value || 'ALL';
         const selectorJefe = document.getElementById('select-jefe-cuadernos-impresion');
@@ -109,7 +230,7 @@
         const grupoUmbral = document.getElementById('grupo-umbral');
         if (modo && grupoUmbral) grupoUmbral.style.display = modo.value === 'estado' ? 'block' : 'none';
 
-        const modulosGuardados = new Set(Array.isArray(preferencias.modulos) ? preferencias.modulos : MODULOS_TRANSVERSALES);
+        const modulosGuardados = this.modulosExportSeleccionados(preferencias);
         document.querySelectorAll('.chk-modulo-export').forEach(check => {
           check.checked = modulosGuardados.has(check.value);
         });
@@ -138,6 +259,77 @@
         if (document.getElementById('select-grupo-cuaderno')?.value && typeof UI.actualizarTablaCuaderno === 'function') {
           UI.actualizarTablaCuaderno();
         }
+      },
+
+      /* Qué módulos quedan marcados para exportar. Si el catálogo creció desde
+         la última vez que se guardó, los módulos nuevos entran marcados por
+         defecto; los que el docente desmarcó siguen desmarcados. */
+      modulosExportSeleccionados(preferencias) {
+        const actuales = MODULOS_TRANSVERSALES.slice();
+        if (!preferencias || !Array.isArray(preferencias.modulos)) return new Set(actuales);
+        const seleccion = new Set(preferencias.modulos);
+        const catalogoPrevio = Array.isArray(preferencias.catalogoModulos)
+          ? preferencias.catalogoModulos
+          : null;
+        if (catalogoPrevio) {
+          const previo = new Set(catalogoPrevio);
+          actuales.forEach(nombre => {
+            if (!previo.has(nombre) && !seleccion.has(nombre)) seleccion.add(nombre);
+          });
+        }
+        return seleccion;
+      },
+
+      /* ── Alta y baja de módulos académicos ─────────────────────
+         Un docente puede crear "Inglés" u otro módulo inventado para su
+         centro sin tocar código: la lista se guarda en la base compartida
+         y se propaga sola a Cuaderno, Estadísticas, Exámenes e Informe. */
+      async agregarModuloAcademico() {
+        const nombre = window.prompt('Nombre del nuevo módulo académico (ej. Inglés):');
+        if (nombre === null) return false;
+        const db = typeof DataEngine !== 'undefined' ? DataEngine.db : null;
+        const resultado = ModulosAcademicos.agregar(db, nombre);
+        if (resultado.error) { UI.showToast(`⚠️ ${resultado.error}`); return false; }
+
+        let guardado = true;
+        try {
+          await DataEngine.save();
+          UI.showToast(`✅ Módulo "${resultado.nombre}" agregado: ya aparece en el Cuaderno, Estadísticas, Exámenes e Informe.`);
+        } catch (error) {
+          guardado = false;
+          ModulosAcademicos.restaurar(db, resultado.anterior);
+          UI.showToast(`❌ No se pudo guardar el módulo: ${error.message}`);
+        }
+        UI.renderCurrentModule();
+        return guardado;
+      },
+
+      async quitarModuloAcademico() {
+        const seleccionado = document.getElementById('select-modulo-cuaderno')?.value;
+        if (!seleccionado || seleccionado === 'ALL') {
+          UI.showToast('⚠️ Selecciona primero el módulo que quieres quitar (paso 1).');
+          return false;
+        }
+        const aviso = ModulosAcademicos.tieneNotas(seleccionado)
+          ? `El módulo "${seleccionado}" tiene notas o convalidaciones registradas. Quitarlo oculta la columna, pero NO borra esos datos. ¿Continuar?`
+          : `¿Quitar el módulo "${seleccionado}" de la lista del centro?`;
+        if (!window.confirm(aviso)) return false;
+
+        const db = typeof DataEngine !== 'undefined' ? DataEngine.db : null;
+        const resultado = ModulosAcademicos.quitar(db, seleccionado);
+        if (resultado.error) { UI.showToast(`⚠️ ${resultado.error}`); return false; }
+
+        let guardado = true;
+        try {
+          await DataEngine.save();
+          UI.showToast(`✅ Módulo "${seleccionado}" quitado de la lista del centro.`);
+        } catch (error) {
+          guardado = false;
+          ModulosAcademicos.restaurar(db, resultado.anterior);
+          UI.showToast(`❌ No se pudo guardar el cambio: ${error.message}`);
+        }
+        UI.renderCurrentModule();
+        return guardado;
       },
 
       normalizarTexto(texto) {

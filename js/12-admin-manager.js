@@ -363,9 +363,7 @@ const AdminManager = {
       const loadingCenterName = document.getElementById('loading-center-name');
       if (loadingCenterName) loadingCenterName.textContent = this.centers[centerId].name;
       document.title = `INATEC | ${this.centers[centerId].name} | Cuaderno Docente`;
-      UI.currentModule = 'dashboard';
-      UI.actualizarNavActivo('dashboard');
-      UI.renderCurrentModule();
+      UI.irA('dashboard');
       UI.showToast(`✅ Centro activo: ${this.centers[centerId].name}.`);
     } catch (error) {
       console.error('No se pudo cambiar el centro operativo:', error);

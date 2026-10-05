@@ -40,11 +40,24 @@ const INFORME_FILAS_MANUALES = [
 // usa las etiquetas {r11_...}, y ese componente es en realidad el
 // Módulo Transversal "Cultura de Paz" (ya se registra solo por
 // estudiante en el Cuaderno Docente, no requiere asignar grupos).
+//
+// El módulo de cada fila se resuelve en cada uso (getter) y por NOMBRE,
+// no por posición: el centro puede añadir módulos ("Inglés") o quitar
+// alguno mientras la app está abierta y estas filas siguen apuntando al
+// módulo correcto. Si un módulo oficial desaparece, la fila queda en 0.
+function buscarModuloTransversal(fragmento) {
+  const normalizar = texto => String(texto || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const clave = normalizar(fragmento);
+  if (!clave) return '';
+  return MODULOS_TRANSVERSALES.find(modulo => normalizar(modulo).includes(clave)) || '';
+}
+
 const INFORME_FILAS_TRANSVERSALES = [
-  { key: 'r3', label: 'Historia e identidad Nacional', modulo: MODULOS_TRANSVERSALES[0] },
-  { key: 'r4', label: 'Adaptación al cambio climático', modulo: MODULOS_TRANSVERSALES[1] },
-  { key: 'r5', label: 'Orientación laboral', modulo: MODULOS_TRANSVERSALES[2] },
-  { key: 'r11', label: 'Optativo (Cultura de Paz)', modulo: MODULOS_TRANSVERSALES[3] }
+  { key: 'r3', label: 'Historia e identidad Nacional', get modulo() { return buscarModuloTransversal('historia e identidad'); } },
+  { key: 'r4', label: 'Adaptación al cambio climático', get modulo() { return buscarModuloTransversal('cambio climático'); } },
+  { key: 'r5', label: 'Orientación laboral', get modulo() { return buscarModuloTransversal('orientación laboral'); } },
+  { key: 'r11', label: 'Optativo (Cultura de Paz)', get modulo() { return buscarModuloTransversal('cultura de paz'); } }
 ];
 
 const InformeEngine = {

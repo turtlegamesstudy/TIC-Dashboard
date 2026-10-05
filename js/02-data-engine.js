@@ -365,7 +365,7 @@
           reference.on('value', callback);
           this._listeners.push({ reference, event: 'value', callback });
         });
-        ['informe', 'cuadernoConfig'].forEach(key => {
+        ['informe', 'cuadernoConfig', 'modulosAcademicos'].forEach(key => {
           const reference = this._centerDataReference(database).child(key);
           const settingsChanged = snapshot => this._applyRemoteSettings(key, snapshot.val());
           reference.on('value', settingsChanged);
@@ -380,6 +380,12 @@
         if (!this._localLimpio()) return;
         if (value === null) delete this.db[key];
         else this.db[key] = value;
+        // Si cambió el catálogo de módulos académicos se vuelve a volcar en
+        // MODULOS_TRANSVERSALES antes de repintar (si no, las vistas seguirían
+        // usando la lista anterior durante esta sesión).
+        if (key === 'modulosAcademicos' && typeof ModulosAcademicos !== 'undefined') {
+          ModulosAcademicos.sincronizar(this.db);
+        }
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
         this._notificarCambio();
       },
@@ -450,6 +456,10 @@
         // [NUEVO] Asegura que todo grupo tenga el campo docenteGuia, aunque
         // sea de una DB vieja cargada antes de este cambio.
         (this.db.grupos || []).forEach(g => { if (g.docenteGuia === undefined) g.docenteGuia = ''; });
+        // [NUEVO] El catálogo de módulos académicos viaja en la base: si no
+        // existe todavía se usa la lista oficial. Se relee en cada migración
+        // porque la base puede sustituirse (carga, conflicto, importación).
+        if (typeof ModulosAcademicos !== 'undefined') ModulosAcademicos.sincronizar(this.db);
       },
 
       // Convierte cualquier forma guardada de una colección (arreglo, mapa o
