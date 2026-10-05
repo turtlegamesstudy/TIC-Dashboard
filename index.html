@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INATEC | Cuaderno Docente</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Bitter:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <!-- Tema guardado (claro/oscuro): se aplica antes del primer pintado -->
+  <script>try{var _t=localStorage.getItem('tic-theme');if(_t){document.documentElement.setAttribute('data-theme',_t);}}catch(e){}</script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <!-- [NUEVO] Librerías para el Reporte PDF de Equipos Innovatec / Hackathon -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <!-- [NUEVO] Librerías para llenar el Informe de Avance en Word -->
+  <script defer src="https://unpkg.com/pizzip@3.1.6/dist/pizzip.js"></script>
+  <script defer src="https://unpkg.com/docxtemplater@3.44.0/build/docxtemplater.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+  <!-- <base target="_blank"> eliminado: causaba que todo se abriera en pestaña nueva y bloqueaba inputs -->
+</head>
+<body>
+  <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
+    <form class="auth-card" id="auth-login-form" novalidate>
+      <div class="auth-brand-mark" aria-hidden="true"><i class="ri-government-line"></i></div>
+      <p class="auth-eyebrow">INATEC · RED DE CENTROS TECNOLÓGICOS</p>
+      <h1 id="auth-title">Acceso docente</h1>
+      <p class="auth-description">Inicia sesión con la cuenta habilitada por la administración.</p>
+      <label class="auth-field" for="auth-email">Correo electrónico</label>
+      <div class="auth-input-wrap">
+        <i class="ri-mail-line" aria-hidden="true"></i>
+        <input id="auth-email" name="email" type="email" autocomplete="username" required placeholder="docente@inatec.edu.ni">
+      </div>
+      <label class="auth-field" for="auth-password">Contraseña</label>
+      <div class="auth-input-wrap">
+        <i class="ri-lock-line" aria-hidden="true"></i>
+        <input id="auth-password" name="password" type="password" autocomplete="current-password" required placeholder="Ingresa tu contraseña">
+      </div>
+      <p class="auth-message" id="auth-message" role="alert" aria-live="polite"></p>
+      <button class="auth-submit" type="submit" id="auth-submit">
+        <span>Iniciar sesión</span><i class="ri-arrow-right-line" aria-hidden="true"></i>
+      </button>
+      <button class="auth-reset" type="button" id="auth-reset">¿Olvidaste tu contraseña?</button>
+      <p class="auth-footnote">El acceso requiere una cuenta autorizada por el administrador.</p>
+    </form>
+  </section>
+
+  <div class="app-loading" id="app-loading" role="status" aria-live="polite" aria-label="Cargando aplicación">
+    <div class="app-loading-card">
+      <div class="app-loading-art" aria-hidden="true">
+        <svg viewBox="0 0 320 230" role="presentation">
+          <defs>
+            <linearGradient id="loader-building" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffffff"/>
+              <stop offset="1" stop-color="#d9f4fb"/>
+            </linearGradient>
+            <linearGradient id="loader-roof" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#11b4e5"/>
+              <stop offset="1" stop-color="#e9107b"/>
+            </linearGradient>
+          </defs>
+          <circle class="loader-sun" cx="251" cy="49" r="24"/>
+          <path class="loader-orbit" d="M214 48c5-33 42-49 69-29"/>
+          <path class="loader-ground" d="M21 190h278"/>
+          <path class="loader-building" d="M72 94 160 53l88 41v13H72z"/>
+          <path class="loader-building" d="M83 107h154v75H83z"/>
+          <path class="loader-roof" d="M62 96 160 48l98 48-5 10-93-45-93 45z"/>
+          <path class="loader-column" d="M99 112h17v61H99zm39 0h17v61h-17zm39 0h17v61h-17z"/>
+          <path class="loader-building" d="M151 145h18v37h-18z"/>
+          <path class="loader-step" d="M76 182h168v9H76zm-12 11h192v8H64z"/>
+          <path class="loader-flag" d="M160 52V29"/>
+          <path class="loader-flag-cloth" d="M160 30h24l-8 8 8 8h-24z"/>
+          <circle class="loader-dot loader-dot-one" cx="46" cy="80" r="5"/>
+          <circle class="loader-dot loader-dot-two" cx="274" cy="128" r="4"/>
+          <path class="loader-spark" d="M43 125v16m-8-8h16m204-44v14m-7-7h14"/>
+        </svg>
+        <span class="app-loading-art-label">CENTRO TECNOLÓGICO</span>
+      </div>
+      <div class="app-loading-copy">
+        <div class="app-loading-logo" aria-hidden="true"><i class="ri-government-line"></i></div>
+        <p class="app-loading-brand">INATEC <span id="loading-center-name">Centro tecnológico</span></p>
+        <p class="app-loading-message" id="app-loading-message">Preparando tu espacio...</p>
+        <p class="app-loading-caption" id="app-loading-caption">Un momento, estamos organizando la información</p>
+        <div class="app-loading-progress" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <a class="skip-link" href="#workspace">Saltar al contenido principal</a>
+  <div class="app-container" id="app-container" hidden aria-hidden="true" inert>
+    <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+      <div class="sidebar-header">
+        <div class="logo-box"><i class="ri-government-line"></i></div>
+        <div class="brand-info">
+          <h2>INATEC</h2>
+          <span id="sidebar-center-name">Centro tecnológico</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" aria-label="Secciones del panel">
+        <div class="nav-section">Principal</div>
+        <a href="#dashboard" class="nav-item active" data-module="dashboard" title="Dashboard" aria-current="page"><i class="ri-dashboard-3-line" aria-hidden="true"></i><span>Dashboard</span></a>
+        <a href="#estadisticas" class="nav-item" data-module="estadisticas" title="Estadísticas"><i class="ri-bar-chart-line" aria-hidden="true"></i><span>Estadísticas</span></a>
+
+        <div class="nav-section">Académico</div>
+        <a href="#grupos" class="nav-item" data-module="grupos" title="Grupos de Clase"><i class="ri-team-line" aria-hidden="true"></i><span>Grupos de Clase</span></a>
+        <a href="#estudiantes" class="nav-item" data-module="estudiantes" title="Estudiantes"><i class="ri-user-search-line" aria-hidden="true"></i><span>Estudiantes</span></a>
+        <a href="#cuaderno-docente" class="nav-item" data-module="cuaderno-docente" title="Cuaderno Docente"><i class="ri-file-excel-2-line" aria-hidden="true"></i><span>Cuaderno Docente</span></a>
+        <a href="#Examenes-Reparacion" class="nav-item" data-module="Examenes-Reparacion" title="Exámenes Programados"><i class="ri-file-edit-line" aria-hidden="true"></i><span>Exámenes</span></a>
+        <a href="#informe-avance" class="nav-item" data-module="informe-avance" title="Informe de Avance"><i class="ri-file-word-2-line" aria-hidden="true"></i><span>Informe de Avance</span></a>
+
+        <div class="nav-section">Comunicación e innovación</div>
+        <a href="#envio-mensajes" class="nav-item" data-module="envio-mensajes" title="Envío de Mensajes"><i class="ri-mail-line" aria-hidden="true"></i><span>Envío de Mensajes</span></a>
+        <a href="#equipos" class="nav-item" data-module="equipos" title="Equipos Innovatec / Hackathon"><i class="ri-trophy-line" aria-hidden="true"></i><span>Equipos Innovatec</span></a>
+        <div class="nav-section">Mi espacio</div>
+        <a href="#perfil" class="nav-item" data-module="perfil" title="Mi perfil"><i class="ri-user-settings-line" aria-hidden="true"></i><span>Mi perfil</span></a>
+        <div class="nav-section" id="admin-nav-section" hidden>Administración</div>
+        <a href="#administracion" class="nav-item" id="admin-nav-item" data-module="administracion" title="Administración" hidden><i class="ri-shield-user-line" aria-hidden="true"></i><span>Administración</span></a>
+      </nav>
+    </aside>
+    <!-- Fondo que cierra el menú al tocar fuera (móvil / tablet) -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="UI.closeSidebar()"></div>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-icon" id="btn-toggle-sidebar" type="button" title="Expandir navegación" aria-label="Expandir navegación" aria-expanded="false" aria-controls="sidebar"><i class="ri-menu-unfold-line" aria-hidden="true"></i></button>
+          <div class="search-box">
+            <i class="ri-search-line" aria-hidden="true" style="pointer-events: none;"></i>
+            <label class="sr-only" for="global-search">Buscar estudiante o grupo</label>
+            <input type="text" id="global-search" placeholder="Buscar estudiante o grupo..." autocomplete="off">
+            <button class="search-clear" id="search-clear-btn" type="button" title="Limpiar búsqueda" aria-label="Limpiar búsqueda" onclick="document.getElementById('global-search').value=''; document.getElementById('global-search').dispatchEvent(new Event('input'));"><i class="ri-close-line" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div class="topbar-right" role="group" aria-label="Herramientas generales">
+          <button class="btn-icon" id="btn-toggle-theme" type="button" title="Cambiar tema claro u oscuro" aria-label="Cambiar tema claro u oscuro" onclick="UI.toggleTheme()"><i class="ri-moon-clear-line" aria-hidden="true"></i></button>
+          <div class="topbar-data-actions" role="group" aria-label="Gestión de base de datos">
+            <span class="toolbar-group-label" aria-hidden="true">Datos</span>
+            <button class="btn-primary-soft" type="button" onclick="UI.abrirModalConfigExport()" title="Configurar exportación" aria-label="Configurar exportación"><i class="ri-settings-3-line" aria-hidden="true"></i><span class="btn-label">Configurar Exportación</span></button>
+            <button class="btn-primary-soft" type="button" onclick="DataEngine.exportDBJSON()" title="Descargar DB.json" aria-label="Descargar DB.json"><i class="ri-download-cloud-2-line" aria-hidden="true"></i><span class="btn-label">Descargar DB.json</span></button>
+            <button class="btn-primary-soft" id="admin-import-trigger" type="button" onclick="document.getElementById('db-file-input').click()" title="Cargar DB.json" aria-label="Cargar DB.json"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i><span class="btn-label">Cargar DB.json</span></button>
+            <input type="file" id="db-file-input" accept=".json" style="display: none;" onchange="DataEngine.importDBJSON(event)">
+          </div>
+          <div class="topbar-account" aria-label="Cuenta activa">
+            <div class="avatar" aria-hidden="true">U</div>
+            <div class="topbar-account-details">
+              <span class="topbar-account-name" id="current-user-name">Usuario</span>
+              <span class="topbar-account-meta"><span id="current-user-role">Docente</span><span aria-hidden="true">·</span><span id="current-user-center">Centro tecnológico</span></span>
+            </div>
+            <button class="topbar-signout" type="button" onclick="AuthManager.signOut()" title="Cerrar sesión" aria-label="Cerrar sesión">
+              <i class="ri-logout-box-r-line" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+      <main class="workspace" id="workspace" tabindex="-1" aria-label="Contenido principal"></main>
+    </div>
+    <aside class="section-settings-sidebar" id="section-settings-sidebar" role="dialog" aria-modal="true" aria-labelledby="section-settings-title" aria-hidden="true" hidden inert>
+      <div class="section-settings-header">
+        <div>
+          <h2 id="section-settings-title">Filtros y ajustes</h2>
+          <p>Opciones de esta sección</p>
+        </div>
+        <button class="btn-icon" id="btn-close-section-settings" type="button" title="Cerrar ajustes" aria-label="Cerrar ajustes"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </div>
+      <div class="section-settings-content" id="section-settings-content"></div>
+    </aside>
+    <div class="section-settings-backdrop" id="section-settings-backdrop"></div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-edit-student">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="ri-edit-line"></i> Editar Estudiante</h3>
+        <button class="btn-icon" onclick="UI.closeModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <form id="form-edit-student" onsubmit="UI.saveStudentEdit(event)">
+        <input type="hidden" id="edit-student-id">
+        <input type="hidden" id="edit-group-id">
+        <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombres" required></div>
+        <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellidos" required></div>
+        <div class="form-group"><label>Correo Electrónico</label><input type="email" id="edit-correo" required></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" id="edit-telefono" required></div>
+        <div class="form-group"><label>Estado</label><select id="edit-estado" onchange="UI.toggleMotivoRetiro()"><option value="Activo">Activo</option><option value="Retirado">Retirado</option></select></div>
+        <div class="form-group" id="grupo-motivo-retiro" style="display:none;">
+          <label>Motivo de Retiro <span style="font-weight:400; color: var(--text-muted); font-size: 0.75rem;">(soporte / referencia interna)</span></label>
+          <textarea id="edit-motivo-retiro" rows="3" placeholder="Ej: Dejó de asistir desde el 12/06, no respondió mensajes ni llamadas..." style="width:100%; resize:vertical; font-family:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--border-default); background:var(--bg-input); color:var(--text-primary);"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="UI.closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-convalidaciones" class="modal-overlay hidden">
+    <div class="modal-content" style="padding: 25px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin:0;"><i class="ri-award-line"></i> Gestión de Convalidaciones</h3>
+        <button class="btn-icon" onclick="UI.cerrarModalConvalidaciones()"><i class="ri-close-line"></i></button>
+      </div>
+      <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 0.95rem; color: #444;">➕ Registrar Nueva Convalidación</h4>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label for="select-estudiante-convalidar">Estudiante:</label>
+          <select id="select-estudiante-convalidar" class="form-control" style="width: 100%;"><option value="">-- Seleccionar Estudiante --</option></select>
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="select-modulo-convalidar">Módulo Transversal:</label>
+          <select id="select-modulo-convalidar" class="form-control" style="width: 100%;"><option value="">-- Seleccionar Módulo --</option></select>
+        </div>
+        <div style="text-align: right;">
+          <button class="btn-primary" onclick="DataEngine.guardarConvalidacion()"><i class="ri-save-line"></i> Guardar Convalidación</button>
+        </div>
+      </div>
+      <div>
+        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 0.95rem; color: #444;">📋 Convalidaciones del Grupo</h4>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+            <thead>
+              <tr style="background: #f4f6f8; text-align: left; border-bottom: 1px solid #ddd;">
+                <th style="padding: 8px 12px;">Estudiante</th>
+                <th style="padding: 8px 12px;">Módulo</th>
+                <th style="padding: 8px 12px; text-align: center;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-convalidaciones-lista">
+              <tr><td colspan="3" style="text-align: center; padding: 15px; color: #888;">No hay convalidaciones registradas en este grupo.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px; text-align: right;">
+        <button class="btn-secondary" onclick="UI.cerrarModalConvalidaciones()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOVIDO DENTRO DEL BODY (antes estaba fuera, causando overlay invisible) -->
+  <div id="modal-config-export" class="modal-overlay hidden">
+    <div class="modal-content" style="padding: 25px; max-width: 700px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin:0;"><i class="ri-settings-3-line"></i> Configuración de Exportación Excel</h3>
+        <button class="btn-icon" onclick="UI.cerrarModalConfigExport()"><i class="ri-close-line"></i></button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+
+        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📝 Fuente y Texto</h4>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Fuente:</label>
+            <select id="cfg-font-family" class="form-control"><option value="Arial">Arial</option><option value="Calibri">Calibri</option><option value="Times New Roman">Times New Roman</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Tamaño fuente (pt):</label>
+            <input type="number" id="cfg-font-size" class="form-control" value="14" min="8" max="24">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Color texto:</label>
+            <select id="cfg-text-color" class="form-control"><option value="#000000">Negro puro</option><option value="#333333">Gris oscuro</option><option value="#C00000">Rojo</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label><input type="checkbox" id="cfg-bold" checked style="margin-right: 6px;">Todo en negrita</label>
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📐 Bordes y Relleno</h4>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Color borde tabla:</label>
+            <select id="cfg-border-color" class="form-control"><option value="#000000">Negro puro</option><option value="#D9D9D9">Gris claro</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label><input type="checkbox" id="cfg-header-bg" checked style="margin-right: 6px;">Relleno en encabezados</label>
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Color fondo encabezados:</label>
+            <input type="color" id="cfg-header-color" class="form-control" value="#F5F5F5" style="height: 36px; padding: 2px;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label><input type="checkbox" id="cfg-data-bg" style="margin-right: 6px;">Relleno en celdas de datos</label>
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📏 Anchos de Columna (px)</h4>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Columna A (No.):</label>
+            <input type="number" id="cfg-col-a" class="form-control" value="227" min="30" max="500">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Columna B (Estudiante):</label>
+            <input type="number" id="cfg-col-b" class="form-control" value="720" min="100" max="1200">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Columna C (Correo):</label>
+            <input type="number" id="cfg-col-c" class="form-control" value="720" min="100" max="1200">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Columnas de notas (D+):</label>
+            <input type="number" id="cfg-col-notes" class="form-control" value="310" min="50" max="800">
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📐 Altos de Fila (px)</h4>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Encabezado tabla principal:</label>
+            <input type="number" id="cfg-row-header-main" class="form-control" value="170" min="20" max="300">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Encabezado cuestionarios:</label>
+            <input type="number" id="cfg-row-header-mod" class="form-control" value="160" min="20" max="300">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Filas de datos:</label>
+            <input type="number" id="cfg-row-data" class="form-control" value="20" min="15" max="100">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Espacio antes de firmas:</label>
+            <input type="number" id="cfg-row-firma" class="form-control" value="80" min="20" max="200">
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">🖨️ Configuración de Impresión</h4>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Orientación:</label>
+            <select id="cfg-print-orientation" class="form-control">
+              <option value="landscape">Horizontal</option>
+              <option value="portrait">Vertical</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Márgenes:</label>
+            <select id="cfg-print-margin" class="form-control">
+              <option value="estrecho">Estrecho</option>
+              <option value="normal">Normal</option>
+              <option value="ancho">Ancho</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label><input type="checkbox" id="cfg-print-fit" checked style="margin-right: 6px;">Ajustar ancho y alto a 1 página</label>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label><input type="checkbox" id="cfg-print-centered" checked style="margin-right: 6px;">Centrar hoja en la página</label>
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; grid-column: 1 / -1;">
+          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">🏛️ Membrete Institucional</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Título INATEC (pt):</label>
+              <input type="number" id="cfg-title-inatec" class="form-control" value="18" min="10" max="30">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Subtítulo (pt):</label>
+              <input type="number" id="cfg-title-centro" class="form-control" value="16" min="10" max="30">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Reporte (pt):</label>
+              <input type="number" id="cfg-title-reporte" class="form-control" value="15" min="10" max="30">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-actions" style="margin-top: 20px; text-align: right; display: flex; justify-content: space-between;">
+        <button class="btn-secondary" onclick="ConfigExport.resetDefaults()">🔄 Restaurar Predeterminados</button>
+        <div>
+          <button class="btn-secondary" onclick="UI.cerrarModalConfigExport()">Cancelar</button>
+          <button class="btn-primary" onclick="ConfigExport.guardar()"><i class="ri-save-line"></i> Guardar Configuración</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-config-academica" class="modal-overlay hidden">
+    <div class="modal-content" style="padding: 25px; max-width: 760px;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;"><i class="ri-government-line"></i> Responsables académicos del centro</h3>
+        <button type="button" class="btn-icon" onclick="CuadernoEngine.cerrarConfiguracionAcademica()" aria-label="Cerrar"><i class="ri-close-line"></i></button>
+      </div>
+      <form onsubmit="CuadernoEngine.guardarConfiguracionAcademica(event)">
+        <div class="form-group">
+          <label for="cfg-coordinador-academico">Coordinador(a) académico(a)</label>
+          <input type="text" id="cfg-coordinador-academico" class="form-control" maxlength="120" placeholder="Nombre completo">
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:18px 0 10px;">
+          <div>
+            <h4 style="margin:0;">Jefes de departamento</h4>
+            <p style="margin:4px 0 0; color:var(--text-muted); font-size:0.82rem;">Indica el nombre de cada jefe y marca los turnos que cubre.</p>
+          </div>
+          <button type="button" class="btn-secondary" onclick="CuadernoEngine.agregarJefeDepartamentoConfig()"><i class="ri-add-line"></i> Agregar jefe</button>
+        </div>
+        <div id="cfg-jefes-departamento-lista" style="display:grid; gap:12px; max-height:45vh; overflow:auto; padding:2px;"></div>
+        <p id="cfg-academica-error" role="alert" style="color:#b91c1c; font-size:0.85rem;" hidden></p>
+        <div class="modal-actions" style="margin-top:20px;">
+          <button type="button" class="btn-secondary" onclick="CuadernoEngine.cerrarConfiguracionAcademica()">Cancelar</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar responsables</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: Crear / Editar Equipo (Innovatec / Hackathon) ═══ -->
+  <div id="modal-equipo" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 640px; padding: 25px;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;" id="titulo-modal-equipo"><i class="ri-flag-2-line"></i> Nuevo Equipo</h3>
+        <button class="btn-icon" onclick="EquiposEngine.cerrarModalEquipo()"><i class="ri-close-line"></i></button>
+      </div>
+      <form id="form-equipo" onsubmit="EquiposEngine.guardarEquipo(event)">
+        <input type="hidden" id="equipo-id">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Nombre del Equipo</label>
+            <input type="text" id="equipo-nombre" class="form-control" placeholder="Ej: Los Innovadores" required>
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select id="equipo-categoria" class="form-control" required>
+              <option value="Innovatec">Innovatec</option>
+              <option value="Hackathon">Hackathon</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nombre del Proyecto</label>
+          <input type="text" id="equipo-proyecto" class="form-control" placeholder="Ej: Sistema inteligente de riego" required>
+        </div>
+        <div class="form-group">
+          <label>Grupo de Clases de Origen</label>
+          <select id="equipo-grupo-clase" class="form-control" onchange="EquiposEngine.actualizarProfesorGuiaPreview()">
+            <option value="">-- Seleccionar Grupo --</option>
+          </select>
+          <p id="equipo-profesor-guia-preview" style="font-size:0.78rem; color:var(--text-muted); margin:4px 0 0 0;"><i class="ri-user-star-line"></i> Profesor Guía: <strong>—</strong></p>
+        </div>
+        <div class="form-group">
+          <label>Descripción del Proyecto</label>
+          <textarea id="equipo-descripcion" class="form-control" rows="3" placeholder="¿Qué hace el proyecto y qué problema resuelve?"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Propuesta de Valor</label>
+          <textarea id="equipo-propuesta-valor" class="form-control" rows="2" placeholder="¿Qué hace único o valioso al proyecto?"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Entregables</label>
+          <textarea id="equipo-entregables" class="form-control" rows="2" placeholder="Ej: Prototipo funcional, informe técnico, video pitch..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="EquiposEngine.cerrarModalEquipo()">Cancelar</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar Equipo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: Asignar Docente Guía a un Grupo ═══ -->
+  <div id="modal-docente-guia" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 420px; padding: 25px;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;"><i class="ri-user-star-line"></i> Asignar Docente Guía</h3>
+        <button class="btn-icon" onclick="UI.cerrarModalDocenteGuia()"><i class="ri-close-line"></i></button>
+      </div>
+      <form id="form-docente-guia" onsubmit="UI.guardarDocenteGuia(event)">
+        <input type="hidden" id="docente-guia-grupo-id">
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">Grupo: <strong id="docente-guia-grupo-nombre"></strong></p>
+        <div class="form-group">
+          <label>Nombre del Docente Guía</label>
+          <input type="text" id="docente-guia-nombre" class="form-control" placeholder="Ej. Hanzell René Mayorga Calero">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="UI.cerrarModalDocenteGuia()">Cancelar</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: Crear / Editar Integrante de Equipo ═══ -->
+  <div id="modal-integrante" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 560px; padding: 25px;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;" id="titulo-modal-integrante"><i class="ri-user-add-line"></i> Nuevo Integrante</h3>
+        <button class="btn-icon" onclick="EquiposEngine.cerrarModalIntegrante()"><i class="ri-close-line"></i></button>
+      </div>
+      <form id="form-integrante" onsubmit="EquiposEngine.guardarIntegrante(event)">
+        <input type="hidden" id="integrante-id">
+        <input type="hidden" id="integrante-equipo-id">
+        <input type="hidden" id="integrante-estudiante-id">
+        <input type="hidden" id="integrante-estudiante-grupo-id">
+        <div class="form-group">
+          <label>Tomar de la base de estudiantes (opcional)</label>
+          <select id="integrante-estudiante-select" class="form-control" onchange="EquiposEngine.autocompletarDesdeEstudiante(this.value)">
+            <option value="">-- Ingresar manualmente --</option>
+          </select>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Nombres</label>
+            <input type="text" id="integrante-nombres" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Apellidos</label>
+            <input type="text" id="integrante-apellidos" class="form-control" required>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="integrante-correo" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" id="integrante-telefono" class="form-control" required>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Cédula</label>
+            <input type="text" id="integrante-cedula" class="form-control" placeholder="000-000000-0000X">
+          </div>
+          <div class="form-group">
+            <label>Rol en el Equipo</label>
+            <select id="integrante-rol" class="form-control">
+              <option value="Integrante">Integrante</option>
+              <option value="Coordinador">Coordinador de Equipo</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="EquiposEngine.cerrarModalIntegrante()">Cancelar</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar Integrante</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JS dividido en módulos por responsabilidad (antes un solo app.js de 2600+ líneas).
+       El orden importa: cada archivo depende de que los anteriores ya estén cargados. -->
+  <script defer src="js/10-firebase-bootstrap.js"></script>
+  <script defer src="js/01-cuaderno-engine.js"></script>
+  <script defer src="js/02-data-engine.js"></script>
+  <script defer src="js/03-config-export.js"></script>
+  <script defer src="js/04-ui-core.js"></script>
+  <script defer src="js/05-message-engine.js"></script>
+  <script defer src="js/06-stats-engine.js"></script>
+  <script defer src="js/07-examenes-engine.js"></script>
+  <script defer src="js/08-informe-engine.js"></script>
+  <script defer src="js/09-equipos-engine.js"></script>
+  <script defer src="js/11-auth.js"></script>
+  <script defer src="js/12-admin-manager.js"></script>
+  <script defer src="js/13-profile-manager.js"></script>
+  <script defer src="js/00-main.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Entorno virtual Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Respaldo de la base de datos (contiene datos personales)
+TIC_Dashboard_DB_*.json
+
+# Dependencias y build
+node_modules/
+dist/
+build/
+package-lock.json
+
+# Archivos de sistema
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp

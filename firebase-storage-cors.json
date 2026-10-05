@@ -1,0 +1,15 @@
+[
+  {
+    "origin": [
+      "https://ina-tions.web.app",
+      "https://ina-tions.firebaseapp.com",
+      "http://localhost:4173",
+      "http://127.0.0.1:4173",
+      "http://localhost:5000",
+      "http://127.0.0.1:5000"
+    ],
+    "method": ["GET", "HEAD", "POST", "PUT", "DELETE"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition"],
+    "maxAgeSeconds": 3600
+  }
+]
