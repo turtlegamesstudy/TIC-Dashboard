@@ -99,6 +99,7 @@ function createHarness(initialData) {
     AuthManager: authManager,
     UI: { showToast(message) { messages.push(message); }, renderCurrentModule() {} },
     document: { getElementById: () => null },
+    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     console: { error() {} },
     Date,
     JSON,
@@ -357,4 +358,42 @@ test('detects a concurrent edit and reloads rather than overwriting it', async (
 
   assert.equal(database.getForTest('appData/grupos/group-1/nombre'), 'Cambio remoto');
   assert.equal(engine.getGrupoById('group-1').nombre, 'Cambio remoto');
+});
+
+test('lets a teacher upgrade legacy shared data without an administrator session', async () => {
+  const { engine, database } = createHarness({});
+  const legacyData = {
+    version: '1.0',
+    lastUpdated: '2026-01-05T00:00:00.000Z',
+    grupos: [
+      { id: 'group-1', nombre: 'Primero', estudiantes: [] },
+      { id: 'group-2', nombre: 'Segundo', estudiantes: [] }
+    ],
+    equipos: []
+  };
+  database.setForTest('centers/ct-ariel-darce/appData', legacyData);
+
+  await engine.init();
+
+  const stored = database.getForTest('centers/ct-ariel-darce/appData');
+  assert.equal(Array.isArray(stored.grupos), false);
+  assert.equal(stored.firebaseKeyEncoding, 1);
+  assert.deepEqual(Array.from(stored.gruposOrden), ['group-1', 'group-2']);
+  assert.deepEqual(Array.from(stored.equiposOrden), []);
+  assert.deepEqual(Array.from(engine.getGrupos(), group => group.id), ['group-1', 'group-2']);
+  assert.equal(engine._syncSnapshot.firebaseKeyEncoding, 1);
+  assert.equal(engine._migrationNotice, 'La base se actualizó al formato actual sin perder información.');
+});
+
+test('lets a teacher open an empty shared base instead of waiting for an import', async () => {
+  const { engine, database } = createHarness({});
+
+  await engine.init();
+
+  assert.equal(engine.db.grupos.length, 0);
+  assert.equal(engine.db.equipos.length, 0);
+  assert.equal(engine._syncSnapshot.firebaseKeyEncoding, 1);
+  assert.deepEqual(Array.from(engine._syncSnapshot.gruposOrden), []);
+  assert.equal(typeof database.getForTest('centers/ct-ariel-darce/appData/grupos'), 'object');
+  assert.match(engine._migrationNotice, /base compartida vacía/);
 });

@@ -83,9 +83,9 @@
         const snapshot = await reference.once('value');
         const remoteData = snapshot.val();
         if (!remoteData) {
-          if (AuthManager.profile?.role !== 'admin') {
-            throw new Error('La base compartida aún no tiene datos. Solicita al administrador que importe la base inicial de grupos.');
-          }
+          // [ACCESO] Una base vacía no tiene nada que pisar, así que
+          // cualquier cuenta del centro puede crearla y empezar a trabajar
+          // sin depender de que un administrador inicie sesión primero.
           this.db = { version: '1.0', lastUpdated: new Date().toISOString(), grupos: [], equipos: [] };
           const localData = localStorage.getItem('TIC_DASHBOARD_DB');
           if (localData && window.confirm('Se encontró una base guardada en este navegador. ¿Quieres migrarla ahora a Firebase como base compartida?')) {
@@ -108,6 +108,8 @@
               console.error('No se pudo retirar la copia local ya migrada:', error);
               this._migrationNotice += ' La copia local no pudo eliminarse automáticamente.';
             }
+          } else {
+            this._migrationNotice = 'Se creó una base compartida vacía para tu centro; los grupos que cargues se guardarán allí.';
           }
         } else {
           this.db = this._deserializeDatabase(remoteData);
@@ -119,10 +121,20 @@
             !Array.isArray(remoteData.equiposOrden) ||
             remoteData.firebaseKeyEncoding !== 1;
           if (usesLegacyFormat) {
-            if (AuthManager.profile?.role !== 'admin') {
-              throw new Error('La base necesita una migración inicial. Solicita al administrador que inicie sesión primero.');
+            // [ACCESO] La actualización de formato reescribe exactamente los
+            // mismos datos en el orden que la aplicación espera; no crea ni
+            // borra información, así que la puede aplicar cualquier cuenta
+            // del centro. Antes solo lo hacía un administrador y el resto
+            // de los docentes no podía entrar hasta que él iniciaba sesión.
+            try {
+              await reference.set({ ...normalized, updatedBy: AuthManager.user.uid });
+            } catch (error) {
+              console.error('No se pudo actualizar el formato de la base compartida:', error);
+              throw new Error(`No se pudo actualizar el formato de la base compartida: ${error.message}. La información no fue modificada.`);
             }
-            await reference.set({ ...normalized, updatedBy: AuthManager.user.uid });
+            if (!this._migrationNotice) {
+              this._migrationNotice = 'La base se actualizó al formato actual sin perder información.';
+            }
           }
           this._syncSnapshot = this._clone(normalized);
           this._keyEncodingVersion = 1;
@@ -898,77 +910,600 @@
         return lista;
       },
 
+      // ═══════════════════════════════════════════════════════════════
+      // CARGA FLEXIBLE DE LISTADOS DE GRUPO
+      // El listado oficial cambia de formato entre ciclos: aparecen o
+      // desaparecen columnas, cambian los encabezados y se mueven las filas
+      // de datos. Antes se leían posiciones fijas (columna 7, fila 12,
+      // columna 26), así que cualquier cambio rompía la importación.
+      // Ahora:
+      //   1. se localiza la fila de encabezados por el nombre de las
+      //      columnas (alias, sin importar mayúsculas ni acentos),
+      //   2. si no hay encabezado reconocible se prueba la posición
+      //      clásica y, en último caso, se infiere la estructura por el
+      //      contenido mismo de las celdas,
+      //   3. los datos del grupo (Grupo/Evento/Turno/Docente) se leen por
+      //      etiquetas, sin depender de la celda exacta,
+      //   4. al recargar un grupo ya guardado se conservan identificadores,
+      //      notas, convalidaciones y los campos que el archivo no trae,
+      //   5. todo lo que no se pueda leer se reporta en "advertencias".
+      // ═══════════════════════════════════════════════════════════════
+
+      // Minúsculas, sin acentos y sin puntuación: así se comparan los
+      // encabezados del archivo sin importar cómo estén escritos.
+      _textoNormalizado(valor) {
+        return String(valor === null || valor === undefined ? '' : valor)
+          .replace(/\s+/g, ' ')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^A-Za-z0-9]+/g, ' ')
+          .trim()
+          .toLowerCase();
+      },
+
+      _aliasColumnasListado() {
+        if (!this._aliasListado) {
+          this._aliasListado = {
+            nombre: ['nombre del participante', 'nombres del participante', 'nombre completo del participante',
+              'nombre completo', 'nombres y apellidos', 'nombre y apellidos', 'apellidos y nombres',
+              'apellido y nombre', 'nombre del estudiante', 'nombre del alumno', 'nombres del estudiante',
+              'nombre y apellido', 'nombre', 'estudiante', 'alumno', 'participante', 'nombres'],
+            nombres: ['nombres', 'nombre s', 'nombres del estudiante', 'nombres del alumno',
+              'nombres del participante', 'nombres y apellidos'],
+            apellidos: ['apellidos', 'apellido', 'apellidos del estudiante', 'apellidos del alumno',
+              'apellido paterno', 'apellido materno', 'apellido s'],
+            correo: ['correo electronico institucional', 'correo institucional', 'correo electronico',
+              'correo personal', 'correo del estudiante', 'direccion de correo', 'correo', 'email',
+              'e mail', 'mail'],
+            telefono: ['telefono de contacto', 'telefono celular', 'telefono personal', 'telefono',
+              'telefono del estudiante', 'celular', 'numero de telefono', 'contacto'],
+            estado: ['estado del participante', 'estado del estudiante', 'estado', 'situacion',
+              'condicion', 'estatus']
+          };
+        }
+        return this._aliasListado;
+      },
+
+      // 100 = coincidencia exacta, 80 = el encabezado empieza o termina con
+      // el alias, 60 = solo contiene el alias.
+      _puntajeColumna(normalizado, aliasCampo) {
+        if (!normalizado) return 0;
+        let i;
+        for (i = 0; i < aliasCampo.length; i++) if (normalizado === aliasCampo[i]) return 100;
+        for (i = 0; i < aliasCampo.length; i++) {
+          if (normalizado.startsWith(aliasCampo[i]) || aliasCampo[i].startsWith(normalizado)) return 80;
+        }
+        for (i = 0; i < aliasCampo.length; i++) if (normalizado.includes(aliasCampo[i])) return 60;
+        return 0;
+      },
+
+      // Asigna cada celda de una fila al campo que mejor la representa.
+      _asignarColumnasListado(fila) {
+        const alias = this._aliasColumnasListado();
+        const columnas = {};
+        const puntajes = {};
+        const filaSegura = Array.isArray(fila) ? fila : [];
+        filaSegura.forEach((celda, indice) => {
+          const normalizado = this._textoNormalizado(celda);
+          if (!normalizado) return;
+          let mejorCampo = null;
+          let mejorPuntaje = 0;
+          Object.keys(alias).forEach(campo => {
+            const puntaje = this._puntajeColumna(normalizado, alias[campo]);
+            if (puntaje > mejorPuntaje) {
+              mejorPuntaje = puntaje;
+              mejorCampo = campo;
+            }
+          });
+          if (!mejorCampo) return;
+          if (puntajes[mejorCampo] === undefined || mejorPuntaje > puntajes[mejorCampo]) {
+            puntajes[mejorCampo] = mejorPuntaje;
+            columnas[mejorCampo] = indice;
+          }
+        });
+        return columnas;
+      },
+
+      // Solo puede existir la columna "nombre" (nombre completo) o la pareja
+      // "nombres" + "apellidos"; nunca las dos a la vez.
+      _normalizarColumnasListado(columnas) {
+        const salida = { ...columnas };
+        if (salida.apellidos !== undefined) {
+          const indiceNombre = salida.nombres !== undefined ? salida.nombres : salida.nombre;
+          delete salida.nombre;
+          if (indiceNombre !== undefined) salida.nombres = indiceNombre;
+          else delete salida.nombres;
+        } else {
+          if (salida.nombre === undefined && salida.nombres !== undefined) salida.nombre = salida.nombres;
+          delete salida.nombres;
+        }
+        return salida;
+      },
+
+      _columnaNombreListado(columnas) {
+        if (!columnas) return undefined;
+        if (columnas.nombre !== undefined) return columnas.nombre;
+        if (columnas.nombres !== undefined && columnas.apellidos !== undefined) return columnas.nombres;
+        return undefined;
+      },
+
+      // Busca la fila de encabezados en las primeras 40 filas.
+      _detectarEncabezadoListado(filas) {
+        const limite = Math.min(filas.length, 40);
+        const alias = this._aliasColumnasListado();
+        let mejor = null;
+        for (let r = 0; r < limite; r++) {
+          const fila = filas[r] || [];
+          const columnas = this._normalizarColumnasListado(this._asignarColumnasListado(fila));
+          const indiceNombre = this._columnaNombreListado(columnas);
+          if (indiceNombre === undefined) continue;
+          const coincidencias = Object.keys(columnas).length;
+          const puntajeNombre = this._puntajeColumna(this._textoNormalizado(fila[indiceNombre]), alias.nombre);
+          // Se exige un reconocimiento directo del nombre (o varias
+          // columnas reconocidas a la vez) para no confundir un título
+          // suelto con la fila de encabezados.
+          if (puntajeNombre < 80 && coincidencias < 2) continue;
+          if (!mejor || coincidencias > mejor.coincidencias) {
+            mejor = { fila: r, columnas, coincidencias, origen: 'encabezados' };
+          }
+        }
+        return mejor;
+      },
+
+      // Posición clásica del listado oficial: encabezados en la fila 12,
+      // nombre en la columna 7, estado 16, teléfono 20 y correo 26.
+      _detectarEncabezadoHeredado(filas) {
+        const filaEncabezado = 12;
+        const fila = filas[filaEncabezado];
+        if (!Array.isArray(fila)) return null;
+        const filaSiguiente = Array.isArray(filas[filaEncabezado + 1]) ? filas[filaEncabezado + 1] : [];
+        const hayContenido = indice => Boolean(
+          String(fila[indice] === null || fila[indice] === undefined ? '' : fila[indice]).trim() ||
+          String(filaSiguiente[indice] === null || filaSiguiente[indice] === undefined ? '' : filaSiguiente[indice]).trim()
+        );
+        if (!hayContenido(7)) return null;
+        const columnas = { nombre: 7 };
+        if (hayContenido(16)) columnas.estado = 16;
+        if (hayContenido(20)) columnas.telefono = 20;
+        if (hayContenido(26)) columnas.correo = 26;
+        return { fila: filaEncabezado, columnas, origen: 'heredado' };
+      },
+
+      // Último recurso: infiere cada columna por el contenido que contiene
+      // (nombres, correos, teléfonos y estados) cuando los encabezados no
+      // se parecen en nada a los que conoce la aplicación.
+      _inferirColumnasListado(filas) {
+        const limite = Math.min(filas.length, 150);
+        const estadisticas = {};
+        for (let r = 0; r < limite; r++) {
+          const fila = filas[r] || [];
+          fila.forEach((celda, indice) => {
+            const texto = String(celda === null || celda === undefined ? '' : celda).trim();
+            if (!texto) return;
+            if (!estadisticas[indice]) {
+              estadisticas[indice] = { nombre: 0, correo: 0, telefono: 0, estado: 0, primeraFila: -1 };
+            }
+            const est = estadisticas[indice];
+            const normalizado = this._textoNormalizado(texto);
+            const palabras = normalizado ? normalizado.split(' ').length : 0;
+            if (palabras >= 2 && palabras <= 6 && texto.length >= 6 &&
+              /[A-Za-z]{2}/.test(texto) && !/\d{4,}/.test(texto)) {
+              est.nombre++;
+              if (est.primeraFila === -1) est.primeraFila = r;
+            }
+            if (texto.includes('@')) est.correo++;
+            if (/^[+\d][\d\s().-]{6,}$/.test(texto)) est.telefono++;
+            if (/^(activo|retirado|baja|inactivo|graduado|egresado|en curso)/.test(normalizado)) est.estado++;
+          });
+        }
+        const indices = Object.keys(estadisticas).map(Number);
+        if (!indices.length) return null;
+        let columnaNombre = -1;
+        let mejorNombre = 0;
+        indices.forEach(indice => {
+          if (estadisticas[indice].nombre > mejorNombre) {
+            mejorNombre = estadisticas[indice].nombre;
+            columnaNombre = indice;
+          }
+        });
+        if (columnaNombre < 0 || mejorNombre < 3) return null;
+        const columnas = { nombre: columnaNombre };
+        const elegir = (campo, minimo) => {
+          let elegido = -1;
+          let mejor = minimo;
+          indices.forEach(indice => {
+            if (indice === columnaNombre) return;
+            const puntaje = estadisticas[indice][campo];
+            if (puntaje > mejor) {
+              mejor = puntaje;
+              elegido = indice;
+            }
+          });
+          if (elegido >= 0) columnas[campo] = elegido;
+        };
+        elegir('correo', 1);
+        elegir('telefono', 2);
+        elegir('estado', 2);
+        return {
+          fila: estadisticas[columnaNombre].primeraFila - 1,
+          columnas,
+          origen: 'inferido'
+        };
+      },
+
+      // Lee los datos generales del listado (Grupo, Evento, Turno, Docente)
+      // buscando la etiqueta en cualquier celda de la zona superior.
+      _leerMetadatosListado(filas, limiteFilas) {
+        const metadatos = {};
+        const etiquetas = [
+          { campo: 'grupo', alias: ['grupo', 'grupo y seccion', 'grupo o seccion', 'seccion', 'curso', 'paralelo'] },
+          { campo: 'carrera', alias: ['evento', 'evento o carrera', 'carrera', 'programa', 'tecnico', 'carrera o evento'] },
+          { campo: 'turno', alias: ['turno', 'jornada', 'horario', 'modalidad'] },
+          { campo: 'docenteGuia', alias: ['docente guia', 'docente responsable', 'docente', 'profesor', 'tutor', 'asesor'] }
+        ];
+        const limite = Math.max(0, Math.min(filas.length, limiteFilas));
+        for (let r = 0; r < limite; r++) {
+          if (Object.keys(metadatos).length === etiquetas.length) break;
+          const fila = filas[r] || [];
+          for (let c = 0; c < fila.length; c++) {
+            const crudo = String(fila[c] === null || fila[c] === undefined ? '' : fila[c]).trim();
+            if (!crudo) continue;
+            const partes = crudo.split(':');
+            const etiqueta = this._textoNormalizado(partes[0]);
+            const valorEnCelda = partes.length > 1 ? partes.slice(1).join(':').trim() : '';
+            const coincidencia = etiquetas.find(item => metadatos[item.campo] === undefined &&
+              (item.alias.includes(etiqueta) ||
+                (etiqueta && item.alias.some(alias => etiqueta.startsWith(alias)))));
+            if (!coincidencia) continue;
+            let valor = valorEnCelda;
+            if (!valor) {
+              for (let d = c + 1; d < Math.min(fila.length, c + 5); d++) {
+                const candidato = String(fila[d] === null || fila[d] === undefined ? '' : fila[d]).trim();
+                if (!candidato) continue;
+                const candidatoNormalizado = this._textoNormalizado(candidato);
+                // Una etiqueta sin valor o la etiqueta siguiente: no hay dato.
+                if (candidato.includes(':') ||
+                  etiquetas.some(item => item.alias.includes(candidatoNormalizado))) break;
+                valor = candidato;
+                break;
+              }
+            }
+            if (valor) metadatos[coincidencia.campo] = valor;
+          }
+        }
+        return metadatos;
+      },
+
+      // El correo de relleno que usaban versiones anteriores no sirve para
+      // identificar a nadie: se trata como si no existiera.
+      _esCorreoUtil(correo) {
+        const texto = String(correo === null || correo === undefined ? '' : correo).trim();
+        if (!texto || texto === 'sin.correo@tecnacional.edu.ni') return false;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto);
+      },
+
+      _separarNombreCompleto(nombreCompleto) {
+        const partes = String(nombreCompleto === null || nombreCompleto === undefined ? '' : nombreCompleto)
+          .trim().split(/\s+/).filter(Boolean);
+        if (partes.length >= 4) return { nombres: partes.slice(0, 2).join(' '), apellidos: partes.slice(2).join(' ') };
+        if (partes.length === 3) return { nombres: partes[0], apellidos: partes.slice(1).join(' ') };
+        if (partes.length === 2) return { nombres: partes[0], apellidos: partes[1] };
+        if (partes.length === 1) return { nombres: partes[0], apellidos: '---' };
+        return { nombres: '', apellidos: '' };
+      },
+
+      // Filas que no son alumnos: encabezados repetidos, totales, firmas...
+      _esFilaRuidoListado(celdaNombre) {
+        const texto = this._textoNormalizado(celdaNombre);
+        if (!texto) return true;
+        if (!/[a-z]/.test(texto)) return true;
+        const encabezados = ['nombre', 'nombres', 'apellidos', 'apellido', 'nombre del participante',
+          'nombres del participante', 'nombre completo', 'nombres y apellidos', 'estudiante', 'alumno',
+          'participante', 'correo', 'email', 'telefono', 'estado', 'grupo', 'evento', 'turno',
+          'carrera', 'carnet', 'cedula', 'orden', 'no'];
+        if (encabezados.includes(texto)) return true;
+        return /^(total|subtotal|promedio|general|firmas|firma|fecha|pagina|listado|observaciones|detalle|encabezado)/
+          .test(texto);
+      },
+
+      _leerFilasEstudiantes(filas, deteccion) {
+        const columnas = (deteccion && deteccion.columnas) || {};
+        const columnaNombre = this._columnaNombreListado(columnas);
+        if (columnaNombre === undefined) return [];
+        const estudiantes = [];
+        const filaEncabezado = Number.isInteger(deteccion.fila) ? deteccion.fila : -1;
+        for (let r = Math.max(0, filaEncabezado + 1); r < filas.length; r++) {
+          const fila = filas[r] || [];
+          if (this._esFilaRuidoListado(fila[columnaNombre])) continue;
+          let nombres = '';
+          let apellidos = '';
+          if (columnas.nombres !== undefined && columnas.apellidos !== undefined) {
+            nombres = String(fila[columnas.nombres] === undefined ? '' : fila[columnas.nombres]).trim();
+            apellidos = String(fila[columnas.apellidos] === undefined ? '' : fila[columnas.apellidos]).trim();
+          } else {
+            const separado = this._separarNombreCompleto(fila[columnaNombre]);
+            nombres = separado.nombres;
+            apellidos = separado.apellidos;
+          }
+          if (!nombres && !apellidos) continue;
+          // Solo se agregan las claves que el archivo trae: así, al
+          // recargar un grupo, lo que el listado no incluye se conserva.
+          const estudiante = { nombres, apellidos };
+          if (columnas.correo !== undefined) {
+            const correo = String(fila[columnas.correo] === undefined ? '' : fila[columnas.correo]).trim();
+            estudiante.correo = this._esCorreoUtil(correo) ? correo : '';
+          }
+          if (columnas.telefono !== undefined) {
+            const telefono = String(fila[columnas.telefono] === undefined ? '' : fila[columnas.telefono]).trim();
+            if (telefono && telefono !== 'undefined') estudiante.telefono = telefono;
+          }
+          if (columnas.estado !== undefined) {
+            const estado = this._textoNormalizado(fila[columnas.estado]);
+            estudiante.estado = /retirado|retiro|baja|inactivo/.test(estado) ? 'Retirado' : 'Activo';
+          }
+          estudiantes.push(estudiante);
+        }
+        return estudiantes;
+      },
+
+      _explicarFalloListado(filas, encabezado) {
+        const vistas = [];
+        for (let r = 0; r < filas.length && vistas.length < 5; r++) {
+          const celdas = (filas[r] || [])
+            .map(celda => String(celda === null || celda === undefined ? '' : celda).trim())
+            .filter(Boolean).slice(0, 6);
+          if (celdas.length) vistas.push(`fila ${r + 1}: ${celdas.join(' | ')}`);
+        }
+        const muestra = vistas.length ? vistas.join('; ') : 'la hoja no tiene filas con texto';
+        const detalleEncabezado = encabezado
+          ? ` Se detectó la fila ${encabezado.fila + 1} como encabezados, pero no se leyó ningún estudiante.`
+          : '';
+        return 'No se reconoció ninguna columna de nombres del listado. ' +
+          `Contenido encontrado → ${muestra}.${detalleEncabezado} ` +
+          'Usa un encabezado como "Nombre del participante", "Nombres y apellidos" o "Nombres" / "Apellidos".';
+      },
+
+      // Punto de entrada del análisis: recibe las filas de una hoja y
+      // devuelve los metadatos del grupo y sus estudiantes.
+      analizarListadoExcel(filas) {
+        const filasSeguras = Array.from(
+          Array.isArray(filas) ? filas : [],
+          fila => Array.isArray(fila) ? fila : []
+        );
+        if (!filasSeguras.some(fila => fila.length)) {
+          throw new Error('La hoja está vacía: no se encontraron filas con información.');
+        }
+        const intentos = [];
+        const encabezado = this._detectarEncabezadoListado(filasSeguras);
+        if (encabezado) intentos.push(encabezado);
+        const heredado = this._detectarEncabezadoHeredado(filasSeguras);
+        if (heredado && !intentos.some(intento => intento.fila === heredado.fila &&
+          JSON.stringify(intento.columnas) === JSON.stringify(heredado.columnas))) {
+          intentos.push(heredado);
+        }
+        const inferido = this._inferirColumnasListado(filasSeguras);
+        if (inferido && !intentos.some(intento => intento.fila === inferido.fila &&
+          JSON.stringify(intento.columnas) === JSON.stringify(inferido.columnas))) {
+          intentos.push(inferido);
+        }
+
+        for (const intento of intentos) {
+          const estudiantes = this._leerFilasEstudiantes(filasSeguras, intento);
+          if (!estudiantes.length) continue;
+          const advertencias = [];
+          if (intento.origen === 'heredado') {
+            advertencias.push('No se reconoció la fila de encabezados; se usó la posición clásica del listado.');
+          }
+          if (intento.origen === 'inferido') {
+            advertencias.push('No se reconoció la estructura del archivo; las columnas se infirieron por su contenido. Revisa el resultado.');
+          }
+          if (intento.columnas.correo === undefined) {
+            advertencias.push('El archivo no trae columna de correo: se conservan los correos ya registrados.');
+          }
+          if (intento.columnas.telefono === undefined) {
+            advertencias.push('El archivo no trae columna de teléfono: se conservan los teléfonos ya registrados.');
+          }
+          if (intento.columnas.estado === undefined) {
+            advertencias.push('El archivo no trae columna de estado: los alumnos conservan su estado actual.');
+          }
+          return {
+            metadatos: this._leerMetadatosListado(filasSeguras, Math.max(0, intento.fila)),
+            columnas: intento.columnas,
+            filaEncabezado: intento.fila,
+            origen: intento.origen,
+            estudiantes,
+            advertencias
+          };
+        }
+        throw new Error(this._explicarFalloListado(filasSeguras, encabezado));
+      },
+
+      // Recorre todas las hojas del archivo y se queda con la que tenga más
+      // estudiantes reconocidos (así una hoja de portada o de resumen no
+      // arruina la importación).
+      _analizarHojasListado(workbook, nombreArchivo) {
+        const hojas = workbook && Array.isArray(workbook.SheetNames) ? workbook.SheetNames : [];
+        if (!hojas.length) throw new Error('El archivo no tiene hojas legibles.');
+        let mejor = null;
+        let mejorError = null;
+        let filasDelMejorError = -1;
+        hojas.forEach(nombreHoja => {
+          const hoja = workbook.Sheets ? workbook.Sheets[nombreHoja] : null;
+          if (!hoja) return;
+          let filas = [];
+          try {
+            filas = XLSX.utils.sheet_to_json(hoja, { header: 1 });
+          } catch (error) {
+            if (!mejorError) mejorError = error;
+            return;
+          }
+          if (!filas.length) return;
+          try {
+            const analisis = this.analizarListadoExcel(filas);
+            analisis.hoja = nombreHoja;
+            analisis.nombreArchivo = nombreArchivo;
+            if (!mejor || analisis.estudiantes.length > mejor.estudiantes.length) mejor = analisis;
+          } catch (error) {
+            if (filas.length >= filasDelMejorError) {
+              filasDelMejorError = filas.length;
+              mejorError = error;
+            }
+          }
+        });
+        if (!mejor) throw (mejorError || new Error('No se encontró ningún listado de estudiantes en el archivo.'));
+        return mejor;
+      },
+
+      _idSeguroGrupo(nombre) {
+        let id = String(nombre === null || nombre === undefined ? '' : nombre)
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[.#$\[\]/]/g, '-')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        if (!id || id === '.' || id === '..') id = `GRUPO-${this._hashCorto(nombre)}`;
+        return id;
+      },
+
+      _hashCorto(texto) {
+        const cadena = String(texto === null || texto === undefined ? '' : texto);
+        let hash = 5381;
+        for (let i = 0; i < cadena.length; i++) {
+          hash = ((hash << 5) + hash + cadena.charCodeAt(i)) >>> 0;
+        }
+        return hash.toString(36).toUpperCase();
+      },
+
+      // Arma el grupo a partir del análisis de una hoja, actualizando el
+      // grupo ya guardado si el listado corresponde al mismo.
+      _construirGrupoDesdeListado(analisis, nombreArchivo) {
+        const metadatos = (analisis && analisis.metadatos) || {};
+        const estudiantesArchivo = (analisis && analisis.estudiantes) || [];
+        const nombreGrupo = String(metadatos.grupo || '').trim() ||
+          String(nombreArchivo || '').trim() || 'GRUPO NUEVO';
+        const claveGrupo = this._textoNormalizado(nombreGrupo);
+        const claveArchivo = this._textoNormalizado(nombreArchivo);
+        const grupos = this.db.grupos || [];
+        const existente = grupos.find(grupo => {
+          if (claveArchivo && this._textoNormalizado(grupo.origenArchivo) === claveArchivo) return true;
+          return this._textoNormalizado(grupo.id) === claveGrupo ||
+            this._textoNormalizado(grupo.nombre) === claveGrupo ||
+            this._textoNormalizado(grupo.codigo) === claveGrupo;
+        });
+
+        // Índices de los alumnos ya guardados para conservar todo lo que el
+        // archivo nuevo no trae (notas, convalidaciones, identificador...).
+        const anteriores = existente ? (existente.estudiantes || []) : [];
+        const porCorreo = new Map();
+        const porNombre = new Map();
+        anteriores.forEach(anterior => {
+          if (this._esCorreoUtil(anterior.correo)) {
+            porCorreo.set(this._textoNormalizado(anterior.correo), anterior);
+          }
+          const clave = this._textoNormalizado(`${anterior.nombres || ''} ${anterior.apellidos || ''}`);
+          if (!porNombre.has(clave)) porNombre.set(clave, []);
+          porNombre.get(clave).push(anterior);
+        });
+        const idsUsados = new Set(anteriores.map(anterior => String(anterior.id)));
+        const usados = new Set();
+        // El contador continúa después del último STU-xxx ya usado para que
+        // los identificadores nuevos no parezcan alumnos antiguos.
+        let contador = anteriores.reduce((maximo, anterior) => {
+          const coincidencia = /^STU-(\d+)$/.exec(String(anterior.id === undefined || anterior.id === null ? '' : anterior.id));
+          return coincidencia ? Math.max(maximo, Number(coincidencia[1])) : maximo;
+        }, 0);
+        const siguienteId = () => {
+          let id = '';
+          do {
+            contador += 1;
+            id = 'STU-' + String(contador).padStart(3, '0');
+          } while (idsUsados.has(id));
+          idsUsados.add(id);
+          return id;
+        };
+
+        const estudiantesFinales = estudiantesArchivo.map(parcial => {
+          let anterior = null;
+          if (this._esCorreoUtil(parcial.correo)) {
+            const candidato = porCorreo.get(this._textoNormalizado(parcial.correo));
+            if (candidato && !usados.has(candidato.id)) anterior = candidato;
+          }
+          if (!anterior) {
+            const cola = porNombre.get(this._textoNormalizado(`${parcial.nombres || ''} ${parcial.apellidos || ''}`));
+            while (cola && cola.length) {
+              const candidato = cola.shift();
+              if (!usados.has(candidato.id)) {
+                anterior = candidato;
+                break;
+              }
+            }
+          }
+          if (!anterior) {
+            return {
+              id: siguienteId(),
+              nombres: parcial.nombres,
+              apellidos: parcial.apellidos,
+              correo: parcial.correo || '',
+              telefono: parcial.telefono || '',
+              estado: parcial.estado || 'Activo'
+            };
+          }
+          usados.add(anterior.id);
+          const fusion = { ...anterior, ...parcial, id: anterior.id };
+          fusion.correo = this._esCorreoUtil(fusion.correo) ? fusion.correo : '';
+          if (!fusion.telefono) fusion.telefono = '';
+          if (!fusion.estado) fusion.estado = 'Activo';
+          return fusion;
+        });
+
+        const grupo = {
+          ...(existente || {}),
+          id: existente ? existente.id : this._idSeguroGrupo(nombreGrupo),
+          codigo: String(metadatos.grupo || '').trim() || (existente && existente.codigo) || nombreGrupo,
+          nombre: nombreGrupo,
+          carrera: String(metadatos.carrera || '').trim() || (existente && existente.carrera) || 'TÉCNICO GENERAL',
+          turno: String(metadatos.turno || '').trim() || (existente && existente.turno) || 'General',
+          estudiantes: estudiantesFinales,
+          estructuraModulos: (existente && existente.estructuraModulos) || {},
+          origenArchivo: String(nombreArchivo || '').trim() ||
+            (existente && existente.origenArchivo) || ''
+        };
+        const docenteListado = String(metadatos.docenteGuia || '').trim();
+        grupo.docenteGuia = docenteListado || (existente && existente.docenteGuia) || '';
+        return grupo;
+      },
+
       parseExcelGroup(file, callback) {
+        const nombreArchivo = String(file && file.name ? file.name : '')
+          .replace(/\.[^.]+$/, '').trim();
+        const esTextoPlano = /\.(csv|txt|tsv)$/i.test(String(file && file.name ? file.name : ''));
         const reader = new FileReader();
         reader.onload = async (e) => {
-          const previousGroups = DataEngine.db.grupos;
+          const previousGroups = this.db.grupos;
           const previousGroupsSnapshot = previousGroups.slice();
           try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rawData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            const contenido = e.target.result;
+            const workbook = esTextoPlano
+              ? XLSX.read(String(contenido || ''), { type: 'string' })
+              : XLSX.read(new Uint8Array(contenido), { type: 'array' });
+            const analisis = this._analizarHojasListado(workbook, nombreArchivo);
+            const newGroupData = this._construirGrupoDesdeListado(analisis, nombreArchivo);
 
-          let grupoId = "GRUPO-" + Math.floor(Math.random() * 1000);
-          let carrera = "TÉCNICO GENERAL";
-          let turno = "General";
+            const existingIdx = (this.db.grupos || []).findIndex(grupo => grupo.id === newGroupData.id);
+            if (existingIdx >= 0) this.db.grupos[existingIdx] = newGroupData;
+            else this.db.grupos.push(newGroupData);
 
-          for (let r = 0; r < Math.min(12, rawData.length); r++) {
-            const row = rawData[r] || [];
-            for (let c = 0; c < row.length; c++) {
-              const val = String(row[c] || '').trim();
-              if (val === 'Grupo:') grupoId = String(row[c + 3] || grupoId).trim();
-              if (val === 'Evento:') carrera = String(row[c + 3] || carrera).trim();
-              if (val === 'Turno:') turno = String(row[c + 1] || turno).trim();
+            await this.save();
+            if (typeof callback === 'function') {
+              callback(newGroupData, {
+                hoja: analisis.hoja,
+                origen: analisis.origen,
+                advertencias: analisis.advertencias
+              });
             }
-          }
-
-          const estudiantes = [];
-          for (let r = 12; r < rawData.length; r++) {
-            const row = rawData[r] || [];
-            const nombreCompleto = String(row[7] || '').trim();
-            const estadoRaw = String(row[16] || '').trim();
-            if (nombreCompleto && nombreCompleto !== 'NOMBRE DEL PARTICIPANTE') {
-              const parts = nombreCompleto.split(/\s+/);
-              let nombres = "", apellidos = "";
-              if (parts.length >= 4) { nombres = parts.slice(0, 2).join(' '); apellidos = parts.slice(2).join(' '); }
-              else if (parts.length === 3) { nombres = parts[0]; apellidos = parts.slice(1).join(' '); }
-              else if (parts.length === 2) { nombres = parts[0]; apellidos = parts[1]; }
-              else { nombres = nombreCompleto; apellidos = "---"; }
-              const telefono = String(row[20] || 'Sin teléfono').trim();
-              const correo = String(row[26] || 'sin.correo@tecnacional.edu.ni').trim();
-              const estado = estadoRaw.toLowerCase().includes('retirado') ? 'Retirado' : 'Activo';
-              estudiantes.push({ id: 'STU-' + (estudiantes.length + 1).toString().padStart(3, '0'), nombres, apellidos, correo, telefono: telefono === 'undefined' ? 'Sin teléfono' : telefono, estado });
-            }
-          }
-
-          const existingIdx = DataEngine.db.grupos.findIndex(g => g.id === grupoId);
-          const newGroupData = { id: grupoId, codigo: grupoId, nombre: grupoId, carrera, turno, estudiantes, estructuraModulos: {} };
-
-          if (existingIdx >= 0) {
-            const existing = DataEngine.db.grupos[existingIdx];
-            const existingEvals = {};
-            const existingConvs = {};
-            (existing.estudiantes || []).forEach(oldE => {
-              const key = `${oldE.nombres}|${oldE.apellidos}|${oldE.correo}`;
-              if (oldE.evaluacionesPorModulo) existingEvals[key] = oldE.evaluacionesPorModulo;
-              if (oldE.convalidaciones) existingConvs[key] = oldE.convalidaciones;
-            });
-            newGroupData.estudiantes.forEach(newE => {
-              const key = `${newE.nombres}|${newE.apellidos}|${newE.correo}`;
-              if (existingEvals[key]) newE.evaluacionesPorModulo = existingEvals[key];
-              if (existingConvs[key]) newE.convalidaciones = existingConvs[key];
-            });
-            newGroupData.estructuraModulos = existing.estructuraModulos || {};
-            DataEngine.db.grupos[existingIdx] = { ...existing, ...newGroupData };
-          } else {
-            DataEngine.db.grupos.push(newGroupData);
-          }
-
-          await DataEngine.save();
-          callback(newGroupData);
           } catch (error) {
-            if (DataEngine.db.grupos === previousGroups) DataEngine.db.grupos = previousGroupsSnapshot;
+            if (this.db.grupos === previousGroups) this.db.grupos = previousGroupsSnapshot;
             console.error('No se pudo importar el grupo desde Excel:', error);
             UI.showToast(`❌ No se pudo importar el grupo: ${error.message}`);
           }
@@ -977,6 +1512,7 @@
           console.error('No se pudo leer el archivo Excel del grupo:', error);
           UI.showToast('❌ No se pudo leer el archivo Excel.');
         };
-        reader.readAsArrayBuffer(file);
+        if (esTextoPlano) reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
       }
     };
