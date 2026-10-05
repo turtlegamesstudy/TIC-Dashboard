@@ -24,7 +24,8 @@
         loading.setAttribute('role', 'status');
         loading.setAttribute('aria-hidden', 'false');
         if (loadingMessage) loadingMessage.textContent = message;
-        if (loadingCaption) loadingCaption.textContent = 'Un momento, estamos organizando la información';
+        if (loadingCaption) loadingCaption.textContent = 'Un momento: estamos preparando tu información';
+        this.reproducirEntradaCarga(loading);
         const workspace = document.getElementById('workspace');
         workspace?.classList.remove('content-ready');
         workspace?.setAttribute('aria-busy', 'true');
@@ -60,7 +61,17 @@
         loading.setAttribute('aria-hidden', 'false');
         if (loadingMessage) loadingMessage.textContent = message;
         if (loadingCaption) loadingCaption.textContent = 'Verifica la conexión o recarga la página para reintentar.';
+        this.reproducirEntradaCarga(loading);
         document.getElementById('workspace')?.removeAttribute('aria-busy');
+      },
+
+      /* Reinicia la entrada escalonada de la pantalla de carga
+         (marca, hoja, titular y pasos entran en cascada). */
+      reproducirEntradaCarga(loading) {
+        if (!loading) return;
+        loading.classList.remove('is-entering');
+        void loading.offsetWidth;
+        loading.classList.add('is-entering');
       },
 
       /* ── Tema claro / oscuro (identidad INATEC) ──

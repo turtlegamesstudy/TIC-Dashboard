@@ -233,10 +233,15 @@ const AuthManager = {
   showLoading(message) {
     const loading = document.getElementById('app-loading');
     const loadingMessage = document.getElementById('app-loading-message');
+    const loadingCaption = document.getElementById('app-loading-caption');
     if (!loading) return;
     loading.classList.remove('is-hidden', 'has-error');
     loading.setAttribute('aria-hidden', 'false');
     if (loadingMessage) loadingMessage.textContent = message;
+    if (loadingCaption) loadingCaption.textContent = 'Un momento: estamos preparando tu información';
+    loading.classList.remove('is-entering');
+    void loading.offsetWidth;
+    loading.classList.add('is-entering');
     document.getElementById('auth-screen').hidden = true;
   },
 

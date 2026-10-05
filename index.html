@@ -53,45 +53,82 @@
     </form>
   </section>
 
-  <div class="app-loading" id="app-loading" role="status" aria-live="polite" aria-label="Cargando aplicación">
-    <div class="app-loading-card">
-      <div class="app-loading-art" aria-hidden="true">
-        <svg viewBox="0 0 320 230" role="presentation">
-          <defs>
-            <linearGradient id="loader-building" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#ffffff"/>
-              <stop offset="1" stop-color="#d9f4fb"/>
-            </linearGradient>
-            <linearGradient id="loader-roof" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#11b4e5"/>
-              <stop offset="1" stop-color="#e9107b"/>
-            </linearGradient>
-          </defs>
-          <circle class="loader-sun" cx="251" cy="49" r="24"/>
-          <path class="loader-orbit" d="M214 48c5-33 42-49 69-29"/>
-          <path class="loader-ground" d="M21 190h278"/>
-          <path class="loader-building" d="M72 94 160 53l88 41v13H72z"/>
-          <path class="loader-building" d="M83 107h154v75H83z"/>
-          <path class="loader-roof" d="M62 96 160 48l98 48-5 10-93-45-93 45z"/>
-          <path class="loader-column" d="M99 112h17v61H99zm39 0h17v61h-17zm39 0h17v61h-17z"/>
-          <path class="loader-building" d="M151 145h18v37h-18z"/>
-          <path class="loader-step" d="M76 182h168v9H76zm-12 11h192v8H64z"/>
-          <path class="loader-flag" d="M160 52V29"/>
-          <path class="loader-flag-cloth" d="M160 30h24l-8 8 8 8h-24z"/>
-          <circle class="loader-dot loader-dot-one" cx="46" cy="80" r="5"/>
-          <circle class="loader-dot loader-dot-two" cx="274" cy="128" r="4"/>
-          <path class="loader-spark" d="M43 125v16m-8-8h16m204-44v14m-7-7h14"/>
-        </svg>
-        <span class="app-loading-art-label">CENTRO TECNOLÓGICO</span>
-      </div>
-      <div class="app-loading-copy">
-        <div class="app-loading-logo" aria-hidden="true"><i class="ri-government-line"></i></div>
-        <p class="app-loading-brand">INATEC <span id="loading-center-name">Centro tecnológico</span></p>
-        <p class="app-loading-message" id="app-loading-message">Preparando tu espacio...</p>
-        <p class="app-loading-caption" id="app-loading-caption">Un momento, estamos organizando la información</p>
-        <div class="app-loading-progress" aria-hidden="true"><span></span></div>
-      </div>
+  <div class="app-loading is-entering" id="app-loading" role="status" aria-live="polite" aria-label="Cargando aplicación">
+    <!-- Escena: rejilla de cuaderno, celdas flotando y luz de marca -->
+    <div class="cargador-escena" aria-hidden="true">
+      <span class="cargador-rejilla"></span>
+      <span class="cargador-brillo cargador-brillo-azul"></span>
+      <span class="cargador-brillo cargador-brillo-rosa"></span>
+      <span class="cargador-celda celdas-1"></span>
+      <span class="cargador-celda celdas-2"></span>
+      <span class="cargador-celda celdas-3"></span>
+      <span class="cargador-celda celdas-4"></span>
     </div>
+
+    <div class="cargador">
+      <header class="cargador-marca">
+        <span class="cargador-monograma" aria-hidden="true">TIC</span>
+        <span class="cargador-marca-texto">
+          <strong>INATEC</strong>
+          <small id="loading-center-name">Centro tecnológico</small>
+        </span>
+      </header>
+
+      <div class="cargador-hoja" aria-hidden="true">
+        <svg viewBox="0 0 320 176" role="presentation">
+          <rect class="hoja" x="12" y="14" width="142" height="148" rx="12"/>
+          <rect class="hoja" x="166" y="14" width="142" height="148" rx="12"/>
+          <path class="hoja-lomo" d="M160 28v120"/>
+          <line class="raya raya-1" x1="34" y1="46" x2="106" y2="46"/>
+          <line class="raya raya-2" x1="34" y1="74" x2="132" y2="74"/>
+          <line class="raya raya-3" x1="34" y1="98" x2="132" y2="98"/>
+          <line class="raya raya-4" x1="34" y1="122" x2="132" y2="122"/>
+          <line class="raya raya-5" x1="34" y1="146" x2="94" y2="146"/>
+          <g class="hoja-rejilla">
+            <line x1="182" y1="44" x2="292" y2="44"/>
+            <line x1="182" y1="72" x2="292" y2="72"/>
+            <line x1="182" y1="100" x2="292" y2="100"/>
+            <line x1="182" y1="128" x2="292" y2="128"/>
+            <line x1="218" y1="44" x2="218" y2="128"/>
+            <line x1="256" y1="44" x2="256" y2="128"/>
+          </g>
+          <rect class="hoja-celda hoja-celda-azul" x="218" y="44" width="38" height="28"/>
+          <rect class="hoja-celda hoja-celda-rosa" x="256" y="72" width="36" height="28"/>
+          <rect class="hoja-celda hoja-celda-verde" x="182" y="100" width="36" height="28"/>
+          <rect class="hoja-banda banda-azul" x="182" y="143" width="36" height="8" rx="4"/>
+          <rect class="hoja-banda banda-rosa" x="224" y="143" width="36" height="8" rx="4"/>
+          <rect class="hoja-banda banda-verde" x="266" y="143" width="26" height="8" rx="4"/>
+        </svg>
+      </div>
+
+      <div class="cargador-copy">
+        <p class="cargador-titulo" id="app-loading-message">Preparando tu espacio...</p>
+        <p class="cargador-nota" id="app-loading-caption">Un momento: estamos preparando tu información</p>
+      </div>
+
+      <ol class="cargador-pasos" aria-hidden="true">
+        <li style="--i: 0;">
+          <span class="cargador-tick">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.4l3.5 3.5L15.2 7"/></svg>
+          </span>
+          Conectando con la nube
+        </li>
+        <li style="--i: 1;">
+          <span class="cargador-tick">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.4l3.5 3.5L15.2 7"/></svg>
+          </span>
+          Organizando tus grupos
+        </li>
+        <li style="--i: 2;">
+          <span class="cargador-tick">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.4l3.5 3.5L15.2 7"/></svg>
+          </span>
+          Preparando el cuaderno
+        </li>
+      </ol>
+    </div>
+
+    <div class="cargador-barra" aria-hidden="true"><span></span></div>
   </div>
 
   <a class="skip-link" href="#workspace">Saltar al contenido principal</a>
