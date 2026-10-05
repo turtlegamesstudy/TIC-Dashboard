@@ -25,6 +25,7 @@
         loading.setAttribute('aria-hidden', 'false');
         if (loadingMessage) loadingMessage.textContent = message;
         if (loadingCaption) loadingCaption.textContent = 'Un momento: estamos preparando tu información';
+        document.getElementById('app-loading-retry-wrap')?.setAttribute('hidden', '');
         this.reproducirEntradaCarga(loading);
         const workspace = document.getElementById('workspace');
         workspace?.classList.remove('content-ready');
@@ -48,10 +49,11 @@
         }, delay);
       },
 
-      showLoadingError(message) {
+      showLoadingError(message, detalle) {
         const loading = document.getElementById('app-loading');
         const loadingMessage = document.getElementById('app-loading-message');
         const loadingCaption = document.getElementById('app-loading-caption');
+        const reintentar = document.getElementById('app-loading-retry-wrap');
         if (!loading) return;
         clearTimeout(this.loadingTimer);
         clearTimeout(this.contentTimer);
@@ -60,9 +62,22 @@
         loading.setAttribute('role', 'alert');
         loading.setAttribute('aria-hidden', 'false');
         if (loadingMessage) loadingMessage.textContent = message;
-        if (loadingCaption) loadingCaption.textContent = 'Verifica la conexión o recarga la página para reintentar.';
+        if (loadingCaption) {
+          // El detalle técnico se muestra junto al consejo: si algo vuelve a
+          // fallar se puede leer directamente en pantalla sin abrir la consola.
+          loadingCaption.textContent = detalle
+            ? `Verifica la conexión o recarga la página para reintentar. Detalle: ${detalle}`
+            : 'Verifica la conexión o recarga la página para reintentar.';
+        }
+        if (reintentar) reintentar.removeAttribute('hidden');
         this.reproducirEntradaCarga(loading);
         document.getElementById('workspace')?.removeAttribute('aria-busy');
+      },
+
+      // Reintenta pintar la sección que falló sin recargar toda la página.
+      reintentarSeccion() {
+        document.getElementById('app-loading-retry-wrap')?.setAttribute('hidden', '');
+        this.renderCurrentModule();
       },
 
       /* Reinicia la entrada escalonada de la pantalla de carga
@@ -795,7 +810,10 @@ actualizarNavActivo(modulo) {
           if (enBackground) workspace.classList.add('content-ready');
           else this.hideLoading();
         } catch (error) {
-          this.showLoadingError('No se pudo cargar esta sección. Recarga la página para intentarlo de nuevo.');
+          // El detalle se muestra en la propia pantalla de error: si una
+          // sección vuelve a fallar se ve la causa sin abrir la consola.
+          const detalle = `${this.currentModule}${error && error.message ? `: ${error.message}` : ''}`;
+          this.showLoadingError('No se pudo cargar esta sección. Recarga la página para intentarlo de nuevo.', detalle);
           console.error(`Error al cargar el módulo "${this.currentModule}":`, error);
           throw error;
         }
@@ -817,20 +835,45 @@ actualizarNavActivo(modulo) {
       },
 
       renderGruposView() {
-        const grupos = DataEngine.db.grupos;
+        // [FIX] Firebase guarda un arreglo vacío como nodo vacío, así que al
+        // releer la base un grupo puede venir sin `estudiantes` (o con null):
+        // aquí se restaura la forma que espera la tabla para que la sección
+        // no se caiga al pintarla.
+        const grupos = (DataEngine.db.grupos || []).map(g => ({
+          ...g,
+          estudiantes: UI.listaEstudiantes(g.estudiantes)
+        }));
         const filaEstudiante = (s, g) => `<tr data-est-id="${s.id}"><td><strong>${s.nombres}</strong></td><td>${s.apellidos}</td><td>${s.correo}</td><td>${s.telefono}</td><td>${UI.renderBadgeEstado(s)}</td><td style="text-align: center; display: flex; justify-content: center; gap: 6px;"><button class="btn-icon" title="Editar Estudiante" onclick="UI.openEditStudentModal('${g.id}', '${s.id}')"><i class="ri-pencil-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Eliminar Estudiante" onclick="UI.deleteStudent('${g.id}', '${s.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></td></tr>`;
         return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><div><h1>Gestión de Grupos de Clase</h1><p>Carga el listado oficial del grupo en Excel o CSV: el formato del archivo se detecta automáticamente para extraer alumnos y actualizar la base compartida.</p></div><div><button class="btn-primary" onclick="document.getElementById('excel-upload-input').click()"><i class="ri-file-excel-line"></i> Cargar Lista de Grupo (.xlsx o .csv)</button><input type="file" id="excel-upload-input" accept=".xlsx, .xls, .csv, .txt" style="display: none;" onchange="UI.handleExcelImport(event)"></div></div>${grupos.length === 0 ? `<div style="background: var(--white); padding: 40px; text-align: center; border-radius: var(--radius-md); border: 1px solid var(--border-color);"><i class="ri-folder-add-line" style="font-size: 3rem; color: var(--text-muted);"></i><h3 style="margin-top: 10px;">No hay grupos cargados</h3><p style="color: var(--text-muted); font-size: 0.85rem;">Haz clic en "Cargar Lista de Grupo" para procesar el listado oficial de INATEC.</p></div>` : grupos.map((g, index) => `<details class="group-accordion" data-grupo-id="${g.id}" ${index === 0 ? 'open' : ''}><summary><div style="display: flex; align-items: center; gap: 12px;"><i class="ri-arrow-right-s-line accordion-icon" style="font-size: 1.2rem; color: var(--primary-blue);"></i><div><h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;"><i class="ri-group-line" style="color: var(--primary-blue);"></i> ${g.nombre}</h3><p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">${g.carrera} | Turno: ${g.turno}</p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i> Docente Guía: <strong>${g.docenteGuia ? g.docenteGuia : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p></div></div><div style="display: flex; align-items: center; gap: 12px;"><span class="badge-status activo"><i class="ri-user-line"></i> ${g.estudiantes.length} Estudiantes</span><button class="btn-icon" title="Asignar Docente Guía" onclick="event.stopPropagation(); UI.abrirModalDocenteGuia('${g.id}')"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon btn-delete" title="Eliminar Grupo" onclick="event.stopPropagation(); UI.deleteGroup('${g.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></div></summary><div class="table-container" style="border-top: 1px solid var(--border-color); border-radius: 0;"><table class="custom-table"><thead><tr><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acciones</th></tr></thead><tbody>${g.estudiantes.map(s => filaEstudiante(s, g)).join('')}</tbody></table></div></details>`).join('')}</div>`;
+      },
+
+      // [FIX] Convierte cualquier forma guardada de una lista de estudiantes
+      // (arreglo, mapa o ausente) en un arreglo utilizable para pintar.
+      listaEstudiantes(valor) {
+        if (Array.isArray(valor)) return valor;
+        if (valor && typeof valor === 'object') {
+          return (valor.id !== undefined || valor.nombres !== undefined)
+            ? [valor]
+            : Object.values(valor);
+        }
+        return [];
       },
 
       renderBadgeEstado(s) {
         // [NUEVO] Si el estudiante está Retirado y tiene un motivo registrado,
         // se muestra un ícono con tooltip nativo (title) para consultarlo rápido
         // sin abrir el modal de edición — pensado como soporte/bitácora interna.
-        const base = `<span class="badge-status ${s.estado.toLowerCase()}">${s.estado}</span>`;
-        if (s.estado === 'Retirado' && s.motivoRetiro && s.motivoRetiro.trim()) {
-          return `${base} <i class="ri-information-line" title="Motivo: ${String(s.motivoRetiro).replace(/"/g, '&quot;')}" style="color: var(--text-muted); cursor: help; font-size: 0.95rem; vertical-align: middle;"></i>`;
+        // [FIX] Un registro heredado (o al que le faltó el campo) no debe
+        // tumbar la sección entera: sin estado legible se pinta como Activo.
+        const estudiante = s && typeof s === 'object' ? s : {};
+        const estado = typeof estudiante.estado === 'string' && estudiante.estado.trim()
+          ? estudiante.estado
+          : 'Activo';
+        const base = `<span class="badge-status ${estado.toLowerCase()}">${estado}</span>`;
+        if (estado === 'Retirado' && estudiante.motivoRetiro && String(estudiante.motivoRetiro).trim()) {
+          return `${base} <i class="ri-information-line" title="Motivo: ${String(estudiante.motivoRetiro).replace(/"/g, '&quot;')}" style="color: var(--text-muted); cursor: help; font-size: 0.95rem; vertical-align: middle;"></i>`;
         }
-        if (s.estado === 'Retirado') {
+        if (estado === 'Retirado') {
           return `${base} <i class="ri-question-line" title="Sin motivo registrado" style="color: var(--text-disabled); cursor: help; font-size: 0.95rem; vertical-align: middle;"></i>`;
         }
         return base;

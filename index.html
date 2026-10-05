@@ -74,32 +74,16 @@
         </span>
       </header>
 
-      <div class="cargador-hoja" aria-hidden="true">
-        <svg viewBox="0 0 320 176" role="presentation">
-          <rect class="hoja" x="12" y="14" width="142" height="148" rx="12"/>
-          <rect class="hoja" x="166" y="14" width="142" height="148" rx="12"/>
-          <path class="hoja-lomo" d="M160 28v120"/>
-          <line class="raya raya-1" x1="34" y1="46" x2="106" y2="46"/>
-          <line class="raya raya-2" x1="34" y1="74" x2="132" y2="74"/>
-          <line class="raya raya-3" x1="34" y1="98" x2="132" y2="98"/>
-          <line class="raya raya-4" x1="34" y1="122" x2="132" y2="122"/>
-          <line class="raya raya-5" x1="34" y1="146" x2="94" y2="146"/>
-          <g class="hoja-rejilla">
-            <line x1="182" y1="44" x2="292" y2="44"/>
-            <line x1="182" y1="72" x2="292" y2="72"/>
-            <line x1="182" y1="100" x2="292" y2="100"/>
-            <line x1="182" y1="128" x2="292" y2="128"/>
-            <line x1="218" y1="44" x2="218" y2="128"/>
-            <line x1="256" y1="44" x2="256" y2="128"/>
-          </g>
-          <rect class="hoja-celda hoja-celda-azul" x="218" y="44" width="38" height="28"/>
-          <rect class="hoja-celda hoja-celda-rosa" x="256" y="72" width="36" height="28"/>
-          <rect class="hoja-celda hoja-celda-verde" x="182" y="100" width="36" height="28"/>
-          <rect class="hoja-banda banda-azul" x="182" y="143" width="36" height="8" rx="4"/>
-          <rect class="hoja-banda banda-rosa" x="224" y="143" width="36" height="8" rx="4"/>
-          <rect class="hoja-banda banda-verde" x="266" y="143" width="26" height="8" rx="4"/>
-        </svg>
-      </div>
+      <figure class="cargador-gif" aria-hidden="true">
+        <img
+          src="assets/carga.gif"
+          width="1920"
+          height="1080"
+          alt=""
+          decoding="async"
+          onerror="this.onerror=null;this.src='https://www.fundacioncarolina.es/wp-content/uploads/2022/03/FCarolina_portada_sinFondo.gif';"
+        >
+      </figure>
 
       <div class="cargador-copy">
         <p class="cargador-titulo" id="app-loading-message">Preparando tu espacio...</p>
@@ -126,6 +110,12 @@
           Preparando el cuaderno
         </li>
       </ol>
+
+      <div class="cargador-reintentar" id="app-loading-retry-wrap" hidden>
+        <button type="button" class="btn-primary" id="app-loading-retry" onclick="UI.reintentarSeccion()">
+          <i class="ri-refresh-line"></i> Reintentar
+        </button>
+      </div>
     </div>
 
     <div class="cargador-barra" aria-hidden="true"><span></span></div>

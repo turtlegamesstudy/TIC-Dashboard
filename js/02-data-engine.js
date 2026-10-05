@@ -402,7 +402,12 @@
         const collectionName = collection === 'grupos' ? 'grupos' : 'equipos';
         const records = this.db[collectionName];
         const storedRecord = snapshot.val();
-        const record = this._keyEncodingVersion === 1 ? this._decodeFirebaseKeys(storedRecord) : storedRecord;
+        const decoded = this._keyEncodingVersion === 1 ? this._decodeFirebaseKeys(storedRecord) : storedRecord;
+        // [FIX] El registro que llega de la nube se normaliza antes de
+        // compararlo: un grupo sin `estudiantes` (arreglo vacío perdido) o un
+        // alumno sin `estado` no debe sustituir la forma completa local.
+        const record = collectionName === 'grupos' ? this._normalizarGrupo(decoded)
+          : collectionName === 'equipos' ? this._normalizarEquipo(decoded) : decoded;
         const recordId = String(record?.id || snapshot.key);
         const index = records.findIndex(item => String(item.id) === recordId);
 
@@ -435,15 +440,53 @@
         if (!this.db || typeof this.db !== 'object') this.db = {};
         if (!Array.isArray(this.db.grupos)) this.db.grupos = [];
         if (!Array.isArray(this.db.equipos)) this.db.equipos = [];
-        this.db.equipos = this.db.equipos.map(eq => ({
-          ...eq,
-          integrantes: Array.isArray(eq.integrantes) ? eq.integrantes : [],
-          archivos: Array.isArray(eq.archivos) ? eq.archivos : [],
-          categoria: eq.categoria === 'Hackathon' ? 'Hackathon' : 'Innovatec'
-        }));
+        this.db.equipos = this.db.equipos.map(eq => this._normalizarEquipo(eq));
+        // [FIX] Firebase guarda un arreglo vacío como nodo vacío: al releer,
+        // un grupo puede venir sin `estudiantes` (o con null) y un alumno sin
+        // `estado`. Las vistas y los motores asumen las dos cosas, así que se
+        // restaura la forma completa aquí (y también cuando un registro llega
+        // desde la nube en _applyRemoteRecord).
+        this.db.grupos = this.db.grupos.map(g => this._normalizarGrupo(g));
         // [NUEVO] Asegura que todo grupo tenga el campo docenteGuia, aunque
         // sea de una DB vieja cargada antes de este cambio.
         (this.db.grupos || []).forEach(g => { if (g.docenteGuia === undefined) g.docenteGuia = ''; });
+      },
+
+      // Convierte cualquier forma guardada de una colección (arreglo, mapa o
+      // ausente) en un arreglo utilizable, sin perder registros.
+      _listaGuardada(valor) {
+        if (Array.isArray(valor)) return valor;
+        if (valor && typeof valor === 'object') {
+          return (valor.id !== undefined || valor.nombres !== undefined) ? [valor] : Object.values(valor);
+        }
+        return [];
+      },
+
+      // Devuelve el grupo con la forma completa que esperan vistas y motores:
+      // lista de estudiantes siempre presente y estado válido en cada alumno.
+      // (Solo lo imprescindible: normalizar más haría que el registro local y
+      // el remoto nunca coincidieran y cada evento repintara la sección.)
+      _normalizarGrupo(grupo) {
+        if (!grupo || typeof grupo !== 'object') return grupo;
+        const originales = this._listaGuardada(grupo.estudiantes);
+        const estudiantes = originales.map(est => {
+          if (!est || typeof est !== 'object') return est;
+          const estado = typeof est.estado === 'string' && est.estado.trim() ? est.estado : 'Activo';
+          return estado === est.estado ? est : { ...est, estado };
+        });
+        return { ...grupo, estudiantes };
+      },
+
+      // Misma idea para los equipos: integrantes y archivos nunca deben quedar
+      // como null (arreglo vacío perdido en la nube).
+      _normalizarEquipo(equipo) {
+        if (!equipo || typeof equipo !== 'object') return equipo;
+        return {
+          ...equipo,
+          integrantes: this._listaGuardada(equipo.integrantes),
+          archivos: this._listaGuardada(equipo.archivos),
+          categoria: equipo.categoria === 'Hackathon' ? 'Hackathon' : 'Innovatec'
+        };
       },
 
       async _mutateGroupAndSave(grupoId, mutate) {
