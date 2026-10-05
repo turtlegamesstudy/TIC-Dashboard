@@ -1368,6 +1368,8 @@
           construirHojaOficial(ws, mNombre, columnas, estudiantes);
         });
 
+        // Blanco y negro parejo en todas las hojas (Excel y PDF)
+        wb.worksheets.forEach(ws => this.negroizarHoja(ws));
         if (listoParaImprimir) wb.worksheets.forEach(ws => this.ajustarAnchosParaImpresion(ws));
         return wb;
       },
@@ -1710,24 +1712,27 @@
                 if (c < 1 || c > totalColumnas) return;
 
                 const clave = `${r},${c}`;
-                let rango = maestros.get(clave);
+                const rangoMaestro = maestros.get(clave);
+                const rangoCubierto = rangoMaestro ? null : cubiertas.get(clave);
                 let filaOrigen = r, infoOrigen = info, colInicio = c;
+                let colFin = c, filaFin = r;
 
-                if (!rango) {
-                  rango = cubiertas.get(clave);
-                  if (!rango) return;
+                if (rangoMaestro) {
+                  colFin = Math.min(rangoMaestro.c2, totalColumnas);
+                  filaFin = rangoMaestro.r2;
+                } else if (rangoCubierto) {
                   // La continuación de una combinación solo se dibuja si el maestro
                   // está en esta página y empezó fuera de la banda actual.
-                  const infoMaestro = filas[rango.r1];
+                  const infoMaestro = filas[rangoCubierto.r1];
                   if (!infoMaestro || infoMaestro.pagina !== p) return;
-                  if (rango.c1 >= banda.desde && rango.c1 <= banda.hasta) return;
-                  filaOrigen = rango.r1;
+                  if (rangoCubierto.c1 >= banda.desde && rangoCubierto.c1 <= banda.hasta) return;
+                  filaOrigen = rangoCubierto.r1;
                   infoOrigen = infoMaestro;
-                  colInicio = rango.c1;
+                  colInicio = rangoCubierto.c1;
+                  colFin = Math.min(rangoCubierto.c2, totalColumnas);
+                  filaFin = rangoCubierto.r2;
                 }
 
-                const colFin = Math.min(rango.c2, totalColumnas);
-                const filaFin = rango.r2;
                 if (colFin < banda.desde || colInicio > banda.hasta) return;
 
                 const bordeIzq = Math.max(0, (inicio[colInicio - 1] * escala) - offsetBanda);
@@ -1876,7 +1881,34 @@
           ? `🖨️ ${exportados} cuaderno(s) exportado(s) ${detalleFormato} para ${jefeSeleccionado.nombre}, según sus turnos.`
           : listoParaImprimir
             ? `🖨️ ${exportados} cuaderno(s) exportado(s) ${detalleFormato} en Legal horizontal, blanco y negro y sin rellenos.`
-            : `📦 ${exportados} grupo(s) exportado(s) ${detalleFormato} con diseño completo.`);
+            : `📦 ${exportados} grupo(s) exportado(s) ${detalleFormato} en blanco y negro, texto en negrita.`);
+      },
+
+      // Deja la hoja en blanco y negro parejo: texto negro en negrita,
+      // fondos de color a blanco y bordes en negro. Los colores salen
+      // borrosos al imprimir, así que el cuaderno va siempre en B/N.
+      negroizarHoja(ws) {
+        const colorNegro  = { argb: 'FF000000' };
+        const colorBlanco = { argb: 'FFFFFFFF' };
+        ws.eachRow({ includeEmpty: true }, fila => {
+          fila.eachCell({ includeEmpty: true }, celda => {
+            const fuente = celda.font || {};
+            celda.font = { ...fuente, bold: true, color: { argb: 'FF000000' } };
+            if (celda.fill && celda.fill.type === 'pattern') {
+              celda.fill = { type: 'pattern', pattern: 'solid', fgColor: colorBlanco };
+            }
+            const borde = celda.border;
+            if (borde) {
+              const lado = nombre => (borde[nombre] ? { ...borde[nombre], color: colorNegro } : undefined);
+              celda.border = {
+                top:    lado('top'),
+                left:   lado('left'),
+                bottom: lado('bottom'),
+                right:  lado('right')
+              };
+            }
+          });
+        });
       },
 
       aplicarConfigImpresion(ws, cfg, listoParaImprimir = false) {
