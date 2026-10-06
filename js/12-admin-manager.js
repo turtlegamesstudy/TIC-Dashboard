@@ -27,16 +27,34 @@ const AdminManager = {
     this._bindWorkspace();
     return `
       <section class="module-fade-enter admin-users-page">
-        <header class="admin-page-header">
-          <div>
-            <p class="admin-page-eyebrow">CONTROL DEL SISTEMA</p>
-            <h1>Administración de usuarios</h1>
-            <p>Gestiona el acceso, los roles y la activación de las cuentas docentes.</p>
+        <header class="view-header">
+          <div class="admin-header-copy">
+            <p class="view-eyebrow">CONTROL DEL SISTEMA</p>
+            <h1><i class="ri-shield-user-line" aria-hidden="true"></i> Administración</h1>
+            <p>Cuentas, roles y centros tecnológicos que tienen acceso al panel.</p>
+          </div>
+          <div class="header-actions admin-header-stats">
+            <span class="admin-stat"><b data-admin-stat="cuentas">—</b> cuentas</span>
+            <span class="admin-stat"><b data-admin-stat="activas">—</b> activas</span>
+            <span class="admin-stat"><b data-admin-stat="centros">—</b> centros</span>
           </div>
         </header>
+
+        <div class="group-header-card admin-center-bar">
+          <label class="tb-label" for="admin-active-center"><i class="ri-building-2-line" aria-hidden="true"></i> Centro operativo</label>
+          <select id="admin-active-center" aria-label="Centro operativo"></select>
+          <button class="btn-primary-soft" type="button" data-admin-action="switch-center"><i class="ri-folder-open-line" aria-hidden="true"></i> Abrir centro</button>
+          <p class="admin-center-note">Abre la base compartida de otro centro tecnológico para consultarlo o actualizarlo.</p>
+        </div>
+
         <div class="admin-users-layout">
           <section class="admin-panel" aria-labelledby="admin-create-heading">
-            <h2 id="admin-create-heading">Crear una cuenta</h2>
+            <div class="admin-panel-heading">
+              <span class="admin-panel-icon"><i class="ri-user-add-line" aria-hidden="true"></i></span>
+              <div>
+                <h2 id="admin-create-heading">Crear una cuenta</h2>
+              </div>
+            </div>
             <p class="admin-panel-description">Se enviará un correo para que el usuario establezca su contraseña. No necesitas conocer ni compartirla.</p>
             <form class="admin-create-form" id="admin-create-user-form">
               <div class="form-group">
@@ -72,7 +90,13 @@ const AdminManager = {
               </button>
             </form>
             <hr class="admin-section-divider">
-            <h2>Registrar un centro</h2>
+            <div class="admin-panel-heading">
+              <span class="admin-panel-icon"><i class="ri-building-2-line" aria-hidden="true"></i></span>
+              <div>
+                <h2>Registrar un centro</h2>
+              </div>
+            </div>
+            <p class="admin-panel-description">Cada centro tecnológico tiene su propia base de grupos, equipos y exportaciones.</p>
             <form class="admin-create-form" id="admin-create-center-form">
               <div class="form-group">
                 <label for="admin-new-center-name">Nombre oficial</label>
@@ -81,17 +105,19 @@ const AdminManager = {
               <div class="form-group">
                 <label for="admin-new-center-code">Identificador</label>
                 <input id="admin-new-center-code" name="centerCode" type="text" maxlength="60" pattern="[A-Za-z0-9_-]+" placeholder="ct-nombre-ciudad" required>
+                <small class="admin-field-help">Se usa dentro de la base de datos; no puede cambiarse después.</small>
               </div>
               <button class="btn-primary-soft" type="submit" data-admin-submit><i class="ri-building-2-line" aria-hidden="true"></i> Crear centro</button>
             </form>
           </section>
           <section class="admin-panel" aria-labelledby="admin-users-heading">
             <div class="admin-users-heading">
-              <div>
-                <h2 id="admin-users-heading">Cuentas autorizadas</h2>
-                <label class="admin-panel-description" for="admin-active-center">Centro operativo</label>
-                <select id="admin-active-center" aria-label="Centro operativo"></select>
-                <button class="btn-primary-soft" type="button" data-admin-action="switch-center">Abrir centro</button>
+              <div class="admin-panel-heading">
+                <span class="admin-panel-icon"><i class="ri-group-line" aria-hidden="true"></i></span>
+                <div>
+                  <h2 id="admin-users-heading">Cuentas autorizadas</h2>
+                  <p class="admin-panel-description" data-admin-summary>Roles, estado y centro de cada cuenta.</p>
+                </div>
               </div>
               <button class="btn-primary-soft" type="button" data-admin-action="refresh">
                 <i class="ri-refresh-line" aria-hidden="true"></i><span class="btn-label">Actualizar</span>
@@ -215,8 +241,9 @@ const AdminManager = {
       .filter(([, profile]) => profile && typeof profile === 'object')
       .sort((left, right) => String(left[1].displayName || left[1].email || left[0])
         .localeCompare(String(right[1].displayName || right[1].email || right[0]), 'es'));
+    this._actualizarResumen(entries);
     if (entries.length === 0) {
-      container.innerHTML = '<p class="admin-users-message">Todavía no hay perfiles registrados.</p>';
+      container.innerHTML = `<div class="admin-empty"><i class="ri-user-search-line" aria-hidden="true"></i><p>Todavía no hay perfiles registrados.</p></div>`;
       return;
     }
 
@@ -224,12 +251,32 @@ const AdminManager = {
     container.innerHTML = `
       <div class="admin-users-table-wrap">
         <table class="admin-users-table">
-          <thead><tr><th>Usuario</th><th>Rol / centro</th><th>Estado / acciones</th></tr></thead>
+          <thead><tr><th>Usuario</th><th>Rol y permisos</th><th>Centro y acciones</th></tr></thead>
           <tbody>
             ${entries.map(([uid, profile]) => this._renderUserRow(uid, profile, activeAdmins)).join('')}
           </tbody>
         </table>
       </div>`;
+  },
+
+  /* Contadores de la cabecera y resumen del panel de cuentas. */
+  _actualizarResumen(entries) {
+    const lista = Array.isArray(entries) ? entries : [];
+    const cuentas = lista.length;
+    const activas = lista.filter(([, profile]) => profile && profile.active === true).length;
+    const centros = Object.values(this.centers || {})
+      .filter(center => center && center.active !== false).length;
+    const poner = (clave, valor) => {
+      const celda = document.querySelector?.(`[data-admin-stat="${clave}"]`);
+      if (celda) celda.textContent = String(valor);
+    };
+    poner('cuentas', cuentas);
+    poner('activas', activas);
+    poner('centros', centros);
+    const resumen = document.querySelector?.('[data-admin-summary]');
+    if (resumen) {
+      resumen.textContent = `${cuentas} cuenta${cuentas === 1 ? '' : 's'} · ${activas} activa${activas === 1 ? '' : 's'} · ${centros} centro${centros === 1 ? '' : 's'}.`;
+    }
   },
 
   _renderUserRow(uid, profile, activeAdmins) {
@@ -245,38 +292,50 @@ const AdminManager = {
     const name = staffName || profile.displayName || email || uid;
     const centerId = profile.centerId || '';
     const area = staff.area || 'general';
+    const resumenRol = typeof Permisos !== 'undefined' ? Permisos.resumenRol(role) : '';
+    const iniciales = name.split(/\s+/).slice(0, 2).map(parte => parte.charAt(0))
+      .join('').toLocaleUpperCase('es') || '?';
     const centers = Object.entries(this.centers)
       .filter(([, center]) => center.active !== false)
       .map(([id, center]) => `<option value="${this._escape(id)}"${id === centerId ? ' selected' : ''}>${this._escape(center.name)}</option>`)
       .join('');
     return `
       <tr data-user-row data-uid="${safeUid}">
-        <td>
-          <span class="admin-user-name">${this._escape(name)}${isCurrentUser ? ' (tú)' : ''}</span>
-          <span class="admin-user-email">${this._escape(email)}</span>
-          <span class="admin-user-uid">UID: ${this._escape(uid)}</span>
+        <td class="admin-cell-user">
+          <div class="admin-user-cell">
+            <span class="admin-avatar" aria-hidden="true">${this._escape(iniciales)}</span>
+            <span class="admin-user-copy">
+              <span class="admin-user-name">${this._escape(name)}${isCurrentUser ? '<span class="admin-you">tú</span>' : ''}</span>
+              <span class="admin-user-email">${this._escape(email)}</span>
+              <span class="admin-user-uid" title="Identificador de la cuenta: ${safeUid}">UID: ${safeUid}</span>
+            </span>
+          </div>
         </td>
-        <td>
-          <span class="admin-user-status${profile.active === true ? '' : ' is-inactive'}">${statusText}</span>
+        <td class="admin-cell-role">
           <div class="admin-user-actions">
             <select aria-label="Rol de ${this._escape(name)}" data-user-role ${roleDisabled ? 'disabled' : ''} onchange="AdminManager.actualizarPistaRol(this)">
               <option value="docente"${role === 'docente' ? ' selected' : ''}>Docente</option>
               <option value="admin"${role === 'admin' ? ' selected' : ''}>Administrador</option>
             </select>
-            ${roleDisabled ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="save-role" data-uid="${safeUid}">Guardar rol</button>`}
+            ${roleDisabled ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="save-role" data-uid="${safeUid}"><i class="ri-check-line" aria-hidden="true"></i> Guardar</button>`}
           </div>
-          <span class="admin-user-email">${this._escape(AuthManager.getAreaLabel(area))}</span>
-          <span class="admin-user-email" data-role-hint>${this._escape(typeof Permisos !== 'undefined' ? Permisos.resumenRol(role) : '')}</span>
+          <div class="admin-badges">
+            <span class="admin-user-status${profile.active === true ? '' : ' is-inactive'}">${statusText}</span>
+            <span class="admin-area-chip">${this._escape(AuthManager.getAreaLabel(area))}</span>
+          </div>
+          <span class="admin-role-hint" data-role-hint title="${this._escape(resumenRol)}">${this._escape(resumenRol)}</span>
         </td>
-        <td>
-          <div class="admin-user-actions">
+        <td class="admin-cell-actions">
+          <div class="admin-center-row">
             <select aria-label="Centro de ${this._escape(name)}" data-user-center ${isCurrentUser ? 'disabled' : ''}>
               <option value=""${centerId ? '' : ' selected'} disabled>Seleccionar centro</option>${centers}
             </select>
-            ${isCurrentUser ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="assign-center" data-uid="${safeUid}">Asignar centro</button>`}
-            ${isCurrentUser ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="edit-profile" data-uid="${safeUid}">Editar datos</button>`}
-            ${isCurrentUser || isOnlyActiveAdmin ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="toggle-active" data-uid="${safeUid}">${profile.active === true ? 'Desactivar' : 'Activar'}</button>`}
-            <button class="btn-primary-soft" type="button" data-admin-action="reset-password" data-uid="${safeUid}">Enviar recuperación</button>
+            ${isCurrentUser ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="assign-center" data-uid="${safeUid}"><i class="ri-map-pin-line" aria-hidden="true"></i> Asignar</button>`}
+          </div>
+          <div class="admin-user-actions">
+            <button class="btn-primary-soft" type="button" data-admin-action="edit-profile" data-uid="${safeUid}"><i class="ri-pencil-line" aria-hidden="true"></i> Editar datos</button>
+            ${isCurrentUser || isOnlyActiveAdmin ? '' : `<button class="btn-primary-soft${profile.active === true ? ' is-danger' : ' is-success'}" type="button" data-admin-action="toggle-active" data-uid="${safeUid}">${profile.active === true ? '<i class="ri-user-unfollow-line" aria-hidden="true"></i> Desactivar' : '<i class="ri-user-follow-line" aria-hidden="true"></i> Activar'}</button>`}
+            <button class="btn-primary-soft" type="button" data-admin-action="reset-password" data-uid="${safeUid}"><i class="ri-mail-send-line" aria-hidden="true"></i> Recuperación</button>
           </div>
         </td>
       </tr>`;
@@ -288,7 +347,10 @@ const AdminManager = {
     const acciones = select && select.parentElement ? select.parentElement : null;
     const celda = acciones && acciones.parentElement ? acciones.parentElement : null;
     const pista = celda ? celda.querySelector('[data-role-hint]') : null;
-    if (pista && typeof Permisos !== 'undefined') pista.textContent = Permisos.resumenRol(select.value);
+    if (pista && typeof Permisos !== 'undefined') {
+      pista.textContent = Permisos.resumenRol(select.value);
+      pista.title = pista.textContent;
+    }
   },
 
   async _getSecondaryAuth() {
