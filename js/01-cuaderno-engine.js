@@ -604,6 +604,12 @@
         if (!grupo) return;
         const previousGroupValues = DataEngine._clone(grupo);
         if (!grupo.estructuraModulos) grupo.estructuraModulos = {};
+        // Columnas que el módulo ya tenía en este grupo: así también se
+        // reconoce el Excel que salió del sistema con esos mismos nombres.
+        const columnasConocidas = new Set(
+          (grupo.estructuraModulos[moduloSeleccionado]?.columnasOrdenadas || [])
+            .map(c => CuadernoEngine.normalizarTexto(c.nombreDisplay))
+        );
         grupo.estructuraModulos[moduloSeleccionado] = { columnasOrdenadas: [] };
         const configModulo = grupo.estructuraModulos[moduloSeleccionado];
 
@@ -639,8 +645,9 @@
               for (let i = colInicio; i <= colFin; i++) {
                 const headerOriginal = headers[i];
                 const hNorm = CuadernoEngine.normalizarTexto(headerOriginal);
-                if (hNorm.startsWith("cuestionario:") || hNorm.includes("total")) {
+                if (hNorm.startsWith("cuestionario") || hNorm.includes("total") || columnasConocidas.has(hNorm)) {
                   let nombreLimpio = headerOriginal.replace(/^Cuestionario:\s*\d*\/?\d*\)?\s*/i, '').replace(/\(Real\)$/i, '').trim();
+                  if (!nombreLimpio) nombreLimpio = headerOriginal.trim(); // si al limpiar quedó vacío, se usa tal cual
                   const esTotal = hNorm.includes("total");
                   columnasDelModulo.push({ index: i, nombreDisplay: nombreLimpio, esTotal: esTotal });
                   if (!configModulo.columnasOrdenadas.some(col => col.nombreDisplay === nombreLimpio)) {
@@ -722,6 +729,18 @@
           (g.estudiantes || []).forEach(est => indice.push({ est, grupo: g }));
         });
 
+        // Copia de seguridad por grupo: si algo falla a mitad del archivo,
+        // se devuelve cada grupo a como estaba antes de tocarlo.
+        const previousGroups = new Map();
+
+        // Columnas que estos grupos ya usan en el módulo seleccionado, para
+        // reconocer el Excel exportado del sistema con esos mismos nombres.
+        const columnasConocidas = new Set();
+        grupos.forEach(g => {
+          (g.estructuraModulos?.[moduloSeleccionado]?.columnasOrdenadas || [])
+            .forEach(c => columnasConocidas.add(CuadernoEngine.normalizarTexto(c.nombreDisplay)));
+        });
+
         const reader = new FileReader();
         reader.onload = async (e) => {
           try {
@@ -754,8 +773,9 @@
               for (let i = colInicio; i <= colFin; i++) {
                 const headerOriginal = headers[i];
                 const hNorm = CuadernoEngine.normalizarTexto(headerOriginal);
-                if (hNorm.startsWith("cuestionario:") || hNorm.includes("total")) {
+                if (hNorm.startsWith("cuestionario") || hNorm.includes("total") || columnasConocidas.has(hNorm)) {
                   let nombreLimpio = headerOriginal.replace(/^Cuestionario:\s*\d*\/?\d*\)?\s*/i, '').replace(/\(Real\)$/i, '').trim();
+                  if (!nombreLimpio) nombreLimpio = headerOriginal.trim(); // si al limpiar quedó vacío, se usa tal cual
                   const esTotal = hNorm.includes("total");
                   columnasDelModulo.push({ index: i, nombreDisplay: nombreLimpio, esTotal: esTotal });
                 }
