@@ -907,6 +907,7 @@
         // Buscar SOLO dentro del grupo activo para evitar IDs duplicados entre grupos
         const estudiante = DataEngine.getEstudiantesByGrupo(grupoId).find(e => e.id === estudianteId);
         if (estudiante) {
+          UI.showLoading(`Registrando la convalidación de ${moduloNombre}…`, 'subida');
           try {
             await this._mutateGroupAndSave(grupoId, grupo => {
               const currentStudent = (grupo.estudiantes || []).find(item => item.id === estudianteId);
@@ -914,8 +915,11 @@
               if (!currentStudent.convalidaciones) currentStudent.convalidaciones = {};
               currentStudent.convalidaciones[moduloNombre] = true;
             });
+            UI.hideLoading(500);
           } catch (error) {
+            UI.hideLoading(300);
             console.error('No se pudo guardar la convalidación:', error);
+            UI.showToast(`No se pudo guardar la convalidación: ${error.message}`, 'error');
             return;
           }
           UI.showToast(`✅ Módulo "${moduloNombre}" convalidado para ${estudiante.nombres}.`);
@@ -937,6 +941,7 @@
         const grupo = this.getGrupoById(grupoId);
         if (!grupo) return;
 
+        UI.showLoading(`Borrando las notas de ${moduloSeleccionado}…`, 'subida');
         try {
           await this._mutateGroupAndSave(grupoId, currentGroup => {
             (currentGroup.estudiantes || []).forEach(est => {
@@ -948,8 +953,11 @@
               delete currentGroup.estructuraModulos[moduloSeleccionado];
             }
           });
+          UI.hideLoading(500);
         } catch (error) {
+          UI.hideLoading(300);
           console.error('No se pudieron borrar los datos del módulo:', error);
+          UI.showToast(`No se pudieron borrar los datos del módulo: ${error.message}`, 'error');
           return;
         }
         UI.showToast(`🗑️ Datos del módulo "${moduloSeleccionado}" borrados correctamente.`);
@@ -967,6 +975,7 @@
         const grupo = this.getGrupoById(grupoId);
         if (!grupo) return;
 
+        UI.showLoading(`Eliminando la columna ${nombreColumna}…`, 'subida');
         try {
           await this._mutateGroupAndSave(grupoId, currentGroup => {
             (currentGroup.estudiantes || []).forEach(est => {
@@ -985,9 +994,12 @@
             }
           });
         } catch (error) {
+          UI.hideLoading(300);
           console.error('No se pudo eliminar la columna del módulo:', error);
+          UI.showToast(`No se pudo eliminar la columna: ${error.message}`, 'error');
           return;
         }
+        UI.hideLoading(500);
         UI.showToast(`🗑️ Columna "${nombreColumna}" eliminada correctamente.`);
         if (typeof UI.actualizarTablaCuaderno === 'function') UI.actualizarTablaCuaderno();
       },

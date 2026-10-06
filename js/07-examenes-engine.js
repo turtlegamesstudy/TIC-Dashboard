@@ -44,6 +44,7 @@ const ExamenesEngine = {
   async guardarNotaExamen(estId, grupoId, modulo, nota) {
     const student = DataEngine.getEstudiantesByGrupo(grupoId).find(item => item.id === estId);
     if (!student) return;
+    UI.showLoading('Guardando la nota del examen…', 'subida');
     try {
       await DataEngine._mutateGroupAndSave(grupoId, grupo => {
         const currentStudent = (grupo.estudiantes || []).find(item => item.id === estId);
@@ -53,8 +54,11 @@ const ExamenesEngine = {
         if (!currentStudent.evaluacionesPorModulo[modulo].notas) currentStudent.evaluacionesPorModulo[modulo].notas = {};
         currentStudent.evaluacionesPorModulo[modulo].notas['Examen Reparación'] = parseInt(nota);
       });
+      UI.hideLoading(500);
     } catch (error) {
+      UI.hideLoading(300);
       console.error('No se pudo guardar la nota del examen:', error);
+      UI.showToast(`No se pudo guardar la nota del examen: ${error.message}`, 'error');
       return;
     }
     UI.showToast('✅ Nota registrada: ' + nota);
@@ -139,15 +143,19 @@ const ExamenesEngine = {
     });
     
     if (registrados > 0) {
+      UI.showLoading(`Guardando ${registrados} nota(s) del examen…`, 'subida');
       try {
         await DataEngine.save();
+        UI.hideLoading(600);
       } catch (error) {
+        UI.hideLoading(300);
         previousGroups.forEach(({ group, value }, groupId) => {
           if (DataEngine.getGrupoById(groupId) !== group) return;
           Object.keys(group).forEach(key => delete group[key]);
           Object.assign(group, value);
         });
         console.error('No se pudo guardar la importación masiva de exámenes:', error);
+        UI.showToast(`No se guardaron las notas del examen: ${error.message}`, 'error');
         return;
       }
     }

@@ -602,6 +602,9 @@
 
         const grupo = DataEngine.getGrupoById(grupoId);
         if (!grupo) return;
+        // [UI] Pantalla de carga desde que se elige el archivo: el docente
+        // ve que algo ocurre mientras se lee el Excel y mientras se sube.
+        UI.showLoading(`Leyendo el archivo de ${moduloSeleccionado}…`, 'subida');
         const previousGroupValues = DataEngine._clone(grupo);
         if (!grupo.estructuraModulos) grupo.estructuraModulos = {};
         // Columnas que el módulo ya tenía en este grupo: así también se
@@ -681,25 +684,29 @@
               }
             });
 
+            UI.actualizarCarga('Guardando las calificaciones en la base compartida…', 'subida');
             await DataEngine.save();
+            UI.hideLoading(700);
             UI.showToast(`✅ ${moduloSeleccionado} importado correctamente (${estudiantesActualizados} alumnos).`);
             if (typeof UI.actualizarTablaCuaderno === 'function') UI.actualizarTablaCuaderno();
           } catch (err) {
+            UI.hideLoading(300);
             if (DataEngine.getGrupoById(grupoId) === grupo) {
               Object.keys(grupo).forEach(key => delete grupo[key]);
               Object.assign(grupo, previousGroupValues);
             }
             console.error("Error al importar calificaciones:", err);
-            UI.showToast(`❌ No se guardaron las calificaciones del archivo Excel: ${err.message}`);
+            UI.showToast(`No se guardaron las calificaciones del archivo Excel: ${err.message}`, 'error');
           }
         };
         reader.onerror = error => {
+          UI.hideLoading(300);
           if (DataEngine.getGrupoById(grupoId) === grupo) {
             Object.keys(grupo).forEach(key => delete grupo[key]);
             Object.assign(grupo, previousGroupValues);
           }
           console.error('No se pudo leer el archivo de calificaciones:', error);
-          UI.showToast('❌ No se pudo leer el archivo de calificaciones.');
+          UI.showToast('No se pudo leer el archivo de calificaciones.', 'error');
         };
         reader.readAsArrayBuffer(file);
         event.target.value = "";
@@ -722,6 +729,9 @@
 
         const grupos = DataEngine.getGrupos();
         if (!grupos.length) { UI.showToast("⚠️ No hay grupos registrados todavía."); return; }
+
+        // [UI] Mismo aviso de carga que en la importación de un solo grupo.
+        UI.showLoading(`Leyendo el archivo de ${moduloSeleccionado}…`, 'subida');
 
         // Índice de búsqueda: cada estudiante junto con el grupo al que pertenece
         const indice = [];
@@ -827,19 +837,26 @@
               }
             });
 
+            UI.actualizarCarga('Guardando las calificaciones en la base compartida…', 'subida');
             await DataEngine.save();
+            UI.hideLoading(700);
             const resumenGrupos = gruposTocados.size > 0 ? ` en ${gruposTocados.size} grupo(s)` : '';
             UI.showToast(`✅ ${moduloSeleccionado}: ${estudiantesActualizados} alumno(s) actualizados${resumenGrupos}.${filasSinCoincidencia > 0 ? ` (${filasSinCoincidencia} fila(s) sin coincidencia)` : ''}`);
             if (typeof UI.actualizarTablaCuaderno === 'function') UI.actualizarTablaCuaderno();
           } catch (err) {
+            UI.hideLoading(300);
             previousGroups.forEach(({ group, value }, groupId) => {
               if (DataEngine.getGrupoById(groupId) !== group) return;
               Object.keys(group).forEach(key => delete group[key]);
               Object.assign(group, value);
             });
             console.error("Error al importar calificaciones masivas:", err);
-            UI.showToast(`❌ No se guardaron las calificaciones del archivo Excel: ${err.message}`);
+            UI.showToast(`No se guardaron las calificaciones del archivo Excel: ${err.message}`, 'error');
           }
+        };
+        reader.onerror = () => {
+          UI.hideLoading(300);
+          UI.showToast('No se pudo leer el archivo de calificaciones.', 'error');
         };
         reader.readAsArrayBuffer(file);
         event.target.value = "";

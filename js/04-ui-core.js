@@ -147,6 +147,25 @@
         return catalogo[id] || catalogo.inicio;
       },
 
+      // Actualiza el texto de la pantalla de carga YA ABIERTA, sin repetir
+      // la entrada en cascada: sirve para avisar la segunda fase de un
+      // proceso («leyendo el archivo» → «subiendo a la base compartida»).
+      actualizarCarga(message, modo) {
+        const loading = document.getElementById('app-loading');
+        if (!loading || loading.classList.contains('is-hidden')) {
+          if (message) this.showLoading(message, modo);
+          return;
+        }
+        const contexto = this.contextoCarga(message, modo);
+        const texto = document.getElementById('app-loading-message');
+        if (texto) texto.textContent = message;
+        const pie = document.getElementById('app-loading-caption');
+        if (pie) pie.textContent = contexto.pie;
+        const etiqueta = document.getElementById('app-loading-eyebrow');
+        if (etiqueta) etiqueta.textContent = contexto.etiqueta;
+        loading.setAttribute('data-modo', contexto.id);
+      },
+
       showLoading(message, modo) {
         const loading = document.getElementById('app-loading');
         const loadingMessage = document.getElementById('app-loading-message');
@@ -990,6 +1009,7 @@ actualizarNavActivo(modulo) {
             const currentGroup = DataEngine.getGrupoById(groupId);
             if (currentGroup === group) group.estudiantes = previousStudents;
             console.error('No se pudo eliminar el estudiante:', error);
+            this.showToast(`No se pudo eliminar el estudiante: ${error.message}`, 'error');
           }
         }
       },
@@ -1007,6 +1027,7 @@ actualizarNavActivo(modulo) {
         } catch (error) {
           if (!DataEngine.getGrupoById(groupId)) DataEngine.db.grupos = previousGroups;
           console.error('No se pudo eliminar el grupo:', error);
+          this.showToast(`No se pudo eliminar el grupo: ${error.message}`, 'error');
         }
       },
 
@@ -1467,23 +1488,78 @@ renderCuadernoDocente() {
               const currentStudent = currentGroup?.estudiantes.find(item => item.id === studentId);
               if (currentStudent === student) Object.assign(student, previousStudent);
               console.error('No se pudo actualizar el estudiante:', error);
+              this.showToast(`No se guardaron los datos del estudiante: ${error.message}`, 'error');
             }
           }
         }
       },
 
-      showToast(msg) {
+      // Aviso flotante con tipo (exito | error | aviso | info).
+      // Si no se indica el tipo se deduce del mensaje (✅, ❌, ⚠️, ℹ️ …),
+      // así las llamadas antiguas siguen viéndose con el color correcto.
+      showToast(msg, tipo) {
         const container = document.getElementById('toast-container');
         if (!container) return;
+        const texto = String(msg == null ? '' : msg);
+        const tipoAviso = this.tipoDeAviso(texto, tipo);
+        const meta = this.metaAviso(tipoAviso);
+        const limpio = texto.replace(/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2139}\u{FE0F}\s]+/u, '').trim() || texto;
+        const seguro = String(limpio).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        container.setAttribute('aria-live', tipoAviso === 'error' ? 'assertive' : 'polite');
+
         const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `<i class="ri-check-line"></i> <span>${msg}</span>`;
-        container.appendChild(toast);
-        // [UI] Se desvanece con animación (.saliendo) y recién entonces
-        // se retira del DOM, en lugar de desaparecer de golpe a los 3,2 s.
-        setTimeout(() => {
+        toast.className = `toast ${meta.clase}`;
+        toast.style?.setProperty?.('--toast-duracion', `${meta.duracion}ms`);
+        toast.setAttribute('role', tipoAviso === 'error' ? 'alert' : 'status');
+        toast.innerHTML =
+          `<span class="toast-icono"><i class="${meta.icono}" aria-hidden="true"></i></span>` +
+          `<span class="toast-cuerpo">` +
+            `<strong class="toast-titulo">${meta.titulo}</strong>` +
+            `<span class="toast-texto">${seguro}</span>` +
+          `</span>` +
+          `<button type="button" class="toast-close" aria-label="Cerrar aviso"><i class="ri-close-line" aria-hidden="true"></i></button>` +
+          `<span class="toast-barra" aria-hidden="true"><span></span></span>`;
+
+        const retirar = () => {
+          if (toast.classList.contains('saliendo')) return;
+          // Mientras el puntero está sobre el aviso se pospone: así se puede
+          // leer un mensaje largo sin que desaparezca debajo del cursor.
+          if (typeof toast.matches === 'function' && toast.matches(':hover')) { setTimeout(retirar, 1500); return; }
           toast.classList.add('saliendo');
-          setTimeout(() => toast.remove(), 260);
-        }, 3000);
+          setTimeout(() => toast.remove(), 280);
+        };
+        toast.querySelector('.toast-close')?.addEventListener('click', retirar);
+        toast.addEventListener('mouseenter', () => toast.classList.add('en-pausa'));
+        toast.addEventListener('mouseleave', () => toast.classList.remove('en-pausa'));
+
+        container.appendChild(toast);
+        setTimeout(retirar, meta.duracion);
+      },
+
+      // Clasifica el aviso: por tipo explícito o por el emoji/mensaje.
+      tipoDeAviso(texto, tipo) {
+        const explicito = {
+          success: 'success', exito: 'success', ok: 'success',
+          error: 'error', danger: 'error',
+          warning: 'warning', aviso: 'warning', alerta: 'warning',
+          info: 'info', informacion: 'info'
+        }[String(tipo || '').toLowerCase()];
+        if (explicito) return explicito;
+        const t = String(texto || '');
+        const inicio = t.trimStart().slice(0, 2);
+        if (/[❌⛔🚫‼]/.test(inicio) || /no se pudo|error al|fall[oó]/i.test(t)) return 'error';
+        if (/[⚠❗]/.test(inicio) || /debe seleccionar|sin tel[eé]fono|sin grupo/i.test(t)) return 'warning';
+        if (/[ℹ💡]/.test(inicio)) return 'info';
+        return 'success';
+      },
+
+      metaAviso(tipo) {
+        return {
+          success: { clase: 'success', icono: 'ri-check-line',        titulo: 'Listo',               duracion: 4200 },
+          error:   { clase: 'error',   icono: 'ri-close-circle-line', titulo: 'No se pudo completar', duracion: 7600 },
+          warning: { clase: 'warning', icono: 'ri-alert-line',        titulo: 'Revisa esto',          duracion: 6200 },
+          info:    { clase: 'info',    icono: 'ri-information-line',  titulo: 'Aviso',                duracion: 5000 }
+        }[tipo] || null;
       }
     };
