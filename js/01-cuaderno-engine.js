@@ -285,6 +285,9 @@
          centro sin tocar código: la lista se guarda en la base compartida
          y se propaga sola a Cuaderno, Estadísticas, Exámenes e Informe. */
       async agregarModuloAcademico() {
+        // El catálogo de módulos es del centro entero (se sincroniza a todos
+        // los equipos), así que lo amplía únicamente un administrador.
+        if (typeof Permisos !== 'undefined' && !Permisos.exigir('configurarMateria')) return false;
         const nombre = window.prompt('Nombre del nuevo módulo académico (ej. Inglés):');
         if (nombre === null) return false;
         const db = typeof DataEngine !== 'undefined' ? DataEngine.db : null;
@@ -305,6 +308,7 @@
       },
 
       async quitarModuloAcademico() {
+        if (typeof Permisos !== 'undefined' && !Permisos.exigir('configurarMateria')) return false;
         const seleccionado = document.getElementById('select-modulo-cuaderno')?.value;
         if (!seleccionado || seleccionado === 'ALL') {
           UI.showToast('⚠️ Selecciona primero el módulo que quieres quitar (paso 1).');
@@ -391,6 +395,10 @@
       },
 
       abrirConfiguracionAcademica() {
+        // Responsables institucionales (coordinador y jefes de departamento):
+        // los fija el administrador, no cada docente. Esta es la única puerta
+        // de entrada al modal, así que basta la comprobación aquí.
+        if (typeof Permisos !== 'undefined' && !Permisos.exigir('configurarInstitucion')) return;
         const config = this.obtenerConfiguracionAcademica();
         const coordinador = document.getElementById('cfg-coordinador-academico');
         if (coordinador) coordinador.value = this.obtenerNombreCoordinador();
@@ -460,6 +468,9 @@
 
       async guardarConfiguracionAcademica(event) {
         event.preventDefault();
+        // Defensa en profundidad: aunque el modal estuviera abierto, el
+        // guardado también comprueba el rol.
+        if (typeof Permisos !== 'undefined' && !Permisos.exigir('configurarInstitucion')) return false;
         const error = document.getElementById('cfg-academica-error');
         const mostrarError = mensaje => {
           if (error) { error.textContent = mensaje; error.hidden = false; }

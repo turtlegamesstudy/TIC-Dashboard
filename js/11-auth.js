@@ -106,9 +106,19 @@ const AuthManager = {
       const profileName = [this.staffProfile.firstName, this.staffProfile.lastName].filter(Boolean).join(' ').trim();
       const displayName = String(profileName || profile.displayName || user.displayName || user.email || 'Docente');
       document.getElementById('current-user-name').textContent = displayName;
-      document.getElementById('current-user-role').textContent = profile.role === 'admin'
-        ? 'Administrador global'
-        : this.getAreaLabel(this.staffProfile.area);
+      const rolElement = document.getElementById('current-user-role');
+      if (rolElement) {
+        const esAdmin = profile.role === 'admin';
+        rolElement.textContent = esAdmin
+          ? 'Administrador global'
+          : this.getAreaLabel(this.staffProfile.area);
+        // Insignia de rol: se distingue de un vistazo en la barra superior.
+        rolElement.classList.toggle('rol-admin', esAdmin);
+        rolElement.classList.toggle('rol-docente', !esAdmin);
+        rolElement.title = esAdmin && typeof Permisos !== 'undefined'
+          ? Permisos.resumenRol('admin')
+          : (typeof Permisos !== 'undefined' ? Permisos.resumenRol('docente') : '');
+      }
       const centerName = document.getElementById('current-user-center');
       if (centerName) centerName.textContent = this.getActiveCenterName();
       const sidebarCenterName = document.getElementById('sidebar-center-name');
@@ -117,11 +127,11 @@ const AuthManager = {
       if (loadingCenterName) loadingCenterName.textContent = this.getActiveCenterName();
       document.title = `INATEC | ${this.getActiveCenterName()} | Cuaderno Docente`;
       document.querySelector('.avatar').textContent = displayName.trim().charAt(0).toLocaleUpperCase('es');
-      const importTrigger = document.getElementById('admin-import-trigger');
-      if (importTrigger) importTrigger.hidden = profile.role !== 'admin';
-      // El enlace de Administración ya no se oculta a mano: el menú se genera
-      // desde el registro de secciones (js/14-secciones.js) y solo incluye lo
-      // que el rol puede ver. UI.init() lo pinta más abajo.
+      // El botón «Cargar DB.json» lleva data-permiso="cargarBase" y lo oculta
+      // Permisos.aplicar() (que se ejecuta en UI.init()). El enlace de
+      // Administración tampoco se oculta a mano: el menú se genera desde el
+      // registro de secciones (js/14-secciones.js) y solo incluye lo que el
+      // rol puede ver.
 
       await DataEngine.init();
       if (typeof CuadernoEngine !== 'undefined' && CuadernoEngine.inicializarSelectoresExportacion) {

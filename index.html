@@ -15,6 +15,9 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <!-- Tema guardado (claro/oscuro): se aplica antes del primer pintado -->
   <script>try{var _t=localStorage.getItem('tic-theme');if(_t){document.documentElement.setAttribute('data-theme',_t);}}catch(e){}</script>
+ <!-- Movimiento: se aplica antes del CSS para que la primera pintura ya
+      respete la elección (Opciones → Animaciones). -->
+ <script>try{var _m=localStorage.getItem('tic-motion');if(_m==='on'||_m==='off'){document.documentElement.setAttribute('data-motion',_m);}}catch(e){}</script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <!-- [NUEVO] Librerías para el Reporte PDF de Equipos Innovatec / Hackathon -->
@@ -155,7 +158,7 @@
             <span class="toolbar-group-label" aria-hidden="true">Datos</span>
             <button class="btn-primary-soft" type="button" onclick="UI.abrirModalConfigExport()" title="Configurar exportación" aria-label="Configurar exportación"><i class="ri-settings-3-line" aria-hidden="true"></i><span class="btn-label">Configurar Exportación</span></button>
             <button class="btn-primary-soft" type="button" onclick="DataEngine.exportDBJSON()" title="Descargar DB.json" aria-label="Descargar DB.json"><i class="ri-download-cloud-2-line" aria-hidden="true"></i><span class="btn-label">Descargar DB.json</span></button>
-            <button class="btn-primary-soft" id="admin-import-trigger" type="button" onclick="document.getElementById('db-file-input').click()" title="Cargar DB.json" aria-label="Cargar DB.json"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i><span class="btn-label">Cargar DB.json</span></button>
+            <button class="btn-primary-soft" id="admin-import-trigger" data-permiso="cargarBase" type="button" onclick="document.getElementById('db-file-input').click()" title="Cargar DB.json (solo administradores)" aria-label="Cargar DB.json"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i><span class="btn-label">Cargar DB.json</span></button>
             <input type="file" id="db-file-input" accept=".json" style="display: none;" onchange="DataEngine.importDBJSON(event)">
           </div>
           <div class="topbar-account" aria-label="Cuenta activa">
@@ -587,6 +590,7 @@
   <script defer src="js/12-admin-manager.js"></script>
   <script defer src="js/13-profile-manager.js"></script>
   <script defer src="js/14-secciones.js"></script>
+  <script defer src="js/15-permisos.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>
 </html>

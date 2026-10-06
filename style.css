@@ -3287,10 +3287,12 @@ a:focus-visible,
 }
 
 /* ===== REDUCED MOTION ===== */
+/* [MOV] El silenciador de animaciones sigue al sistema (prefers-reduced-motion),
+   salvo que la persona haya forzado "Animaciones: Activadas" en Opciones. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  html:not([data-motion="on"]) *,
+  html:not([data-motion="on"]) *::before,
+  html:not([data-motion="on"]) *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -3469,7 +3471,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  html:not([data-motion="on"]) *,
+  html:not([data-motion="on"]) *::before,
+  html:not([data-motion="on"]) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -3624,7 +3628,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton {
+  html:not([data-motion="on"]) .skeleton {
     animation: none;
     background: var(--bg-elevated);
   }
@@ -5431,10 +5435,10 @@ html[data-theme="dark"] .topbar .btn-primary-soft[title]::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar *,
-  .topbar .btn-icon,
-  .topbar .btn-primary-soft {
+  html:not([data-motion="on"]) .sidebar,
+  html:not([data-motion="on"]) .sidebar *,
+  html:not([data-motion="on"]) .topbar .btn-icon,
+  html:not([data-motion="on"]) .topbar .btn-primary-soft {
     transition-duration: 0.01ms !important;
   }
 }
@@ -5585,12 +5589,12 @@ html[data-theme="dark"] .topbar .btn-primary-soft[title]::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar *,
-  .topbar .btn-icon,
-  .topbar .btn-primary-soft,
-  .topbar .btn-icon::before,
-  .topbar .btn-primary-soft::before {
+  html:not([data-motion="on"]) .sidebar,
+  html:not([data-motion="on"]) .sidebar *,
+  html:not([data-motion="on"]) .topbar .btn-icon,
+  html:not([data-motion="on"]) .topbar .btn-primary-soft,
+  html:not([data-motion="on"]) .topbar .btn-icon::before,
+  html:not([data-motion="on"]) .topbar .btn-primary-soft::before {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
@@ -6036,9 +6040,9 @@ html[data-theme="dark"] .topbar .btn-primary-soft[title]::before {
 }
 
 @media (prefers-reduced-motion: reduce) and (min-width: 1025px) {
-  .sidebar,
-  .sidebar *,
-  #btn-toggle-sidebar {
+  html:not([data-motion="on"]) .sidebar,
+  html:not([data-motion="on"]) .sidebar *,
+  html:not([data-motion="on"]) #btn-toggle-sidebar {
     transition-duration: 576ms !important;
   }
 }
@@ -7744,37 +7748,37 @@ html[data-theme="dark"] .tab-item.active {
 /* ── Movimiento reducido: todo queda visible y en reposo ─────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .cargador-rejilla,
-  .cargador-brillo,
-  .cargador-celda,
-  .cargador-monograma,
-  .cargador-pasos li,
-  .cargador-tick,
-  .cargador-tick svg,
-  .cargador-barra span,
-  .app-loading.is-entering .cargador-marca,
-  .app-loading.is-entering .cargador-gif,
-  .app-loading.is-entering .cargador-copy,
-  .app-loading.is-entering .cargador-pasos,
-  .app-loading.is-entering .cargador-barra span {
+  html:not([data-motion="on"]) .cargador-rejilla,
+  html:not([data-motion="on"]) .cargador-brillo,
+  html:not([data-motion="on"]) .cargador-celda,
+  html:not([data-motion="on"]) .cargador-monograma,
+  html:not([data-motion="on"]) .cargador-pasos li,
+  html:not([data-motion="on"]) .cargador-tick,
+  html:not([data-motion="on"]) .cargador-tick svg,
+  html:not([data-motion="on"]) .cargador-barra span,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-marca,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-gif,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-copy,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-pasos,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-barra span {
     animation: none !important;
   }
 
-  .cargador-tick {
+  html:not([data-motion="on"]) .cargador-tick {
     border-color: var(--brand-cyan);
     background: rgba(1, 165, 228, 0.18);
   }
 
-  .cargador-celda { opacity: 0.45; }
+  html:not([data-motion="on"]) .cargador-celda { opacity: 0.45; }
 
-  .cargador-barra span {
+  html:not([data-motion="on"]) .cargador-barra span {
     width: 100%;
     transform: none;
     background: linear-gradient(90deg, var(--brand-cyan), var(--brand-pink), var(--brand-green));
   }
 
   /* Fundido suave al cambiar de sección en lugar del desplazamiento. */
-  #workspace.content-ready .module-fade-enter > * {
+  html:not([data-motion="on"]) #workspace.content-ready .module-fade-enter > * {
     animation-name: module-content-fade !important;
     animation-duration: 420ms !important;
     animation-delay: 0ms !important;
@@ -7784,4 +7788,245 @@ html[data-theme="dark"] .tab-item.active {
     from { opacity: 0; }
     to { opacity: 1; }
   }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   1 · ANIMACIONES BAJO CONTROL DEL PANEL
+   ────────────────────────────────────────────────────────────────
+   Opciones → Animaciones:
+     (sin atributo) = sigue al sistema (como hasta ahora)
+     data-motion="on"  = animar aunque el sistema diga que no
+     data-motion="off" = no animar aunque el sistema diga que sí
+   ════════════════════════════════════════════════════════════════ */
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-motion="off"] .skeleton { animation: none; background: var(--bg-elevated); }
+
+html[data-motion="off"] #workspace.content-ready .module-fade-enter > *,
+html[data-motion="off"] #workspace.content-ready .module-fade-enter > *:nth-child(2),
+html[data-motion="off"] #workspace.content-ready .module-fade-enter > *:nth-child(3),
+html[data-motion="off"] #workspace.content-ready .module-fade-enter > *:nth-child(4) {
+  animation: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2 · SUBMENÚS DEL MENÚ LATERAL (grupos plegables y subsecciones)
+   ════════════════════════════════════════════════════════════════ */
+.nav-section.nav-grupo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin: 0;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--r-md);
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.nav-section.nav-grupo > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-section.nav-grupo:hover,
+.nav-section.nav-grupo:focus-visible {
+  color: var(--text-main);
+  background: rgba(20, 87, 139, 0.07);
+}
+
+.nav-grupo-chevron {
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  transition: transform 220ms ease;
+}
+
+.nav-grupo[aria-expanded="false"] .nav-grupo-chevron { transform: rotate(-90deg); }
+
+.nav-grupo-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-grupo-items[hidden] { display: none !important; }
+
+/* Sección con subsecciones: enlace + flecha + lista debajo */
+.nav-con-hijos {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.nav-con-hijos > .nav-item { flex: 1 1 auto; min-width: 0; }
+
+.nav-chevron {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-right: 4px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, transform 220ms ease;
+}
+
+.nav-chevron i { font-size: 1rem; transition: transform 220ms ease; }
+.nav-chevron[aria-expanded="false"] i { transform: rotate(-90deg); }
+.nav-chevron:hover { background: rgba(20, 87, 139, 0.1); color: var(--text-main); }
+
+.nav-hijos {
+  flex: 1 0 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 4px 20px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border-default);
+}
+
+.nav-hijos[hidden] { display: none !important; }
+
+.nav-item.nav-hijo {
+  padding: 7px var(--s-2) 7px var(--s-3);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  gap: var(--s-2);
+}
+
+.nav-item.nav-hijo i { font-size: 0.95rem; }
+
+.nav-item.nav-hijo.active {
+  background: rgba(1, 165, 228, 0.14);
+  color: var(--brand-cyan);
+}
+
+.nav-item.nav-hijo:hover { background: rgba(20, 87, 139, 0.08); }
+
+/* En modo iconos no se muestran flechas ni subsecciones */
+.sidebar.collapsed .nav-chevron,
+.sidebar.collapsed .nav-hijos,
+.sidebar:not(.expanded) .nav-chevron,
+.sidebar:not(.expanded) .nav-hijos {
+  display: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3 · PANEL «OPCIONES»: PREFERENCIAS DE CADA EQUIPO
+   ════════════════════════════════════════════════════════════════ */
+.ajuste-global {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ajuste-global > label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.ajuste-global .form-control { width: 100%; }
+
+.ajuste-nota {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* ── Insignia de rol en la barra superior ── */
+.topbar-account-meta .rol-admin {
+  color: var(--brand-pink);
+  font-weight: 700;
+}
+
+.topbar-account-meta .rol-docente {
+  color: var(--brand-blue);
+  font-weight: 700;
+}
+
+html[data-theme="dark"] .topbar-account-meta .rol-admin { color: var(--brand-pink); }
+html[data-theme="dark"] .topbar-account-meta .rol-docente { color: var(--brand-cyan); }
+
+/* ── Destello del paso del cuaderno al que te lleva un submenú ── */
+details.cuaderno-step.paso-destacado {
+  outline: 2px solid var(--brand-cyan);
+  outline-offset: 3px;
+  border-radius: var(--r-md);
+  animation: paso-pulso 900ms ease 2;
+}
+
+@keyframes paso-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(1, 165, 228, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(1, 165, 228, 0.2); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4 · MISMO ASPECTO EN TODOS LOS DISPOSITIVOS
+   ────────────────────────────────────────────────────────────────
+   · `hidden` manda siempre: antes un botón con display:flex seguía
+     visible aunque el rol no pudiera usarlo.
+   · El gutter de la barra de scroll evita el salto de2-8 px al abrir
+     un modal en equipos con barras clásicas (en los de barras
+     flotantes no se mueve nada).
+   · Sin resaltado azul táctil ni retardo de 300 ms al tocar.
+   ════════════════════════════════════════════════════════════════ */
+[hidden] { display: none !important; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scrollbar-gutter: stable;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+summary,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* En pantallas táctiles no quedan globos de hover pegados tras tocar */
+@media (hover: none) {
+  .sidebar:not(.expanded) .nav-item::after { content: none !important; }
+  .nav-section.nav-grupo:hover { background: none; }
 }

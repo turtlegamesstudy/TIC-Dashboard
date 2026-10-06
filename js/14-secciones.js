@@ -18,18 +18,28 @@
           etiqueta: 'Inglés',             // texto del menú y de la carga
           titulo: 'Módulo de Inglés',     // tooltip (opcional)
           icono: 'ri-translate-2',
-          grupo: 'Académico',             // encabezado del menú
+          grupo: 'Académico',             // encabezado del menú (colapsable)
           orden: 55,                      // posición dentro del menú
           roles: ['admin', 'docente'],    // opcional; sin roles los ve todos
           render: (workspace) => {
             workspace.innerHTML = '<div class="module-fade-enter">…</div>';
           },
+          // Subsecciones del menú (opcional): cada una es un atajo dentro
+          // o fuera de la sección. Sin `accion` solo abre la sección.
+          hijos: [
+            { id: 'resumen', etiqueta: 'Resumen', icono: 'ri-dashboard-3-line' },
+            { id: 'hoja', etiqueta: 'Hoja de ejercicios', icono: 'ri-book-2-line',
+              roles: ['admin'],                       // se oculta si el rol no lo permite
+              accion: () => UI.abrirHojaEjercicios() } // se ejecuta tras abrir la sección
+          ],
           alMostrar: () => { } // opcional: se ejecuta tras pintar
         });
 
    2. Nada más: el enlace entra solo en el menú, respeta permisos, se
       abre con UI.irA('ingles') y desaparece si el rol no lo permite.
       No hay que tocar el HTML, el switch de render ni el buscador.
+      Los encabezados de grupo se pliegan/despliegan y esa preferencia
+      se guarda por equipo en localStorage ('tic-nav').
    ═══════════════════════════════════════════════════════════════ */
 
 const Secciones = {
@@ -56,7 +66,8 @@ const Secciones = {
       ...def,
       id,
       etiqueta: String(def.etiqueta || id),
-      alias: (Array.isArray(def.alias) ? def.alias : []).map(a => String(a).trim()).filter(Boolean)
+      alias: (Array.isArray(def.alias) ? def.alias : []).map(a => String(a).trim()).filter(Boolean),
+      hijos: this._normalizarHijos(def.hijos)
     };
 
     seccion.alias.forEach(alias => {
@@ -107,8 +118,95 @@ const Secciones = {
     return seccion ? seccion.etiqueta : '';
   },
 
+  /* ── Subsecciones (hijos) del menú ──────────────────────────────
+     Cada sección puede declarar `hijos`: atajos que aparecen debajo,
+     plegables, con su propio icono, sus permisos y una acción. */
+  _normalizarHijos(lista) {
+    if (!Array.isArray(lista)) return [];
+    const usados = new Set();
+    return lista.filter(hijo => hijo && typeof hijo === 'object').reduce((acum, hijo) => {
+      const id = String(hijo.id || hijo.etiqueta || '').trim();
+      if (!id || usados.has(id)) return acum;
+      usados.add(id);
+      acum.push({
+        id,
+        etiqueta: String(hijo.etiqueta || id),
+        titulo: String(hijo.titulo || hijo.etiqueta || id),
+        icono: hijo.icono || 'ri-subtract-line',
+        roles: Array.isArray(hijo.roles) && hijo.roles.length ? hijo.roles.slice() : null,
+        oculto: hijo.oculto === true,
+        accion: typeof hijo.accion === 'function' ? hijo.accion : null
+      });
+      return acum;
+    }, []);
+  },
+
+  hijosVisibles(seccion, perfil) {
+    if (!seccion || !Array.isArray(seccion.hijos)) return [];
+    return seccion.hijos.filter(hijo => this.puedeVer(hijo, perfil));
+  },
+
+  hijoDe(seccion, idHijo) {
+    if (!seccion || !Array.isArray(seccion.hijos)) return null;
+    return seccion.hijos.find(hijo => hijo.id === idHijo) || null;
+  },
+
+  /* ── Estado plegado/desplegado del menú ──
+     Se guarda por equipo: el menú no cambia de aspecto solo porque
+     alguien redimensione la ventana o cambie de sección. */
+  _estado: null,
+  _claveEstado: 'tic-nav',
+
+  estado() {
+    if (this._estado) return this._estado;
+    const estado = { grupos: {}, hijos: {} };
+    try {
+      const crudo = typeof localStorage !== 'undefined' ? localStorage.getItem(this._claveEstado) : null;
+      if (crudo) {
+        const guardado = JSON.parse(crudo);
+        if (guardado && typeof guardado === 'object') {
+          if (guardado.grupos && typeof guardado.grupos === 'object') estado.grupos = guardado.grupos;
+          if (guardado.hijos && typeof guardado.hijos === 'object') estado.hijos = guardado.hijos;
+        }
+      }
+    } catch (e) { /* sin almacenamiento legible: estado por defecto */ }
+    this._estado = estado;
+    return estado;
+  },
+
+  _guardarEstado() {
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.setItem(this._claveEstado, JSON.stringify(this.estado()));
+    } catch (e) { /* almacenamiento bloqueado: no se recuerda */ }
+  },
+
+  /* Los grupos arrancan desplegados y las subsecciones plegadas. */
+  grupoAbierto(nombre) {
+    const guardado = this.estado().grupos[nombre];
+    return guardado === undefined ? true : guardado !== false;
+  },
+
+  alternarGrupo(nombre) {
+    const estado = this.estado();
+    estado.grupos[nombre] = !this.grupoAbierto(nombre);
+    this._guardarEstado();
+    return estado.grupos[nombre];
+  },
+
+  hijosAbiertos(idSeccion) {
+    return this.estado().hijos[idSeccion] === true;
+  },
+
+  alternarHijos(idSeccion) {
+    const estado = this.estado();
+    estado.hijos[idSeccion] = !this.hijosAbiertos(idSeccion);
+    this._guardarEstado();
+    return estado.hijos[idSeccion];
+  },
+
   /* HTML del menú lateral para un perfil. Es una función pura para poder
-     probarla sin tocar el DOM. */
+     probarla sin tocar el DOM. Los encabezados de grupo son botones que
+     pliegan su lista y las secciones con hijos llevan su flecha. */
   htmlNavegacion(perfil, activoId) {
     const grupos = [];
     this.visibles(perfil).forEach(seccion => {
@@ -116,19 +214,54 @@ const Secciones = {
       if (!grupo) { grupo = { nombre: seccion.grupo, secciones: [] }; grupos.push(grupo); }
       grupo.secciones.push(seccion);
     });
-    return grupos.map(grupo =>
-      `<div class="nav-section">${this.escapar(grupo.nombre)}</div>` +
-      grupo.secciones.map(seccion => this._htmlItem(seccion, activoId)).join('')
-    ).join('');
+    return grupos.map(grupo => {
+      const abierto = this.grupoAbierto(grupo.nombre);
+      const nombre = this.escapar(grupo.nombre);
+      const slug = this._slug(grupo.nombre);
+      return `<button type="button" class="nav-section nav-grupo" data-nav-grupo="${nombre}"` +
+        ` aria-expanded="${abierto ? 'true' : 'false'}" aria-controls="nav-grupo-${slug}"` +
+        ` title="${abierto ? 'Plegar' : 'Desplegar'} ${nombre}">` +
+        `<span>${nombre}</span>` +
+        `<i class="ri-arrow-down-s-line nav-grupo-chevron" aria-hidden="true"></i></button>` +
+        `<div class="nav-grupo-items" id="nav-grupo-${slug}" data-nav-grupos-items="${nombre}"${abierto ? '' : ' hidden'}>` +
+        grupo.secciones.map(seccion => this._htmlItem(seccion, activoId, perfil)).join('') +
+        `</div>`;
+    }).join('');
   },
 
-  _htmlItem(seccion, activoId) {
+  _slug(valor) {
+    return String(valor).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'grupo';
+  },
+
+  _htmlItem(seccion, activoId, perfil) {
     const activa = seccion.id === activoId;
     const id = this.escapar(seccion.id);
-    return `<a href="#${id}" class="nav-item${activa ? ' active' : ''}" data-module="${id}"` +
+    const enlace = `<a href="#${id}" class="nav-item${activa ? ' active' : ''}" data-module="${id}"` +
       ` title="${this.escapar(seccion.titulo)}"${activa ? ' aria-current="page"' : ''}>` +
       `<i class="${this.escapar(seccion.icono)}" aria-hidden="true"></i>` +
       `<span>${this.escapar(seccion.etiqueta)}</span></a>`;
+
+    const hijos = this.hijosVisibles(seccion, perfil);
+    if (!hijos.length) return enlace;
+
+    const abiertos = this.hijosAbiertos(seccion.id);
+    return `<div class="nav-con-hijos">${enlace}` +
+      `<button type="button" class="nav-chevron" data-nav-toggle="${id}"` +
+      ` aria-expanded="${abiertos ? 'true' : 'false'}" aria-controls="nav-hijos-${id}"` +
+      ` aria-label="${abiertos ? 'Ocultar' : 'Mostrar'} subsecciones de ${this.escapar(seccion.etiqueta)}">` +
+      `<i class="ri-arrow-down-s-line" aria-hidden="true"></i></button>` +
+      `<div class="nav-hijos" id="nav-hijos-${id}" data-nav-hijos="${id}"${abiertos ? '' : ' hidden'}>` +
+      hijos.map(hijo => this._htmlHijo(seccion, hijo)).join('') +
+      `</div></div>`;
+  },
+
+  _htmlHijo(seccion, hijo) {
+    const id = this.escapar(seccion.id);
+    return `<a href="#${id}" class="nav-item nav-hijo" data-module="${id}" data-hijo="${this.escapar(hijo.id)}"` +
+      ` title="${this.escapar(hijo.titulo)}">` +
+      `<i class="${this.escapar(hijo.icono)}" aria-hidden="true"></i>` +
+      `<span>${this.escapar(hijo.etiqueta)}</span></a>`;
   },
 
   pintarNavegacion(perfil, activoId) {
@@ -179,7 +312,17 @@ Secciones.registrarVarias([
     icono: 'ri-team-line',
     grupo: 'Académico',
     orden: 30,
-    render: Secciones.desdeHTML(() => UI.renderGruposView())
+    render: Secciones.desdeHTML(() => UI.renderGruposView()),
+    hijos: [
+      { id: 'listado', etiqueta: 'Grupos y estudiantes', icono: 'ri-team-line' },
+      { id: 'importar', etiqueta: 'Cargar listado (.xlsx / .csv)', icono: 'ri-file-excel-line',
+        accion: () => {
+          if (!Permisos.exigir('importarListado')) return;
+          const input = document.getElementById('excel-upload-input');
+          if (input) input.click();
+          else UI.showToast('Abre Grupos de Clase y usa el botón «Cargar Lista de Grupo».');
+        } }
+    ]
   },
   {
     id: 'estudiantes',
@@ -198,7 +341,28 @@ Secciones.registrarVarias([
     alias: ['cuaderno'],
     // Esta vista se pinta a sí misma (y encadena la inicialización de sus
     // selectores), por eso no usa desdeHTML.
-    render: () => UI.renderCuadernoDocente()
+    render: () => UI.renderCuadernoDocente(),
+    hijos: [
+      { id: 'registro', etiqueta: 'Registro de notas', icono: 'ri-table-line' },
+      { id: 'cargar-notas', etiqueta: 'Cargar notas desde Excel', icono: 'ri-file-excel-line',
+        accion: () => UI.enfocarPasoCuaderno(2) },
+      { id: 'exportar', etiqueta: 'Exportar e imprimir', icono: 'ri-printer-line',
+        accion: () => {
+          if (!Permisos.exigir('exportarDocumentos')) return;
+          UI.abrirModalConfigExport();
+        } },
+      { id: 'convalidaciones', etiqueta: 'Convalidar módulo', icono: 'ri-exchange-line',
+        accion: () => {
+          if (!Permisos.exigir('exportarDocumentos')) return;
+          UI.abrirModalConvalidaciones();
+        } },
+      { id: 'responsables', etiqueta: 'Configurar responsables', icono: 'ri-user-settings-line',
+        roles: ['admin'],
+        accion: () => {
+          if (!Permisos.exigir('configurarInstitucion')) return;
+          CuadernoEngine.abrirConfiguracionAcademica();
+        } }
+    ]
   },
   {
     id: 'Examenes-Reparacion',
@@ -250,6 +414,23 @@ Secciones.registrarVarias([
     orden: 110,
     roles: ['admin'],
     render: Secciones.desdeHTML(() => AdminManager.renderVista()),
-    alMostrar: () => AdminManager.cargarUsuarios()
+    alMostrar: () => AdminManager.cargarUsuarios(),
+    hijos: [
+      { id: 'usuarios', etiqueta: 'Usuarios y roles', icono: 'ri-group-line', roles: ['admin'] },
+      { id: 'descargar', etiqueta: 'Descargar DB.json', icono: 'ri-download-cloud-2-line',
+        roles: ['admin'],
+        accion: () => {
+          if (!Permisos.exigir('descargarBase')) return;
+          DataEngine.exportDBJSON();
+        } },
+      { id: 'cargar', etiqueta: 'Cargar DB.json', icono: 'ri-upload-cloud-2-line',
+        roles: ['admin'],
+        accion: () => {
+          if (!Permisos.exigir('cargarBase')) return;
+          const input = document.getElementById('db-file-input');
+          if (input) input.click();
+          else UI.showToast('Usa el botón «Cargar DB.json» de la barra superior.');
+        } }
+    ]
   }
 ]);

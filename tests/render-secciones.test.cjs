@@ -45,12 +45,17 @@ function fakeElement(tag = 'div') {
       return child;
     },
     replaceChildren(...children) { el.children = children; },
-    setAttribute() {},
-    getAttribute() { return null; },
-    removeAttribute() {},
+    _attrs: new Map(),
+    setAttribute(nombre, valor) { el._attrs.set(nombre, String(valor)); },
+    getAttribute(nombre) { return el._attrs.has(nombre) ? el._attrs.get(nombre) : null; },
+    removeAttribute(nombre) { el._attrs.delete(nombre); },
+    hasAttribute(nombre) { return el._attrs.has(nombre); },
     addEventListener() {},
     removeEventListener() {},
     dispatchEvent() { return true; },
+    remove() {
+      if (el.parentNode && typeof el.parentNode.removeChild === 'function') el.parentNode.removeChild(el);
+    },
     click() {},
     focus() {},
     blur() {},
@@ -95,6 +100,9 @@ function createHarness() {
     write() {}
   };
 
+  // Almacenamiento real (en memoria): permite comprobar que las
+  // preferencias y el estado del menú quedan guardados por equipo.
+  const almacen = new Map();
   const context = {
     console: { log() {}, error() {}, warn() {}, info() {}, debug() {} },
     document,
@@ -105,7 +113,12 @@ function createHarness() {
       location: { href: '' }
     },
     navigator: { userAgent: 'node', language: 'es', clipboard: { writeText: async () => {} } },
-    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    localStorage: {
+      getItem: clave => (almacen.has(clave) ? almacen.get(clave) : null),
+      setItem(clave, valor) { almacen.set(clave, String(valor)); },
+      removeItem(clave) { almacen.delete(clave); },
+      clear() { almacen.clear(); }
+    },
     sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     performance,
     setTimeout,
@@ -149,7 +162,8 @@ function createHarness() {
     'js/09-equipos-engine.js',
     'js/12-admin-manager.js',
     'js/13-profile-manager.js',
-    'js/14-secciones.js'
+    'js/14-secciones.js',
+    'js/15-permisos.js'
   ];
   archivos.forEach(rel => {
     const source = fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
@@ -159,14 +173,27 @@ function createHarness() {
   vm.runInContext(
     'globalThis.__ui = (typeof UI !== "undefined") ? UI : null;' +
     'globalThis.__dataEngine = (typeof DataEngine !== "undefined") ? DataEngine : null;' +
-    'globalThis.__secciones = (typeof Secciones !== "undefined") ? Secciones : null;',
+    'globalThis.__secciones = (typeof Secciones !== "undefined") ? Secciones : null;' +
+    'globalThis.__permisos = (typeof Permisos !== "undefined") ? Permisos : null;' +
+    'globalThis.__ajustes = (typeof Ajustes !== "undefined") ? Ajustes : null;',
     context
   );
 
   assert.ok(context.__ui, 'UI debe quedar definido tras cargar los módulos');
   assert.ok(context.__dataEngine, 'DataEngine debe quedar definido tras cargar los módulos');
   assert.ok(context.__secciones, 'Secciones debe quedar definido tras cargar los módulos');
-  return { UI: context.__ui, DataEngine: context.__dataEngine, Secciones: context.__secciones, elements: elementos };
+  assert.ok(context.__permisos, 'Permisos debe quedar definido tras cargar los módulos');
+  assert.ok(context.__ajustes, 'Ajustes debe quedar definido tras cargar los módulos');
+  return {
+    UI: context.__ui,
+    DataEngine: context.__dataEngine,
+    Secciones: context.__secciones,
+    Permisos: context.__permisos,
+    Ajustes: context.__ajustes,
+    elements: elementos,
+    document,
+    almacen
+  };
 }
 
 const MODULOS = [
@@ -338,9 +365,10 @@ test('el menú lateral se genera desde el registro y respeta el rol', () => {
   const admin = Secciones.htmlNavegacion({ role: 'admin' }, 'dashboard');
   const docente = Secciones.htmlNavegacion({ role: 'docente' }, 'dashboard');
 
-  // Grupos del menú y enlaces oficiales
-  assert.match(admin, /<div class="nav-section">Principal<\/div>/);
-  assert.match(admin, /<div class="nav-section">Académico<\/div>/);
+  // Grupos del menú (encabezado plegable) y enlaces oficiales
+  assert.match(admin, /data-nav-grupo="Principal"/);
+  assert.match(admin, /data-nav-grupo="Académico"/);
+  assert.match(admin, /<span>Principal<\/span>/);
   assert.match(docente, /data-module="grupos"/);
   assert.match(docente, /<span>Exámenes<\/span>/);
   // La sección activa lleva la clase y aria-current
@@ -413,4 +441,168 @@ test('una sección restringida redirige y un id desconocido muestra el marcador'
   UI.currentModule = 'seccion-sin-registrar';
   UI.renderCurrentModule();
   assert.match(workspace.innerHTML, /Módulo: seccion-sin-registrar/);
+});
+
+/* ── Submenús del menú lateral (grupos plegables y subsecciones) ── */
+
+test('los grupos del menú son plegables y las secciones enseñan sus subsecciones', () => {
+  const { Secciones } = createHarness();
+  const html = Secciones.htmlNavegacion({ role: 'admin' }, 'cuaderno-docente');
+
+  // Cada encabezado es un botón que pliega su lista (arranca desplegado)
+  assert.match(html, /<button type="button" class="nav-section nav-grupo" data-nav-grupo="Académico"/);
+  assert.match(html, /aria-expanded="true" aria-controls="nav-grupo-academico"/);
+  assert.match(html, /<div class="nav-grupo-items" id="nav-grupo-academico"/);
+
+  // La sección del Cuaderno lleva flecha y lista de subsecciones
+  assert.match(html, /data-nav-toggle="cuaderno-docente"/);
+  assert.match(html, /data-nav-hijos="cuaderno-docente" hidden/,
+    'las subsecciones arrancan plegadas');
+  assert.match(html, /data-hijo="cargar-notas"/);
+  assert.match(html, /data-hijo="exportar"/);
+  assert.ok(html.indexOf('data-module="cuaderno-docente"') < html.indexOf('data-hijo="cargar-notas"'),
+    'la subsección va justo debajo de su sección');
+});
+
+test('las subsecciones se ocultan cuando el rol no las permite', () => {
+  const { Secciones } = createHarness();
+
+  const docente = Secciones.htmlNavegacion({ role: 'docente' }, 'dashboard');
+  const admin = Secciones.htmlNavegacion({ role: 'admin' }, 'dashboard');
+
+  assert.ok(!docente.includes('Configurar responsables'),
+    'un docente no ve la subsección de responsables institucionales');
+  assert.ok(!docente.includes('data-module="administracion"'));
+  assert.match(admin, /data-hijo="responsables"/);
+
+  const cuaderno = Secciones.obtener('cuaderno-docente');
+  assert.equal(Secciones.hijosVisibles(cuaderno, { role: 'docente' }).length, 4);
+  assert.equal(Secciones.hijosVisibles(cuaderno, { role: 'admin' }).length, 5);
+  assert.equal(Secciones.hijoDe(cuaderno, 'cargar-notas').etiqueta, 'Cargar notas desde Excel');
+  assert.equal(Secciones.hijoDe(cuaderno, 'inventado'), null);
+
+  // Una subsección de Administración solo existe dentro de esa sección
+  const adminSeccion = Secciones.obtener('administracion');
+  assert.equal(Secciones.hijosVisibles(adminSeccion, { role: 'docente' }).length, 0);
+  assert.equal(Secciones.hijosVisibles(adminSeccion, { role: 'admin' }).length, 3);
+});
+
+test('el estado plegado del menú se guarda en el equipo', () => {
+  const { UI, Secciones, elements, document, almacen } = createHarness();
+
+  // Por defecto: grupos desplegados y subsecciones plegadas
+  assert.equal(Secciones.grupoAbierto('Académico'), true);
+  assert.equal(Secciones.hijosAbiertos('cuaderno-docente'), false);
+
+  Secciones.pintarNavegacion({ role: 'admin' }, 'dashboard');
+  assert.match(elements.get('sidebar-nav').innerHTML, /aria-expanded="true" aria-controls="nav-grupo-academico"/);
+
+  // Plegar un grupo queda guardado
+  assert.equal(Secciones.alternarGrupo('Académico'), false);
+  assert.equal(JSON.parse(almacen.get('tic-nav')).grupos['Académico'], false);
+  assert.equal(Secciones.grupoAbierto('Académico'), false);
+
+  // Desplegar subsecciones: se guarda y se refleja en el DOM
+  const lista = { hidden: true };
+  document.querySelector = selector => (selector.includes('nav-hijos') ? lista : null);
+  assert.equal(UI.alternarHijos('cuaderno-docente'), true);
+  assert.equal(lista.hidden, false, 'la lista de subsecciones se muestra');
+  assert.equal(JSON.parse(almacen.get('tic-nav')).hijos['cuaderno-docente'], true);
+});
+
+/* ── Permisos por rol ────────────────────────────────────────── */
+
+test('los permisos deciden qué se ve, qué se ejecuta y qué se oculta del DOM', () => {
+  const { Permisos } = createHarness(); // la sesión del arnés es docente
+
+  // Tabla central: lo declarado se restringe, lo no declarado no
+  assert.equal(Permisos.puede('cargarBase', 'docente'), false);
+  assert.equal(Permisos.puede('cargarBase', 'admin'), true);
+  assert.equal(Permisos.puede('configurarMateria', 'docente'), false);
+  assert.equal(Permisos.puede('importarListado', 'docente'), true);
+  assert.equal(Permisos.puede('accion-inventada', 'docente'), true);
+
+  // Rol de la sesión abierta
+  assert.equal(Permisos.rolActual(), 'docente');
+  assert.equal(Permisos.puede('gestionarUsuarios'), false);
+
+  // exigir frena la acción (no basta con esconder el botón)
+  assert.equal(Permisos.exigir('cargarBase'), false);
+  assert.equal(Permisos.exigir('importarListado'), true);
+  assert.match(Permisos.motivoDenegacion('cargarBase'), /administrador/);
+
+  // Resumen de rol para Administración
+  assert.match(Permisos.resumenRol('admin'), /gestionar usuarios/);
+  assert.match(Permisos.resumenRol('docente'), /listados y notas/);
+
+  // aplicar() oculta del DOM lo que el rol no debe ver
+  const boton = { hidden: false, getAttribute: () => 'cargarBase' };
+  assert.equal(Permisos.aplicar({ querySelectorAll: () => [boton] }), 1);
+  assert.equal(boton.hidden, true, 'el botón de cargar la base queda oculto');
+  assert.equal(Permisos.aplicar({ querySelectorAll: () => [] }), 0);
+});
+
+/* ── Opciones: preferencias del equipo ───────────────────────── */
+
+test('el panel Opciones se abre en cualquier sección y trae las preferencias del equipo', () => {
+  const { UI, DataEngine, elements, document } = createHarness();
+  DataEngine.db = base();
+
+  const cabecera = {
+    children: [],
+    querySelector: () => null,
+    appendChild(hijo) { this.children.push(hijo); return hijo; },
+    prepend(hijo) { this.children.unshift(hijo); return hijo; },
+    classList: { add() {}, remove() {}, contains: () => false }
+  };
+  const workspace = document.getElementById('workspace');
+  workspace.querySelector = selector => (selector === '.view-header' ? cabecera : null);
+
+  UI.currentModule = 'dashboard';
+  UI.renderCurrentModule();
+
+  const panel = elements.get('section-settings-sidebar');
+  const contenido = elements.get('section-settings-content');
+  assert.equal(panel.hidden, false,
+    'ahora el panel se abre también en secciones sin filtros propios');
+  assert.equal(contenido.children.length, 1);
+  assert.match(contenido.children[0].innerHTML, /Preferencias de este equipo/);
+  assert.match(contenido.children[0].innerHTML, /id="ajuste-movimiento"/);
+  assert.match(contenido.children[0].innerHTML, /id="ajuste-menu"/);
+  assert.match(contenido.children[0].innerHTML, /id="ajuste-tema"/);
+  assert.ok(cabecera.children.some(hijo => hijo.id === 'btn-toggle-section-settings'),
+    'el botón «Opciones» se crea en la cabecera de la vista');
+});
+
+test('las animaciones y el menú se pueden forzar desde Opciones y quedan guardados', () => {
+  const { UI, Ajustes, elements, document, almacen } = createHarness();
+
+  // Por defecto se sigue al sistema (sin atributo data-motion)
+  assert.equal(Ajustes.movimiento(), 'auto');
+  Ajustes.aplicarMovimiento();
+  assert.equal(document.documentElement.getAttribute('data-motion'), null);
+  assert.match(Ajustes.notaMovimiento('auto'), /configuración de animaciones/i);
+
+  // Activadas: el panel anima aunque el sistema tenga las animaciones apagadas
+  assert.equal(Ajustes.ponerMovimiento('on'), 'on');
+  assert.equal(document.documentElement.getAttribute('data-motion'), 'on');
+  assert.equal(almacen.get('tic-motion'), 'on');
+  assert.match(Ajustes.notaMovimiento('on'), /aunque el sistema/);
+
+  // De vuelta al sistema: se borra la clave
+  assert.equal(Ajustes.ponerMovimiento('auto'), 'auto');
+  assert.equal(document.documentElement.getAttribute('data-motion'), null);
+  assert.equal(almacen.has('tic-motion'), false);
+
+  // Menú lateral: etiquetas por defecto y elección reflejada en la clase
+  const sidebar = document.getElementById('sidebar');
+  assert.equal(Ajustes.menu(), 'expandido');
+  UI.aplicarMenuGuardado();
+  assert.equal(sidebar.classList.contains('expanded'), true);
+
+  Ajustes.ponerMenu('iconos');
+  UI.aplicarMenuGuardado();
+  assert.equal(sidebar.classList.contains('collapsed'), true);
+  assert.equal(sidebar.classList.contains('expanded'), false);
+  assert.equal(almacen.get('tic-sidebar'), 'iconos');
 });

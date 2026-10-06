@@ -6,9 +6,14 @@
       loadingStartedAt: 0,
 
       init() {
+        // Preferencias de este equipo (animaciones y aspecto del menú) y
+        // permisos del rol: se aplican ANTES de pintar nada.
+        if (typeof Ajustes !== 'undefined' && Ajustes) Ajustes.inicializar();
+        this.aplicarMenuGuardado();
         // El menú se pinta desde el registro de secciones (14-secciones.js)
         // antes de enlazar los eventos: así una sección nueva aparece sola.
         this.pintarNavegacion();
+        if (typeof Permisos !== 'undefined' && Permisos) Permisos.aplicar();
         this.bindEvents();
         this.initBuscadorGlobal();
         this.syncThemeIcon();
@@ -55,6 +60,54 @@
         this.actualizarNavActivo(seccion.id);
         this.renderCurrentModule();
         return true;
+      },
+
+      /* ── Subsecciones del menú lateral ──
+         Pliega/despliega los hijos de una sección y guarda la elección. */
+      alternarHijos(idSeccion) {
+        const abierto = typeof Secciones !== 'undefined' ? Secciones.alternarHijos(idSeccion) : false;
+        const flecha = document.querySelector(`.nav-chevron[data-nav-toggle="${idSeccion}"]`);
+        if (flecha) {
+          flecha.setAttribute('aria-expanded', String(abierto));
+          const seccion = typeof Secciones !== 'undefined' ? Secciones.obtener(idSeccion) : null;
+          const nombre = seccion ? seccion.etiqueta : 'esta sección';
+          flecha.setAttribute('aria-label', `${abierto ? 'Ocultar' : 'Mostrar'} subsecciones de ${nombre}`);
+        }
+        const lista = document.querySelector(`.nav-hijos[data-nav-hijos="${idSeccion}"]`);
+        if (lista) lista.hidden = !abierto;
+        return abierto;
+      },
+
+      /* Ejecuta la acción de una subsección tras abrir su sección padre.
+         Las acciones sensibles vuelven a pedir permiso aquí: el menú solo
+         oculta, esta llamada es la que realmente frena. */
+      ejecutarHijo(idSeccion, idHijo) {
+        const seccion = typeof Secciones === 'undefined' ? null : Secciones.obtener(idSeccion);
+        const hijo = seccion ? Secciones.hijoDe(seccion, idHijo) : null;
+        if (!hijo || !Secciones.puedeVer(hijo, AuthManager.profile)) return false;
+        if (typeof hijo.accion !== 'function') return true;
+        try {
+          hijo.accion(AuthManager.profile);
+        } catch (error) {
+          console.error(`Error en la subsección "${idHijo}" de "${idSeccion}":`, error);
+          this.showToast('⚠️ No se pudo completar esa acción.');
+        }
+        return true;
+      },
+
+      /* Abre un paso concreto del Cuaderno Docente (los pasos son
+         <details class="cuaderno-step">) y lo pone en pantalla. */
+      enfocarPasoCuaderno(numero) {
+        if (this.currentModule !== 'cuaderno-docente') this.irA('cuaderno-docente');
+        setTimeout(() => {
+          const pasos = document.querySelectorAll('#workspace .cuaderno-step');
+          const paso = pasos[Number(numero) - 1];
+          if (!paso) return;
+          paso.open = true;
+          paso.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          paso.classList.add('paso-destacado');
+          setTimeout(() => paso.classList.remove('paso-destacado'), 1800);
+        }, 220);
       },
 
       showLoading(message) {
@@ -432,14 +485,10 @@ actualizarNavActivo(modulo) {
           : '';
         content.replaceChildren();
         const settingsBlocks = workspace.querySelectorAll('[data-section-settings]');
-        if (!settingsBlocks.length) {
-          this.closeSectionSettings(false);
-          sidebar.hidden = true;
-          return;
-        }
 
         const viewHeader = workspace.querySelector('.view-header');
-        if (!viewHeader) return;
+        // Sin encabezado no hay dónde apoyar el botón «Opciones».
+        if (!viewHeader) { sidebar.hidden = true; return; }
         let toggle = viewHeader.querySelector('.section-settings-toggle');
         if (!toggle) {
           toggle = document.createElement('button');
@@ -470,6 +519,11 @@ actualizarNavActivo(modulo) {
           }
         }
 
+        // Preferencias del equipo: están en TODAS las secciones (antes el
+        // panel no se abría si la vista no tenía filtros propios).
+        content.appendChild(this.bloqueAjustesGlobales());
+        this.vincularAjustesGlobales();
+
         settingsBlocks.forEach(block => {
           const group = document.createElement('section');
           group.className = 'section-settings-group';
@@ -485,6 +539,78 @@ actualizarNavActivo(modulo) {
 
         if (focusedId) document.getElementById(focusedId)?.focus({ preventScroll: true });
         sidebar.hidden = false;
+      },
+
+      /* Bloque fijo del panel «Opciones» con las preferencias que
+         dependen de ESTE equipo (no se sincronizan con los compañeros):
+         animaciones, tamaño del menú y tema. */
+      bloqueAjustesGlobales() {
+        const grupo = document.createElement('section');
+        grupo.className = 'section-settings-group';
+        const movimiento = typeof Ajustes !== 'undefined' && Ajustes ? Ajustes.movimiento() : 'auto';
+        const menu = typeof Ajustes !== 'undefined' && Ajustes ? Ajustes.menu() : 'expandido';
+        const temaOscuro = this.getTheme() === 'dark';
+        grupo.innerHTML = `
+          <h3>Preferencias de este equipo</h3>
+          <div class="section-settings-block ajuste-global">
+            <label for="ajuste-movimiento"><i class="ri-sparkling-line" aria-hidden="true"></i> Animaciones</label>
+            <select id="ajuste-movimiento" class="form-control">
+              <option value="auto"${movimiento === 'auto' ? ' selected' : ''}>Seguir el sistema</option>
+              <option value="on"${movimiento === 'on' ? ' selected' : ''}>Activadas</option>
+              <option value="off"${movimiento === 'off' ? ' selected' : ''}>Desactivadas</option>
+            </select>
+            <p class="ajuste-nota" id="nota-ajuste-movimiento">${this.notaMovimiento(movimiento)}</p>
+          </div>
+          <div class="section-settings-block ajuste-global">
+            <label for="ajuste-menu"><i class="ri-menu-line" aria-hidden="true"></i> Menú lateral</label>
+            <select id="ajuste-menu" class="form-control">
+              <option value="expandido"${menu === 'expandido' ? ' selected' : ''}>Con etiquetas</option>
+              <option value="iconos"${menu === 'iconos' ? ' selected' : ''}>Solo iconos</option>
+            </select>
+            <p class="ajuste-nota">Se guarda en este equipo y lo mantiene igual al redimensionar.</p>
+          </div>
+          <div class="section-settings-block ajuste-global">
+            <label for="ajuste-tema"><i class="ri-contrast-line" aria-hidden="true"></i> Tema</label>
+            <select id="ajuste-tema" class="form-control">
+              <option value="light"${temaOscuro ? '' : ' selected'}>Claro (oficial)</option>
+              <option value="dark"${temaOscuro ? ' selected' : ''}>Oscuro</option>
+            </select>
+            <p class="ajuste-nota">El modo claro es el oficial del panel; el oscuro es opcional.</p>
+          </div>`;
+        return grupo;
+      },
+
+      notaMovimiento(valor) {
+        if (typeof Ajustes !== 'undefined' && Ajustes && typeof Ajustes.notaMovimiento === 'function') {
+          return Ajustes.notaMovimiento(valor);
+        }
+        return '';
+      },
+
+      /* Deja los tres selectores de arriba conectados con Ajustes/UI. */
+      vincularAjustesGlobales() {
+        const mov = document.getElementById('ajuste-movimiento');
+        if (mov) mov.addEventListener('change', () => {
+          if (typeof Ajustes === 'undefined' || !Ajustes) return;
+          const aplicado = Ajustes.ponerMovimiento(mov.value);
+          const nota = document.getElementById('nota-ajuste-movimiento');
+          if (nota) nota.textContent = Ajustes.notaMovimiento(aplicado);
+          this.showToast(aplicado === 'on'
+            ? '✨ Animaciones activadas en este equipo.'
+            : aplicado === 'off'
+              ? 'Animaciones desactivadas en este equipo.'
+              : 'El panel sigue ahora la configuración de animaciones del sistema.');
+        });
+
+        const menu = document.getElementById('ajuste-menu');
+        if (menu) menu.addEventListener('change', () => {
+          if (typeof Ajustes === 'undefined' || !Ajustes) return;
+          Ajustes.ponerMenu(menu.value);
+          this.aplicarMenuGuardado();
+        });
+
+        const tema = document.getElementById('ajuste-tema');
+        if (tema) tema.addEventListener('change', () => this.applyTheme(tema.value));
       },
 
       toggleSectionSettings() {
@@ -530,10 +656,40 @@ actualizarNavActivo(modulo) {
         if (sidebarNav) {
           sidebarNav.addEventListener('click', (event) => {
             const destino = event.target;
-            const item = destino && destino.closest ? destino.closest('.nav-item') : null;
+            if (!destino || !destino.closest) return;
+
+            // 1 · Encabezado de grupo: pliega/despliega su lista.
+            const grupo = destino.closest('.nav-grupo');
+            if (grupo) {
+              event.preventDefault();
+              const nombre = grupo.getAttribute('data-nav-grupo');
+              const abierto = typeof Secciones !== 'undefined' ? Secciones.alternarGrupo(nombre) : true;
+              grupo.setAttribute('aria-expanded', String(abierto));
+              grupo.setAttribute('title', `${abierto ? 'Plegar' : 'Desplegar'} ${nombre}`);
+              const lista = grupo.nextElementSibling;
+              if (lista && lista.classList.contains('nav-grupo-items')) lista.hidden = !abierto;
+              return;
+            }
+
+            // 2 · Flecha de una sección con subsecciones: solo pliega.
+            const flecha = destino.closest('.nav-chevron');
+            if (flecha) {
+              event.preventDefault();
+              this.alternarHijos(flecha.getAttribute('data-nav-toggle'));
+              return;
+            }
+
+            const item = destino.closest('.nav-item');
             if (!item || !item.getAttribute('data-module')) return;
             event.preventDefault();
+            const idHijo = item.getAttribute('data-hijo');
             this.closeSectionSettings(false);
+            if (idHijo) {
+              // Subsección: abre la sección padre y lanza su acción.
+              this.irA(item.getAttribute('data-module'));
+              this.ejecutarHijo(item.getAttribute('data-module'), idHijo);
+              return;
+            }
             this.currentModule = item.getAttribute('data-module');
             this.actualizarNavActivo(this.currentModule);
             this.renderCurrentModule();
@@ -574,7 +730,12 @@ actualizarNavActivo(modulo) {
           }
         });
         window.addEventListener('resize', () => {
-          if (!this.isMobileLayout()) this.closeSidebar();
+          if (this.isMobileLayout()) return;
+          const sidebar = document.getElementById('sidebar');
+          if (sidebar && sidebar.classList.contains('open')) this.closeSidebar();
+          // El tamaño del menú no cambia con un resize: solo se vuelve a
+          // aplicar la preferencia guardada (por si cambió el dispositivo).
+          this.aplicarMenuGuardado();
         });
       },
 
@@ -693,18 +854,12 @@ actualizarNavActivo(modulo) {
           return;
         }
         const sidebar = document.getElementById('sidebar');
-        const toggleIcon = document.querySelector('#btn-toggle-sidebar i');
         if (sidebar) {
           const expanded = sidebar.classList.toggle('expanded');
           sidebar.classList.remove('collapsed');
-          const toggleButton = document.getElementById('btn-toggle-sidebar');
-          if (toggleIcon) toggleIcon.className = expanded ? 'ri-menu-fold-line' : 'ri-menu-unfold-line';
-          if (toggleButton) {
-            toggleButton.setAttribute('aria-expanded', String(expanded));
-            toggleButton.title = expanded ? 'Contraer navegación' : 'Expandir navegación';
-            toggleButton.setAttribute('aria-label', toggleButton.title);
-          }
+          if (typeof Ajustes !== 'undefined' && Ajustes) Ajustes.ponerMenu(expanded ? 'expandido' : 'iconos');
         }
+        this.sincronizarEstadoMenu();
       },
 
       openSidebar() {
@@ -712,14 +867,7 @@ actualizarNavActivo(modulo) {
         const backdrop = document.getElementById('sidebar-backdrop');
         if (sidebar) sidebar.classList.add('open');
         if (backdrop) backdrop.classList.add('show');
-        const toggleIcon = document.querySelector('#btn-toggle-sidebar i');
-        if (toggleIcon) toggleIcon.className = 'ri-close-line';
-        const toggleButton = document.getElementById('btn-toggle-sidebar');
-        if (toggleButton) {
-          toggleButton.setAttribute('aria-expanded', 'true');
-          toggleButton.title = 'Cerrar navegación';
-          toggleButton.setAttribute('aria-label', toggleButton.title);
-        }
+        this.sincronizarEstadoMenu();
       },
 
       closeSidebar() {
@@ -727,15 +875,51 @@ actualizarNavActivo(modulo) {
         const backdrop = document.getElementById('sidebar-backdrop');
         if (sidebar) sidebar.classList.remove('open');
         if (backdrop) backdrop.classList.remove('show');
-        if (sidebar && !this.isMobileLayout()) sidebar.classList.remove('expanded', 'collapsed');
-        const toggleIcon = document.querySelector('#btn-toggle-sidebar i');
-        if (toggleIcon) toggleIcon.className = this.isMobileLayout() ? 'ri-menu-fold-line' : 'ri-menu-unfold-line';
-        const toggleButton = document.getElementById('btn-toggle-sidebar');
-        if (toggleButton) {
-          toggleButton.setAttribute('aria-expanded', 'false');
-          toggleButton.title = this.isMobileLayout() ? 'Mostrar navegación' : 'Expandir navegación';
-          toggleButton.setAttribute('aria-label', toggleButton.title);
+        // [CONSISTENCIA] Antes aquí se borraba "expanded"/"collapsed", así que
+        // cualquier resize (rotar la tablet, abrir las herramientas de
+        // desarrollo, cambiar el zoom) devolvía el menú a iconos y cada
+        // equipo se quedaba con un aspecto distinto. Ahora el tamaño del
+        // menú en escritorio solo lo decide la persona con el botón.
+        this.sincronizarEstadoMenu();
+      },
+
+      /* Estado guardado del menú (igual en todos los equipos salvo que
+         cada uno lo cambie a mano). */
+      aplicarMenuGuardado() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && typeof Ajustes !== 'undefined' && Ajustes) {
+          if (Ajustes.menu() === 'iconos') {
+            sidebar.classList.add('collapsed');
+            sidebar.classList.remove('expanded');
+          } else {
+            sidebar.classList.add('expanded');
+            sidebar.classList.remove('collapsed');
+          }
         }
+        this.sincronizarEstadoMenu();
+      },
+
+      /* Deja el botón del menú de acuerdo con el estado real: en móvil
+         refleja el cajón (open) y en escritorio la clase expanded. */
+      sincronizarEstadoMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const icono = document.querySelector('#btn-toggle-sidebar i');
+        const boton = document.getElementById('btn-toggle-sidebar');
+        const movil = this.isMobileLayout();
+        const abierto = movil
+          ? Boolean(sidebar && sidebar.classList.contains('open'))
+          : Boolean(sidebar && sidebar.classList.contains('expanded'));
+        if (icono) {
+          icono.className = movil
+            ? (abierto ? 'ri-close-line' : 'ri-menu-fold-line')
+            : (abierto ? 'ri-menu-fold-line' : 'ri-menu-unfold-line');
+        }
+        if (!boton) return;
+        boton.setAttribute('aria-expanded', String(abierto));
+        boton.title = movil
+          ? (abierto ? 'Cerrar navegación' : 'Mostrar navegación')
+          : (abierto ? 'Contraer navegación' : 'Expandir navegación');
+        boton.setAttribute('aria-label', boton.title);
       },
 
       async deleteStudent(groupId, studentId) {
@@ -838,6 +1022,9 @@ actualizarNavActivo(modulo) {
             workspace.innerHTML = `<div class="module-fade-enter"><h1>Módulo: ${etiquetaId}</h1></div>`;
           }
           this.mountSectionSettings();
+          // Oculta lo que el rol no debe ver (una sección nueva solo tiene
+          // que declarar data-permiso="claveAccion" en sus botones).
+          if (typeof Permisos !== 'undefined' && Permisos) Permisos.aplicar();
           if (enBackground) workspace.classList.add('content-ready');
           else this.hideLoading();
         } catch (error) {
@@ -969,8 +1156,8 @@ renderCuadernoDocente() {
               <option value="ALL">📌 Todos los Módulos (Totales)</option>
               ${MODULOS_TRANSVERSALES.map(m => `<option value="${m}">${m}</option>`).join('')}
             </select>
-            <button type="button" class="btn-icon" onclick="CuadernoEngine.agregarModuloAcademico()" title="Agregar un módulo nuevo a la lista (ej. Inglés)" aria-label="Agregar un módulo nuevo a la lista"><i class="ri-add-line" aria-hidden="true"></i></button>
-            <button type="button" class="btn-icon" onclick="CuadernoEngine.quitarModuloAcademico()" title="Quitar el módulo seleccionado de la lista" aria-label="Quitar el módulo seleccionado de la lista"><i class="ri-subtract-line" aria-hidden="true"></i></button>
+            <button type="button" class="btn-icon" data-permiso="configurarMateria" onclick="CuadernoEngine.agregarModuloAcademico()" title="Agregar un módulo nuevo a la lista (ej. Inglés) · solo administradores" aria-label="Agregar un módulo nuevo a la lista"><i class="ri-add-line" aria-hidden="true"></i></button>
+            <button type="button" class="btn-icon" data-permiso="configurarMateria" onclick="CuadernoEngine.quitarModuloAcademico()" title="Quitar el módulo seleccionado de la lista · solo administradores" aria-label="Quitar el módulo seleccionado de la lista"><i class="ri-subtract-line" aria-hidden="true"></i></button>
           </div>
           <div style="display:flex; align-items:center; font-size:0.72rem; color:var(--text-muted); gap:6px;">
             <i class="ri-lightbulb-line" aria-hidden="true"></i>
@@ -1084,7 +1271,7 @@ renderCuadernoDocente() {
             <option value="xlsx">📊 Formato: Excel</option>
             <option value="pdf">📄 Formato: PDF</option>
           </select>
-          <button type="button" class="btn-secondary" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
+          <button type="button" class="btn-secondary" data-permiso="configurarInstitucion" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
             <i class="ri-settings-3-line"></i> Configurar responsables
           </button>
           <button type="button" class="btn-primary-soft" onclick="CuadernoEngine.exportarCuadernosListosParaImprimir()" title="Descarga un cuaderno por grupo, en Legal horizontal, blanco y negro y sin rellenos, en el formato elegido">

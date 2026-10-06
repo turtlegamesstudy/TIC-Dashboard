@@ -259,13 +259,14 @@ const AdminManager = {
         <td>
           <span class="admin-user-status${profile.active === true ? '' : ' is-inactive'}">${statusText}</span>
           <div class="admin-user-actions">
-            <select aria-label="Rol de ${this._escape(name)}" data-user-role ${roleDisabled ? 'disabled' : ''}>
+            <select aria-label="Rol de ${this._escape(name)}" data-user-role ${roleDisabled ? 'disabled' : ''} onchange="AdminManager.actualizarPistaRol(this)">
               <option value="docente"${role === 'docente' ? ' selected' : ''}>Docente</option>
               <option value="admin"${role === 'admin' ? ' selected' : ''}>Administrador</option>
             </select>
             ${roleDisabled ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="save-role" data-uid="${safeUid}">Guardar rol</button>`}
           </div>
           <span class="admin-user-email">${this._escape(AuthManager.getAreaLabel(area))}</span>
+          <span class="admin-user-email" data-role-hint>${this._escape(typeof Permisos !== 'undefined' ? Permisos.resumenRol(role) : '')}</span>
         </td>
         <td>
           <div class="admin-user-actions">
@@ -279,6 +280,15 @@ const AdminManager = {
           </div>
         </td>
       </tr>`;
+  },
+
+  /* Deja la línea que explica qué implica cada rol al día mientras se
+     elige (antes de pulsar «Guardar rol»). */
+  actualizarPistaRol(select) {
+    const acciones = select && select.parentElement ? select.parentElement : null;
+    const celda = acciones && acciones.parentElement ? acciones.parentElement : null;
+    const pista = celda ? celda.querySelector('[data-role-hint]') : null;
+    if (pista && typeof Permisos !== 'undefined') pista.textContent = Permisos.resumenRol(select.value);
   },
 
   async _getSecondaryAuth() {
