@@ -8030,3 +8030,329 @@ video {
   .sidebar:not(.expanded) .nav-item::after { content: none !important; }
   .nav-section.nav-grupo:hover { background: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   6 · REFINAMIENTO — carga limpia, movimiento sobrio, sin brillos
+   ────────────────────────────────────────────────────────────────
+   · Pantalla de carga: marca, un aro y un filete de progreso.
+     Fuera la escena de rejilla, los destellos de color, el GIF
+     ilustrado y la lista de pasos animados.
+   · Contenido de sección: fundido de 6 px / 320 ms (antes 14 px /
+     760 ms, con escalonados de hasta 220 ms).
+   · Avisos: tarjeta plana con filete de color, sin degradado ni
+     resplandor.
+   · Hover: cambia color y sombra; nada de "levantar" el elemento
+     ni escalar iconos.
+   · Los keyframes de brillo/temblor se redefinen aquí en versión
+     suave (al compartir nombre, en CSS gana la última definición).
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 6.1 · Pantalla de carga ──────────────────────────────────── */
+
+.app-loading {
+  color: var(--text-primary);
+  background: var(--bg-body);
+  transition: opacity 300ms ease, visibility 300ms ease;
+}
+
+.cargador {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  width: min(340px, 100%);
+  text-align: center;
+}
+
+.cargador-marca {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.cargador-monograma {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--brand-navy);
+  box-shadow: none;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  animation: none;
+}
+
+.cargador-marca-texto { gap: 2px; }
+
+.cargador-marca-texto strong {
+  color: var(--text-primary);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.cargador-marca-texto small {
+  color: var(--text-muted);
+  white-space: normal;
+}
+
+/* Aro de un solo trazo */
+.cargador-aro {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--brand-blue);
+  animation: spin 0.9s linear infinite;
+}
+
+.cargador-copy {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+}
+
+.cargador-titulo {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.cargador-nota {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.cargador-reintentar { margin-top: 6px; }
+
+/* Filete de progreso: 2 px y un solo color */
+.cargador-barra {
+  height: 2px;
+  background: var(--border-subtle);
+}
+
+.cargador-barra span {
+  width: 30%;
+  background: var(--brand-blue);
+  animation: cargador-barrido 1.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Entrada: fundido corto y parejo, sin desplazamientos largos */
+.app-loading.is-entering .cargador-marca,
+.app-loading.is-entering .cargador-copy,
+.app-loading.is-entering .cargador-reintentar {
+  animation: cargador-entrada 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.app-loading.is-entering .cargador-aro {
+  /* Dos animaciones: la entrada solo toca la opacidad, para no
+     apagar la vuelta del aro (la rellena la clave `spin`). */
+  animation:
+    cargador-entrada-opacidad 420ms cubic-bezier(0.22, 0.61, 0.36, 1) 60ms both,
+    spin 0.9s linear infinite;
+}
+
+.app-loading.is-entering .cargador-copy { animation-delay: 120ms; }
+.app-loading.is-entering .cargador-reintentar { animation-delay: 160ms; }
+
+@keyframes cargador-entrada {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Estado de error (Detalle: + Reintentar) */
+.app-loading.has-error .cargador-aro { display: none; }
+
+.app-loading.has-error .cargador-titulo { color: var(--neon-red); }
+
+.app-loading.has-error .cargador-monograma {
+  background: var(--neon-red);
+  box-shadow: none;
+  animation: none;
+}
+
+.app-loading.has-error .cargador-barra span {
+  width: 100%;
+  transform: none;
+  background: var(--neon-red);
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="on"]) .cargador-aro,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-aro,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-reintentar {
+    animation: none !important;
+  }
+
+  /* El filete de progreso deja de barreer: queda plano y completo */
+  html:not([data-motion="on"]) .cargador-barra span {
+    width: 100%;
+    background: var(--brand-blue);
+  }
+}
+
+html[data-motion="off"] .cargador-aro,
+html[data-motion="off"] .app-loading.is-entering .cargador-aro {
+  animation: none !important;
+}
+
+/* ── 6.2 · Entrada del contenido de cada sección ──────────────── */
+
+.module-fade-enter {
+  animation: ref-fade 280ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes ref-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+#workspace.content-ready .module-fade-enter > * {
+  animation: ref-bloque 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+#workspace.content-ready .module-fade-enter > *:nth-child(2) { animation-delay: 40ms; }
+#workspace.content-ready .module-fade-enter > *:nth-child(3) { animation-delay: 70ms; }
+#workspace.content-ready .module-fade-enter > *:nth-child(4) { animation-delay: 90ms; }
+
+@keyframes ref-bloque {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── 6.3 · Avisos (toast) ─────────────────────────────────────── */
+
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--brand-blue);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  max-width: 380px;
+  padding: 11px 16px;
+  font-size: 13.5px;
+  animation: ref-toast 240ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes ref-toast {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes toastOut {
+  to { opacity: 0; transform: translate3d(0, 4px, 0); }
+}
+
+/* Sin barrita degradada: el filete izquierdo ya da el estado */
+.toast::before { display: none; }
+
+/* Iconos en color plano en lugar de texto con degradado */
+.toast i,
+.toast.success i,
+.toast.error i,
+.toast.warning i,
+.toast.info i {
+  font-size: 1.1rem;
+  background: none;
+  background-clip: border-box;
+  -webkit-background-clip: border-box;
+  -webkit-text-fill-color: currentColor;
+}
+
+.toast i { color: var(--brand-blue); }
+
+.toast.success i { color: var(--neon-green); }
+.toast.error i { color: var(--neon-red); }
+.toast.warning i { color: var(--neon-amber); }
+.toast.info i { color: var(--neon-cyan); }
+
+/* ── 6.4 · Superficies: sin levitar, sin glow ─────────────────── */
+
+.btn-primary:hover,
+.btn-warning:hover,
+.btn-success:hover,
+.card-widget:hover,
+.card-widget:hover .widget-icon,
+.custom-table tbody tr:hover,
+.logo-box:hover,
+.logo-box:active,
+.nav-item:hover i,
+.search-box:focus-within .search-clear {
+  transform: none;
+}
+
+.btn-success:hover { box-shadow: var(--shadow-sm); }
+
+.widget-icon.blue,
+.widget-icon.green,
+.widget-icon.navy,
+.widget-icon.red,
+.widget-icon.amber,
+.widget-icon.cyan {
+  box-shadow: none;
+}
+
+/* Panel de opciones de exportación: superficie plana, sin degradado */
+#panel-opciones-exportar {
+  background: var(--bg-card);
+  backdrop-filter: none;
+  box-shadow: none;
+  border-color: var(--border-default);
+}
+
+#panel-opciones-exportar::before { display: none; }
+
+/* ── 6.5 · Keyframes en versión sobria ────────────────────────── */
+
+@keyframes pulse-glow {
+  50% { box-shadow: 0 0 0 4px rgba(20, 87, 139, 0.07); }
+}
+
+@keyframes pulse-glow-amber {
+  50% { box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.08); }
+}
+
+@keyframes pulse-glow-red {
+  50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08); }
+}
+
+@keyframes glow-pulse {
+  50% { box-shadow: 0 0 0 4px rgba(20, 87, 139, 0.07); }
+}
+
+@keyframes border-glow {
+  50% { border-color: rgba(20, 87, 139, 0.28); }
+}
+
+@keyframes border-shimmer { 50% { opacity: 0.6; } }
+@keyframes shimmer { 50% { opacity: 0.7; } }
+@keyframes progress-shimmer { 50% { opacity: 0.7; } }
+@keyframes pulse-soft { 50% { opacity: 0.92; } }
+
+@keyframes float {
+  50% { transform: translate3d(0, -4px, 0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounce-in {
+  from { opacity: 0; transform: none; }
+  to { opacity: 1; transform: none; }
+}

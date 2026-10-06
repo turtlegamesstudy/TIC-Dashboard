@@ -57,17 +57,6 @@
   </section>
 
   <div class="app-loading is-entering" id="app-loading" role="status" aria-live="polite" aria-label="Cargando aplicación">
-    <!-- Escena: rejilla de cuaderno, celdas flotando y luz de marca -->
-    <div class="cargador-escena" aria-hidden="true">
-      <span class="cargador-rejilla"></span>
-      <span class="cargador-brillo cargador-brillo-azul"></span>
-      <span class="cargador-brillo cargador-brillo-rosa"></span>
-      <span class="cargador-celda celdas-1"></span>
-      <span class="cargador-celda celdas-2"></span>
-      <span class="cargador-celda celdas-3"></span>
-      <span class="cargador-celda celdas-4"></span>
-    </div>
-
     <div class="cargador">
       <header class="cargador-marca">
         <span class="cargador-monograma" aria-hidden="true">TIC</span>
@@ -77,42 +66,12 @@
         </span>
       </header>
 
-      <figure class="cargador-gif" aria-hidden="true">
-        <img
-          src="assets/carga.gif"
-          width="1920"
-          height="1080"
-          alt=""
-          decoding="async"
-          onerror="this.onerror=null;this.src='https://www.fundacioncarolina.es/wp-content/uploads/2022/03/FCarolina_portada_sinFondo.gif';"
-        >
-      </figure>
+      <div class="cargador-aro" aria-hidden="true"></div>
 
       <div class="cargador-copy">
         <p class="cargador-titulo" id="app-loading-message">Preparando tu espacio...</p>
         <p class="cargador-nota" id="app-loading-caption">Un momento: estamos preparando tu información</p>
       </div>
-
-      <ol class="cargador-pasos" aria-hidden="true">
-        <li style="--i: 0;">
-          <span class="cargador-tick">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.4l3.5 3.5L15.2 7"/></svg>
-          </span>
-          Conectando con la nube
-        </li>
-        <li style="--i: 1;">
-          <span class="cargador-tick">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.4l3.5 3.5L15.2 7"/></svg>
-          </span>
-          Organizando tus grupos
-        </li>
-        <li style="--i: 2;">
-          <span class="cargador-tick">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.4l3.5 3.5L15.2 7"/></svg>
-          </span>
-          Preparando el cuaderno
-        </li>
-      </ol>
 
       <div class="cargador-reintentar" id="app-loading-retry-wrap" hidden>
         <button type="button" class="btn-primary" id="app-loading-retry" onclick="UI.reintentarSeccion()">

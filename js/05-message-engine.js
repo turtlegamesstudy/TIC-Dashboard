@@ -443,7 +443,7 @@ const MessageEngine = {
               <span id="msg-cola-info" style="font-size: 0.75rem; color: var(--text-muted); margin-right: auto;"><i class="ri-list-check-2"></i> Selecciona una plantilla para armar la cola</span>
               <button class="btn-secondary" onclick="MessageEngine.copiarMensaje()"><i class="ri-file-copy-line"></i> Copiar Texto</button>
               <button class="btn-secondary" id="btn-enviar-wa" onclick="MessageEngine.abrirWhatsApp()" disabled><i class="ri-whatsapp-fill"></i> Abrir WhatsApp (todos)</button>
-              <button class="btn-primary" id="btn-siguientes-5" onclick="MessageEngine.abrirSiguientesCinco()" disabled style="background: linear-gradient(135deg, #25D366, #128C7E); box-shadow: 0 0 20px rgba(37,211,102,0.25);">
+              <button class="btn-primary" id="btn-siguientes-5" onclick="MessageEngine.abrirSiguientesCinco()" disabled style="background: linear-gradient(135deg, #25D366, #128C7E);">
                 <i class="ri-skip-forward-line"></i> Ir con próximos 5
               </button>
             </div>
