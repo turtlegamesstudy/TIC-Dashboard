@@ -244,10 +244,16 @@ const AuthManager = {
     const loadingMessage = document.getElementById('app-loading-message');
     const loadingCaption = document.getElementById('app-loading-caption');
     if (!loading) return;
+    const contexto = (typeof UI !== 'undefined' && typeof UI.contextoCarga === 'function')
+      ? UI.contextoCarga(message, 'sesion')
+      : { id: 'sesion', etiqueta: 'Verificando acceso', pie: 'Validando tu cuenta y tus permisos de docente.' };
     loading.classList.remove('is-hidden', 'has-error');
     loading.setAttribute('aria-hidden', 'false');
+    loading.setAttribute('data-modo', contexto.id);
     if (loadingMessage) loadingMessage.textContent = message;
-    if (loadingCaption) loadingCaption.textContent = 'Un momento: estamos preparando tu información';
+    if (loadingCaption) loadingCaption.textContent = contexto.pie;
+    const etiqueta = document.getElementById('app-loading-eyebrow');
+    if (etiqueta) etiqueta.textContent = contexto.etiqueta;
     loading.classList.remove('is-entering');
     void loading.offsetWidth;
     loading.classList.add('is-entering');

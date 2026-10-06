@@ -110,19 +110,60 @@
         }, 220);
       },
 
-      showLoading(message) {
+      // Contexto de la pantalla de carga: cada tipo de operación tiene su
+      // propia ilustración vectorial (data-modo), su etiqueta y su pie.
+      // `modo` puede forzarse: 'inicio' | 'subida' | 'exportacion' | 'sesion'.
+      contextoCarga(message, modo) {
+        const catalogo = {
+          inicio: {
+            id: 'inicio',
+            etiqueta: 'Preparando el panel',
+            pie: 'Un momento: estamos preparando tu información'
+          },
+          subida: {
+            id: 'subida',
+            etiqueta: 'Subiendo datos',
+            pie: 'Subiendo la información a la base compartida: no cierres esta ventana.'
+          },
+          exportacion: {
+            id: 'exportacion',
+            etiqueta: 'Exportando archivo',
+            pie: 'Armando el archivo con tus datos: en cuanto esté listo lo abrimos.'
+          },
+          sesion: {
+            id: 'sesion',
+            etiqueta: 'Verificando acceso',
+            pie: 'Validando tu cuenta y tus permisos de docente.'
+          }
+        };
+        const texto = String(message || '').toLowerCase();
+        let id = modo;
+        if (!id) {
+          if (/(excel|pdf|export|generando|imprim|descarg|cuaderno)/.test(texto)) id = 'exportacion';
+          else if (/(acceso|sesi[oó]n|credencial|contrase|verificando|cerrando)/.test(texto)) id = 'sesion';
+          else if (/(subi|sincroniz|guardand|listado|import|procesand|base compartida|migrar|db\.json)/.test(texto)) id = 'subida';
+          else id = 'inicio';
+        }
+        return catalogo[id] || catalogo.inicio;
+      },
+
+      showLoading(message, modo) {
         const loading = document.getElementById('app-loading');
         const loadingMessage = document.getElementById('app-loading-message');
         const loadingCaption = document.getElementById('app-loading-caption');
         if (!loading) return;
+        const contexto = this.contextoCarga(message, modo);
         clearTimeout(this.loadingTimer);
         clearTimeout(this.contentTimer);
         this.loadingStartedAt = performance.now();
         loading.classList.remove('is-hidden', 'has-error');
+        loading.setAttribute('data-modo', contexto.id);
         loading.setAttribute('role', 'status');
         loading.setAttribute('aria-hidden', 'false');
         if (loadingMessage) loadingMessage.textContent = message;
-        if (loadingCaption) loadingCaption.textContent = 'Un momento: estamos preparando tu información';
+        if (loadingCaption) loadingCaption.textContent = contexto.pie;
+        const etiqueta = document.getElementById('app-loading-eyebrow');
+        if (etiqueta) etiqueta.textContent = contexto.etiqueta;
         document.getElementById('app-loading-retry-wrap')?.setAttribute('hidden', '');
         this.reproducirEntradaCarga(loading);
         const workspace = document.getElementById('workspace');
@@ -1037,6 +1078,35 @@ actualizarNavActivo(modulo) {
         }
       },
 
+      // Saludo del panel: depende del usuario conectado y de su centro.
+      nombreDocente() {
+        try {
+          const perfil = (typeof AuthManager !== 'undefined' && (AuthManager.staffProfile || AuthManager.profile)) || {};
+          const usuario = (typeof AuthManager !== 'undefined' && AuthManager.user) || {};
+          const nombre = [perfil.firstName, perfil.lastName].filter(Boolean).join(' ').trim()
+            || String(perfil.displayName || usuario.displayName || '').trim();
+          if (nombre) return nombre;
+          const correo = String(usuario.email || '').split('@')[0].trim();
+          if (correo) return correo;
+        } catch (error) {
+          console.warn('No se pudo resolver el nombre del docente:', error);
+        }
+        const enBarra = String(document.getElementById('current-user-name')?.textContent || '').trim();
+        return enBarra && enBarra.toLowerCase() !== 'usuario' ? enBarra : 'Docente';
+      },
+
+      nombreCentro() {
+        try {
+          if (typeof AuthManager !== 'undefined' && typeof AuthManager.getActiveCenterName === 'function') {
+            const centro = String(AuthManager.getActiveCenterName() || '').trim();
+            if (centro) return centro;
+          }
+        } catch (error) {
+          console.warn('No se pudo resolver el centro tecnológico:', error);
+        }
+        return 'tu centro tecnológico';
+      },
+
       renderDashboardView() {
         const grupos = DataEngine.db.grupos || [];
         const totalGrupos = grupos.length;
@@ -1049,7 +1119,7 @@ actualizarNavActivo(modulo) {
           }
         });
         const fechaSync = DataEngine.db.lastUpdated ? new Date(DataEngine.db.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start;"><div><h1>¡Hola de nuevo, Hanzell Mayorga! 👋</h1><p>Bienvenido al panel principal de gestión docente en el <strong>Centro Tecnológico Ariel Darce</strong>.</p></div><div style="text-align: right;"><span class="badge-status activo" style="padding: 6px 12px; font-size: 0.8rem;"><i class="ri-checkbox-circle-fill"></i> Sistema en línea</span><p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Última actualización: ${fechaSync}</p></div></div><div class="grid-cards"><div class="card-widget"><div class="widget-icon blue"><i class="ri-team-line"></i></div><div class="widget-info"><h4>Grupos Registrados</h4><div class="value">${totalGrupos}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-user-follow-line"></i></div><div class="widget-info"><h4>Estudiantes Activos</h4><div class="value">${totalActivos} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">/ ${totalEstudiantes}</span></div></div></div><div class="card-widget"><div class="widget-icon navy"><i class="ri-user-unfollow-line"></i></div><div class="widget-info"><h4>Estudiantes Retirados</h4><div class="value" style="color: ${totalRetirados > 0 ? '#B91C1C' : 'var(--text-main)'};">${totalRetirados}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-file-excel-2-line"></i></div><div class="widget-info"><h4>Cuaderno STD</h4><div class="value" style="font-size: 1.1rem; color: var(--accent-green);">Sincronizado</div></div></div></div><div class="table-container" style="margin-top: 24px;"><div style="padding: 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><span style="color: var(--primary-blue); display: flex; align-items: center; gap: 8px;"><i class="ri-list-check-2"></i> Resumen de Grupos Activos en DB.json</span><span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 400;">Total: ${totalGrupos} grupo(s)</span></div><table class="custom-table"><thead><tr><th>Código de Grupo</th><th>Carrera / Evento</th><th>Turno</th><th>Activos</th><th>Retirados</th><th>Total Alumnos</th></tr></thead><tbody>${totalGrupos === 0 ? `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No hay ningún grupo registrado en el sistema.</td></tr>` : grupos.map(g => { const act = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Activo').length : 0; const ret = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Retirado').length : 0; return `<tr><td><strong>${g.nombre}</strong></td><td>${g.carrera}</td><td>${g.turno}</td><td><span class="badge-status activo">${act} activos</span></td><td><span class="badge-status retirado">${ret} retirados</span></td><td><strong>${g.estudiantes ? g.estudiantes.length : 0}</strong></td></tr>`; }).join('')}</tbody></table></div></div>`;
+        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start;"><div><h1>¡Hola de nuevo, ${this.nombreDocente()}! 👋</h1><p>Bienvenido al panel principal de gestión docente en el <strong>${this.nombreCentro()}</strong>.</p></div><div style="text-align: right;"><span class="badge-status activo" style="padding: 6px 12px; font-size: 0.8rem;"><i class="ri-checkbox-circle-fill"></i> Sistema en línea</span><p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Última actualización: ${fechaSync}</p></div></div><div class="grid-cards"><div class="card-widget"><div class="widget-icon blue"><i class="ri-team-line"></i></div><div class="widget-info"><h4>Grupos Registrados</h4><div class="value">${totalGrupos}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-user-follow-line"></i></div><div class="widget-info"><h4>Estudiantes Activos</h4><div class="value">${totalActivos} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">/ ${totalEstudiantes}</span></div></div></div><div class="card-widget"><div class="widget-icon navy"><i class="ri-user-unfollow-line"></i></div><div class="widget-info"><h4>Estudiantes Retirados</h4><div class="value" style="color: ${totalRetirados > 0 ? '#B91C1C' : 'var(--text-main)'};">${totalRetirados}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-file-excel-2-line"></i></div><div class="widget-info"><h4>Cuaderno STD</h4><div class="value" style="font-size: 1.1rem; color: var(--accent-green);">Sincronizado</div></div></div></div><div class="table-container" style="margin-top: 24px;"><div style="padding: 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><span style="color: var(--primary-blue); display: flex; align-items: center; gap: 8px;"><i class="ri-list-check-2"></i> Resumen de Grupos Activos en DB.json</span><span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 400;">Total: ${totalGrupos} grupo(s)</span></div><table class="custom-table"><thead><tr><th>Código de Grupo</th><th>Carrera / Evento</th><th>Turno</th><th>Activos</th><th>Retirados</th><th>Total Alumnos</th></tr></thead><tbody>${totalGrupos === 0 ? `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No hay ningún grupo registrado en el sistema.</td></tr>` : grupos.map(g => { const act = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Activo').length : 0; const ret = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Retirado').length : 0; return `<tr><td><strong>${g.nombre}</strong></td><td>${g.carrera}</td><td>${g.turno}</td><td><span class="badge-status activo">${act} activos</span></td><td><span class="badge-status retirado">${ret} retirados</span></td><td><strong>${g.estudiantes ? g.estudiantes.length : 0}</strong></td></tr>`; }).join('')}</tbody></table></div></div>`;
       },
 
       renderGruposView() {
@@ -1314,13 +1384,16 @@ renderCuadernoDocente() {
         // El archivo ya está en memoria: se limpia el input para poder
         // volver a cargar el mismo listado sin recargar la página.
         event.target.value = '';
+        const cerrarCarga = () => this.hideLoading(300);
+        this.showLoading(`Procesando el listado del grupo…`, 'subida');
         DataEngine.parseExcelGroup(file, (grupo, resumen) => {
+          cerrarCarga();
           const hoja = resumen && resumen.hoja ? ` (hoja "${resumen.hoja}")` : '';
           this.showToast(`Grupo ${grupo.nombre} cargado exitosamente (${grupo.estudiantes.length} estudiantes)${hoja}.`);
           const advertencias = (resumen && resumen.advertencias) || [];
           if (advertencias.length) this.showToast(`ℹ️ ${advertencias.join(' ')}`);
           this.renderCurrentModule();
-        });
+        }, cerrarCarga);
       },
 
       openEditStudentModal(groupId, studentId) {

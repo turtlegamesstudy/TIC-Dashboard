@@ -8047,7 +8047,11 @@ video {
      suave (al compartir nombre, en CSS gana la última definición).
    ════════════════════════════════════════════════════════════════ */
 
-/* ── 6.1 · Pantalla de carga ──────────────────────────────────── */
+/* ── 6.1 · Pantalla de carga: escena INATEC por contexto ────────
+   `data-modo` del overlay toma uno de estos valores y con él cambian
+   la ilustración vectorial, la etiqueta y el pie de texto:
+     inicio | subida | exportacion | sesion   (+ estado has-error)
+   Paleta: celeste #01a5e0 → azul #14578b con acento rosado. */
 
 .app-loading {
   color: var(--text-primary);
@@ -8058,12 +8062,13 @@ video {
 .cargador {
   display: grid;
   justify-items: center;
-  gap: 20px;
-  width: min(340px, 100%);
+  gap: 16px;
+  width: min(360px, 100%);
   text-align: center;
 }
 
-/* Fondo gráfico: cuadrícula de cuaderno con dos guías que barren */
+/* ── Fondo: cuadrícula de cuaderno con dos guías que barren ───── */
+
 .cargador-fondo {
   position: absolute;
   top: 50%;
@@ -8123,16 +8128,27 @@ video {
   background: rgba(140, 182, 216, 0.24);
 }
 
-/* Órbita: pista dibujada, arco institucional y satélite rosado */
-.cargador-orbita {
+/* ── Escena: aura, marco orbital e ilustración ────────────────── */
+
+.cargador-escena {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 118px;
-  height: 118px;
+  width: 258px;
+  height: 258px;
 }
 
-.cargador-orbita svg {
+.cargador-aura {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 44%, rgba(1, 165, 228, 0.28), rgba(1, 165, 228, 0) 68%);
+  animation: aura-respiro 4.5s ease-in-out infinite;
+}
+
+@keyframes aura-respiro {
+  50% { transform: scale(1.07); opacity: 0.7; }
+}
+
+.cargador-marco {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -8142,32 +8158,32 @@ video {
 .cargador-pista {
   fill: none;
   stroke: var(--border-strong);
-  stroke-width: 1;
-  stroke-dasharray: 289;
+  stroke-width: 1.25;
+  stroke-dasharray: 591;
   stroke-dashoffset: 0;
-  animation: pista-dibujar 900ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: pista-dibujar 1000ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 @keyframes pista-dibujar {
-  from { stroke-dashoffset: 289; }
+  from { stroke-dashoffset: 591; }
   to { stroke-dashoffset: 0; }
 }
 
 .cargador-arco {
   fill: none;
-  stroke: var(--brand-blue);
-  stroke-width: 2;
+  stroke: url(#grad-anillo);
+  stroke-width: 3;
   stroke-linecap: round;
-  stroke-dasharray: 60 229;
+  stroke-dasharray: 130 461;
   transform-box: view-box;
-  transform-origin: 50px 50px;
-  animation: orbita-giro 1.5s linear infinite;
+  transform-origin: 100px 100px;
+  animation: orbita-giro 2.6s linear infinite;
 }
 
 .cargador-satelite {
   transform-box: view-box;
-  transform-origin: 50px 50px;
-  animation: orbita-giro 4.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  transform-origin: 100px 100px;
+  animation: orbita-giro 6.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 .cargador-punto { fill: var(--brand-pink); }
@@ -8177,6 +8193,137 @@ video {
   to { transform: rotate(360deg); }
 }
 
+/* ── Ilustración: una escena distinta por data-modo ───────────── */
+
+.cargador-ilustracion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 216px;
+  height: 162px;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+}
+
+.cargador-ilustracion .escena { display: none; }
+
+.app-loading[data-modo="inicio"] .escena-inicio,
+.app-loading[data-modo="subida"] .escena-subida,
+.app-loading[data-modo="exportacion"] .escena-exportacion,
+.app-loading[data-modo="sesion"] .escena-sesion {
+  display: block;
+}
+
+/* Modo inicio: el cuaderno digital que respira */
+.escena-inicio .flota-a { animation: flota-suave 4.2s ease-in-out infinite; }
+.escena-inicio .flota-b { animation: flota-suave 4.2s ease-in-out -2.1s infinite; }
+
+.escena-inicio .linea {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: linea-crece 2.8s ease-in-out infinite;
+}
+
+.escena-inicio .linea-2 { animation-delay: 0.3s; }
+.escena-inicio .linea-3 { animation-delay: 0.6s; }
+
+.escena-inicio .palomita {
+  stroke-dasharray: 24;
+  animation: trazo-ciclico 2.8s ease-in-out infinite;
+}
+
+@keyframes flota-suave {
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes linea-crece {
+  0%, 100% { transform: scaleX(0.35); opacity: 0.5; }
+  45%, 72% { transform: scaleX(1); opacity: 1; }
+}
+
+/* Modo subida: bloques que ascienden, nube y flecha */
+.escena-subida .nube {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nube-respiro 3.8s ease-in-out infinite;
+}
+
+.escena-subida .flecha-subida,
+.escena-subida .flecha-punta {
+  stroke-dasharray: 60;
+  animation: trazo-ciclico 1.9s ease-in-out infinite;
+}
+
+.escena-subida .sube { animation: bloque-sube 1.9s ease-in-out infinite; }
+.escena-subida .sube-2 { animation-delay: 0.28s; }
+.escena-subida .sube-3 { animation-delay: 0.56s; }
+
+@keyframes nube-respiro {
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes bloque-sube {
+  0% { transform: translateY(0); opacity: 0.2; }
+  25% { opacity: 1; }
+  55% { transform: translateY(-20px); opacity: 1; }
+  82%, 100% { transform: translateY(-32px); opacity: 0.3; }
+}
+
+/* Modo exportación: barras que crecen y flecha de descarga */
+.escena-exportacion .barra {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: barra-crece 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.escena-exportacion .barra-2 { animation-delay: 0.18s; }
+.escena-exportacion .barra-3 { animation-delay: 0.36s; }
+
+.escena-exportacion .descarga {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: descarga-baja 1.8s ease-in-out infinite;
+}
+
+@keyframes barra-crece {
+  0%, 100% { transform: scaleY(0.32); }
+  50%, 80% { transform: scaleY(1); }
+}
+
+@keyframes descarga-baja {
+  0%, 100% { transform: translateY(-5px); opacity: 0.5; }
+  45% { transform: translateY(3px); opacity: 1; }
+}
+
+/* Modo sesión: el escudo con la palomita que se dibuja */
+.escena-sesion .palomita-grande {
+  stroke-dasharray: 52;
+  animation: trazo-ciclico 2.6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+@keyframes trazo-ciclico {
+  0%, 8% { stroke-dashoffset: 60; }
+  45%, 76% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 60; }
+}
+
+/* Destellos compartidos por todas las escenas */
+.cargador-ilustracion .destello {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: destello-latir 2.4s ease-in-out infinite;
+}
+
+.cargador-ilustracion .destello-2 { animation-delay: 0.6s; }
+.cargador-ilustracion .destello-3 { animation-delay: 1.2s; }
+
+@keyframes destello-latir {
+  0%, 100% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1); opacity: 0.95; }
+}
+
+/* ── Marca, etiqueta del contexto y textos ────────────────────── */
+
 .cargador-marca {
   display: grid;
   justify-items: center;
@@ -8184,27 +8331,13 @@ video {
   margin-bottom: 0;
 }
 
-.cargador-monograma {
-  position: relative;
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
-  background: var(--brand-navy);
-  box-shadow: none;
-  font-family: var(--font);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  animation: none;
-}
-
 .cargador-marca-texto { gap: 8px; }
 
 .cargador-marca-texto strong {
   color: var(--text-primary);
-  font-size: 12px;
-  letter-spacing: 0.3em;
-  text-indent: 0.3em;
+  font-size: 13px;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
 }
 
 .cargador-marca-texto small {
@@ -8218,7 +8351,7 @@ video {
   justify-self: center;
   width: 56px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(20, 87, 139, 0), rgba(20, 87, 139, 0.55), rgba(20, 87, 139, 0));
+  background: linear-gradient(90deg, rgba(1, 165, 228, 0), rgba(1, 165, 228, 0.75), rgba(20, 87, 139, 0));
   transform: scaleX(1);
   animation: regla-dibujar 640ms 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
@@ -8227,6 +8360,18 @@ video {
   from { opacity: 0; transform: scaleX(0); }
   to { opacity: 1; transform: scaleX(1); }
 }
+
+/* Lo que está pasando ahora (cambia con el contexto de la carga) */
+.cargador-etiqueta {
+  margin: -2px 0 0;
+  color: var(--brand-blue);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.app-loading.has-error .cargador-etiqueta { display: none; }
 
 .cargador-copy {
   display: grid;
@@ -8252,9 +8397,9 @@ video {
   line-height: 1.55;
 }
 
-.cargador-reintentar { margin-top: 6px; }
+.cargador-reintentar { margin-top: 4px; }
 
-/* Filete de progreso: 2 px y un solo color */
+/* Filete de progreso: 2 px con degradado celeste → azul */
 .cargador-barra {
   height: 2px;
   background: var(--border-subtle);
@@ -8262,47 +8407,47 @@ video {
 
 .cargador-barra span {
   width: 30%;
-  background: var(--brand-blue);
+  background: linear-gradient(90deg, #2ec8f5, #14578b);
   animation: cargador-barrido 1.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Entrada: fundido corto y parejo, sin desplazamientos largos */
+/* ── Entradas escalonadas ─────────────────────────────────────── */
+
 .app-loading.is-entering .cargador-fondo {
   animation: cargador-entrada-opacidad 900ms ease both;
 }
 
-.app-loading.is-entering .cargador-orbita,
+.app-loading.is-entering .cargador-escena,
 .app-loading.is-entering .cargador-marca,
+.app-loading.is-entering .cargador-etiqueta,
 .app-loading.is-entering .cargador-copy,
 .app-loading.is-entering .cargador-reintentar {
-  animation: cargador-entrada 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: cargador-entrada 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
-.app-loading.is-entering .cargador-marca { animation-delay: 90ms; }
-.app-loading.is-entering .cargador-copy { animation-delay: 150ms; }
-.app-loading.is-entering .cargador-reintentar { animation-delay: 200ms; }
+.app-loading.is-entering .cargador-marca { animation-delay: 110ms; }
+.app-loading.is-entering .cargador-etiqueta { animation-delay: 170ms; }
+.app-loading.is-entering .cargador-copy { animation-delay: 230ms; }
+.app-loading.is-entering .cargador-reintentar { animation-delay: 280ms; }
 
-@keyframes cargador-entrada {
-  from { opacity: 0; transform: translate3d(0, 8px, 0); }
-  to { opacity: 1; transform: none; }
-}
+/* ── Estado de error (Detalle: + Reintentar) ──────────────────── */
 
-/* Estado de error (Detalle: + Reintentar): la órbita se detiene */
 .app-loading.has-error .cargador-arco,
 .app-loading.has-error .cargador-satelite { display: none; }
 
-.app-loading.has-error .cargador-pista { stroke: rgba(220, 38, 38, 0.35); }
+.app-loading.has-error .cargador-ilustracion {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.app-loading.has-error .cargador-ilustracion * { animation-play-state: paused; }
+
+.app-loading.has-error .cargador-pista { stroke: rgba(220, 38, 38, 0.4); }
 
 .app-loading.has-error .cargador-guia-h,
 .app-loading.has-error .cargador-guia-v { background: rgba(220, 38, 38, 0.16); }
 
 .app-loading.has-error .cargador-titulo { color: var(--neon-red); }
-
-.app-loading.has-error .cargador-monograma {
-  background: var(--neon-red);
-  box-shadow: none;
-  animation: none;
-}
 
 .app-loading.has-error .cargador-barra span {
   width: 100%;
@@ -8311,6 +8456,8 @@ video {
   animation: none;
 }
 
+/* ── Movimiento reducido y preferencia del panel ──────────────── */
+
 @media (prefers-reduced-motion: reduce) {
   html:not([data-motion="on"]) .cargador-fondo,
   html:not([data-motion="on"]) .cargador-guia-h,
@@ -8318,19 +8465,22 @@ video {
   html:not([data-motion="on"]) .cargador-pista,
   html:not([data-motion="on"]) .cargador-arco,
   html:not([data-motion="on"]) .cargador-satelite,
+  html:not([data-motion="on"]) .cargador-aura,
   html:not([data-motion="on"]) .cargador-regla,
+  html:not([data-motion="on"]) .cargador-ilustracion *,
   html:not([data-motion="on"]) .app-loading.is-entering .cargador-fondo,
-  html:not([data-motion="on"]) .app-loading.is-entering .cargador-orbita,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-escena,
   html:not([data-motion="on"]) .app-loading.is-entering .cargador-marca,
+  html:not([data-motion="on"]) .app-loading.is-entering .cargador-etiqueta,
   html:not([data-motion="on"]) .app-loading.is-entering .cargador-copy,
   html:not([data-motion="on"]) .app-loading.is-entering .cargador-reintentar {
     animation: none !important;
   }
 
-  /* El filete de progreso deja de barreer: queda plano y completo */
+  /* El filete de progreso deja de barreer: queda completo */
   html:not([data-motion="on"]) .cargador-barra span {
     width: 100%;
-    background: var(--brand-blue);
+    background: linear-gradient(90deg, #2ec8f5, #14578b);
   }
 }
 
@@ -8339,7 +8489,9 @@ html[data-motion="off"] .cargador-guia-v,
 html[data-motion="off"] .cargador-arco,
 html[data-motion="off"] .cargador-satelite,
 html[data-motion="off"] .cargador-pista,
-html[data-motion="off"] .app-loading.is-entering .cargador-orbita {
+html[data-motion="off"] .cargador-aura,
+html[data-motion="off"] .cargador-ilustracion *,
+html[data-motion="off"] .app-loading.is-entering .cargador-escena {
   animation: none !important;
 }
 

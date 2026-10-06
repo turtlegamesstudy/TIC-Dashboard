@@ -1615,7 +1615,7 @@
       exportarWorkbookEnXlsx(wb, fileName, mensajeExito) {
         // [OPT] El usuario ve "generando…" en lugar de una ventana que
         // parece congelada mientras ExcelJS serializa el libro completo.
-        UI.showLoading('Generando el archivo de Excel…');
+        UI.showLoading('Generando el archivo de Excel…', 'exportacion');
         wb.xlsx.writeBuffer().then(buffer => {
           const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
           this.descargarBlob(blob, fileName);
@@ -1653,7 +1653,7 @@
           // [OPT] El PDF se dibuja de forma síncrona: sin ceder el hilo la
           // pantalla de carga nunca llegaba a pintarse y la ventana quedaba
           // congelada. Se espera un instante, se genera y se libera.
-          UI.showLoading('Generando el PDF del cuaderno…');
+          UI.showLoading('Generando el PDF del cuaderno…', 'exportacion');
           setTimeout(() => {
             let listo = false;
             try {
@@ -2097,7 +2097,7 @@
         // [OPT] Con muchos grupos la exportación tarda varios segundos: se
         // muestra el avance por grupo en la pantalla de carga para que la
         // ventana no parezca congelada.
-        UI.showLoading(`Preparando ${grupos.length} cuaderno(s)…`);
+        UI.showLoading(`Preparando ${grupos.length} cuaderno(s)…`, 'exportacion');
         try {
           let indice = 0;
           for (const grupo of grupos) {

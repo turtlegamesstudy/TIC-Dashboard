@@ -1527,7 +1527,7 @@
         return grupo;
       },
 
-      parseExcelGroup(file, callback) {
+      parseExcelGroup(file, callback, onError) {
         const nombreArchivo = String(file && file.name ? file.name : '')
           .replace(/\.[^.]+$/, '').trim();
         const esTextoPlano = /\.(csv|txt|tsv)$/i.test(String(file && file.name ? file.name : ''));
@@ -1559,11 +1559,13 @@
             if (this.db.grupos === previousGroups) this.db.grupos = previousGroupsSnapshot;
             console.error('No se pudo importar el grupo desde Excel:', error);
             UI.showToast(`❌ No se pudo importar el grupo: ${error.message}`);
+            if (typeof onError === 'function') onError(error);
           }
         };
         reader.onerror = error => {
           console.error('No se pudo leer el archivo Excel del grupo:', error);
           UI.showToast('❌ No se pudo leer el archivo Excel.');
+          if (typeof onError === 'function') onError(error);
         };
         if (esTextoPlano) reader.readAsText(file);
         else reader.readAsArrayBuffer(file);

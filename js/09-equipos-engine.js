@@ -670,6 +670,7 @@ const EquiposEngine = {
     if (aceptados.length === 0) { event.target.value = ''; return; }
 
     const nuevosArchivos = [];
+    UI.showLoading(`Subiendo ${aceptados.length} archivo(s) a la nube…`, 'subida');
     try {
       for (const file of aceptados) {
         const metadata = {
@@ -696,6 +697,8 @@ const EquiposEngine = {
       UI.showToast(`❌ No se pudieron subir los archivos: ${error.message}`);
       event.target.value = '';
       this.refrescarManteniendoAbierto(equipoId);
+    } finally {
+      UI.hideLoading(300);
     }
   },
 
