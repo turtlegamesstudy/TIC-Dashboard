@@ -608,7 +608,7 @@ const MessageEngine = {
           <input type="checkbox" id="chk-${e.id}" onchange="event.stopPropagation(); MessageEngine.toggleEstudiante('${e.id}')" style="cursor: pointer;">
           <div class="msg-avatar-mini">${iniciales}</div>
           <div class="msg-est-info">
-            <div class="msg-est-nombre">${e.apellidos}, ${e.nombres}</div>
+            <div class="msg-est-nombre">${e.nombres} ${e.apellidos}</div>
             <div class="msg-est-meta">${e.estado}${e.rol ? ' • ' + e.rol : ''} • ${e.correo}</div>
           </div>
           <div class="msg-est-telefono">${tel ? '+' + tel : 'Sin teléfono'}</div>

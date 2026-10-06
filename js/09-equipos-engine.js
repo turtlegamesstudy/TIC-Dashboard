@@ -196,7 +196,7 @@ const EquiposEngine = {
   },
 
   renderTarjetaEquipo(eq, abrirPorDefecto) {
-    const integrantes = eq.integrantes || [];
+    const integrantes = DataEngine.ordenarEstudiantes(eq.integrantes || []);
     const archivos = eq.archivos || [];
     const coordinador = integrantes.find(i => i.rol === 'Coordinador');
     const grupoClase = DataEngine.getGrupoClaseDeEquipo(eq);
@@ -498,7 +498,7 @@ const EquiposEngine = {
           // La base reutiliza IDs como STU-030 en distintos grupos. La clave
           // del option debe identificar ambas cosas para no traer otro alumno.
           const clave = `${e.grupoId}::${e.id}`;
-          opciones += `<option value="${clave}" data-estudiante-id="${e.id}" data-grupo-id="${e.grupoId}">${e.apellidos}, ${e.nombres}</option>`;
+          opciones += `<option value="${clave}" data-estudiante-id="${e.id}" data-grupo-id="${e.grupoId}">${e.nombres} ${e.apellidos}</option>`;
         });
         opciones += `</optgroup>`;
       });
@@ -783,7 +783,7 @@ const EquiposEngine = {
   // que el reporte quede completo por sí solo.
   _datosReporteEquipo(eq) {
     const grupoClase = DataEngine.getGrupoClaseDeEquipo(eq);
-    const integrantes = eq.integrantes || [];
+    const integrantes = DataEngine.ordenarEstudiantes(eq.integrantes || []);
     const cabecera = ['Nombres', 'Apellidos', 'Correo', 'Teléfono', 'Cédula', 'Rol', 'Grupo de Clases', 'Profesor Guía'];
     const filas = integrantes.length > 0
       ? integrantes.map(i => [

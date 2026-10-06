@@ -965,11 +965,7 @@
         ).length;
         const estudiantesRetirados = totalEstudiantesGrupo - estudiantesActivos;
 
-        estudiantes = [...estudiantes].sort((a, b) => {
-          const fullA = `${a.nombres || ''} ${a.apellidos || ''}`.toLowerCase().trim();
-          const fullB = `${b.nombres || ''} ${b.apellidos || ''}`.toLowerCase().trim();
-          return fullA.localeCompare(fullB);
-        });
+        estudiantes = DataEngine.ordenarEstudiantes(estudiantes);
 
         estudiantes = this.filtrarEstudiantes(estudiantes, filtroEstudiantes, modulosAExportar, grupo);
         if (!estudiantes || estudiantes.length === 0) return null;
@@ -1255,7 +1251,7 @@
             const cName = ws.getCell(dataRow.number, COL_NOM_S);
             const apellidos = (e.apellidos || '').trim();
             const nombres   = (e.nombres   || '').trim();
-            cName.value = apellidos && nombres ? `${apellidos}, ${nombres}` : (apellidos || nombres);
+            cName.value = nombres && apellidos ? `${nombres} ${apellidos}` : (nombres || apellidos);
             cName.font  = { name: fontName, size: fontSize, bold: !ret, color: { argb: ret ? 'FF94A3B8' : textColor } };
             cName.alignment = { horizontal: 'left', vertical: 'middle' };
             if (ret && !listoParaImprimir) cName.fill = darkFill;

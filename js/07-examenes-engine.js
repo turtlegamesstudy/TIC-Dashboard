@@ -38,6 +38,9 @@ const ExamenesEngine = {
         });
       });
     }); 
+    // Orden alfabético: primero los nombres completos y luego los apellidos.
+    res.sort((a, b) => String(a.grupo?.nombre || '').localeCompare(String(b.grupo?.nombre || ''))
+      || DataEngine.cmpNombres(a.estudiante, b.estudiante));
     return res;
   },
 
@@ -268,7 +271,7 @@ const ExamenesEngine = {
                 return `
                   <tr>
                     <td style="text-align:center;">${idx+1}</td>
-                    <td><strong>${e.apellidos}, ${e.nombres}</strong></td>
+                    <td><strong>${e.nombres} ${e.apellidos}</strong></td>
                     <td><span class="badge-status activo" style="font-size:0.7rem;">${r.grupo.nombre}</span></td>
                     <td style="font-size:0.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;">${r.modulo}</td>
                     <td style="text-align:center;font-weight:700;color:${r.promedioOriginal==='S/N'?'var(--text-muted)':'var(--neon-red)'};">${r.promedioOriginal}</td>
@@ -280,7 +283,7 @@ const ExamenesEngine = {
                     </td>
                     <td style="text-align:center;">
                       <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
-                        <button class="btn-icon" title="${yaTiene?'Editar':'Registrar'} Nota" onclick="ExamenesEngine.mostrarInputNota('${e.id}','${r.grupo.id}','${r.modulo.replace(/'/g,"\\'")}',${r.notaExamen??'null'},'${(e.apellidos+', '+e.nombres).replace(/'/g,"\\'")}')" style="width:34px;height:34px;font-size:1rem;background:rgba(20,87,139,0.1);">
+                        <button class="btn-icon" title="${yaTiene?'Editar':'Registrar'} Nota" onclick="ExamenesEngine.mostrarInputNota('${e.id}','${r.grupo.id}','${r.modulo.replace(/'/g,"\\'")}',${r.notaExamen??'null'},'${(e.nombres+' '+e.apellidos).replace(/'/g,"\\'")}')" style="width:34px;height:34px;font-size:1rem;background:rgba(20,87,139,0.1);">
                           <i class="ri-pencil-line" style="color:var(--p-400);"></i>
                         </button>
                         <button class="btn-icon" title="WhatsApp" onclick="ExamenesEngine.enviarWhatsAppExamen({nombres:'${e.nombres.replace(/'/g,"\\'")}',apellidos:'${e.apellidos.replace(/'/g,"\\'")}',telefono:'${e.telefono}'},'${r.modulo.replace(/'/g,"\\'")}')" style="width:34px;height:34px;font-size:1rem;background:rgba(37,211,102,0.1);">

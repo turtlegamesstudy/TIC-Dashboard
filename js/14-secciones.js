@@ -330,7 +330,9 @@ Secciones.registrarVarias([
     icono: 'ri-user-search-line',
     grupo: 'Académico',
     orden: 40,
-    render: Secciones.desdeHTML(() => UI.renderEstudiantesView())
+    render: Secciones.desdeHTML(() => UI.renderEstudiantesView()),
+    // Al pintar se reaplica el filtro guardado en la URL (chips + select).
+    alMostrar: () => UI.filtrarDirectorioEstudiantes()
   },
   {
     id: 'cuaderno-docente',

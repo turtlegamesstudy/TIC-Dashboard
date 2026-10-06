@@ -17,6 +17,9 @@
         this.bindEvents();
         this.initBuscadorGlobal();
         this.syncThemeIcon();
+        // Vista y filtros llegados en la URL (#/estadisticas?grupo=3A):
+        // se recuperan ANTES del primer pintado para abrir la vista pedida.
+        this.aplicarRuta(false);
         this.renderCurrentModule();
       },
 
@@ -393,7 +396,7 @@ buscarGlobal(query) {
           norm(`${est.nombres} ${est.apellidos}`).includes(query)) {
         resultados.push({
           tipo: 'estudiante',
-          titulo: `${est.apellidos}, ${est.nombres}`,
+          titulo: `${est.nombres} ${est.apellidos}`,
           subtitulo: `${g.nombre} • ${est.correo}`,
           id: est.id,
           grupoId: g.id,
@@ -810,6 +813,45 @@ actualizarNavActivo(modulo) {
           // aplicar la preferencia guardada (por si cambió el dispositivo).
           this.aplicarMenuGuardado();
         });
+
+        // Glosarias ⓘ y chips de filtros: un solo escuchador a nivel de
+        // documento porque el contenido se repinta con cada cambio de filtro.
+        document.addEventListener('click', (event) => {
+          const destino = event.target;
+          if (!destino || !destino.closest) return;
+
+          const botonAyuda = destino.closest('.ayuda-btn');
+          if (botonAyuda) {
+            event.preventDefault();
+            this.alternarAyuda(botonAyuda);
+            return;
+          }
+
+          const quitar = destino.closest('[data-quitar-filtro]');
+          if (quitar) {
+            this.quitarFiltro(quitar.getAttribute('data-vista-filtro') || this.currentModule,
+              quitar.getAttribute('data-quitar-filtro'));
+            return;
+          }
+
+          const limpiar = destino.closest('[data-limpiar-filtros]');
+          if (limpiar) {
+            this.limpiarFiltros(limpiar.getAttribute('data-vista-filtro') || this.currentModule);
+            return;
+          }
+
+          // Clic fuera: se cierra la glosa que estuviera abierta.
+          if (destino.closest('.metrica-ayuda')) return;
+          this.cerrarAyudas(null);
+        });
+
+        // Atrás/adelante del navegador o edición manual de la URL:
+        // la vista y sus filtros vuelven al estado del enlace.
+        if (typeof window.addEventListener === 'function') {
+          const escucharRuta = () => this.aplicarRuta(true);
+          window.addEventListener('popstate', escucharRuta);
+          window.addEventListener('hashchange', escucharRuta);
+        }
       },
 
       abrirModalConvalidaciones() {
@@ -853,7 +895,7 @@ actualizarNavActivo(modulo) {
         if (moduloFiltro === 'ALL') {
           let html = `<div class="table-container" style="overflow-x: auto;"><table class="custom-table"><thead><tr><th style="width: 50px;">No.</th><th>Estudiante</th>${MODULOS_TRANSVERSALES.map(m => `<th>${m}</th>`).join('')}</tr></thead><tbody>`;
           estudiantes.forEach((e, idx) => {
-            html += `<tr><td>${idx + 1}</td><td><strong>${e.apellidos}, ${e.nombres}</strong></td>`;
+            html += `<tr><td>${idx + 1}</td><td><strong>${e.nombres} ${e.apellidos}</strong></td>`;
             MODULOS_TRANSVERSALES.forEach(m => {
               let notaFinal = 'S/N';
               if (e.retirado || e.estado === 'Retirado') notaFinal = 'Retirado';
@@ -899,7 +941,7 @@ actualizarNavActivo(modulo) {
 
         let html = `<div class="table-container" style="overflow-x: auto;"><table class="custom-table"><thead><tr><th style="width: 40px;">No.</th><th style="min-width: 200px;">Estudiante</th>${columnasOrdenadas.map(col => `<th style="${col.esTotal ? 'background-color: var(--primary-soft, #f0fdf4); font-weight: bold;' : 'font-size: 0.78rem;'}"><span style="display:flex; align-items:center; justify-content:center; gap:6px;"><span>${col.nombreDisplay.length > 28 ? col.nombreDisplay.substring(0, 28) + '...' : col.nombreDisplay}</span><i class="ri-close-circle-line" title="Eliminar esta columna" style="cursor:pointer; color:#dc2626; flex-shrink:0;" onclick="DataEngine.eliminarColumnaModulo('${moduloFiltro.replace(/'/g, "\\'")}', '${col.nombreDisplay.replace(/'/g, "\\'")}')"></i></span></th>`).join('')}</tr></thead><tbody>`;
         estudiantes.forEach((e, idx) => {
-          html += `<tr><td>${idx + 1}</td><td><strong>${e.apellidos}, ${e.nombres}</strong></td>`;
+          html += `<tr><td>${idx + 1}</td><td><strong>${e.nombres} ${e.apellidos}</strong></td>`;
           columnasOrdenadas.forEach(col => {
             let nota = CuadernoEngine.obtenerNotaEstudiante(e, moduloFiltro, col.nombreDisplay);
             if (e.retirado || e.estado === 'Retirado') nota = 'Retirado';
@@ -1084,6 +1126,9 @@ actualizarNavActivo(modulo) {
         if (!workspace) return;
         const seccion = this.seccionActual();
         const navLabel = seccion ? seccion.etiqueta : '';
+        // La URL acompaña a la vista y a sus filtros (#/estadisticas?grupo=…)
+        // para poder compartir ese estado exacto o volver atrás con el navegador.
+        this.rutaEscribir(this.currentModule, this.filtrosGuardados(this.currentModule));
         if (!enBackground) this.showLoading(`Cargando ${navLabel || 'contenido'}...`);
         try {
           if (seccion) {
@@ -1153,7 +1198,34 @@ actualizarNavActivo(modulo) {
           }
         });
         const fechaSync = DataEngine.db.lastUpdated ? new Date(DataEngine.db.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start;"><div><h1>¡Hola de nuevo, ${this.nombreDocente()}! 👋</h1><p>Bienvenido al panel principal de gestión docente en el <strong>${this.nombreCentro()}</strong>.</p></div><div style="text-align: right;"><span class="badge-status activo" style="padding: 6px 12px; font-size: 0.8rem;"><i class="ri-checkbox-circle-fill"></i> Sistema en línea</span><p style="font-size: 0.72rem; color: rgba(255, 255, 255, 0.78); margin-top: 4px;">Última actualización: ${fechaSync}</p></div></div><div class="grid-cards"><div class="card-widget"><div class="widget-icon blue"><i class="ri-team-line"></i></div><div class="widget-info"><h4>Grupos Registrados</h4><div class="value">${totalGrupos}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-user-follow-line"></i></div><div class="widget-info"><h4>Estudiantes Activos</h4><div class="value">${totalActivos} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">/ ${totalEstudiantes}</span></div></div></div><div class="card-widget"><div class="widget-icon navy"><i class="ri-user-unfollow-line"></i></div><div class="widget-info"><h4>Estudiantes Retirados</h4><div class="value" style="color: ${totalRetirados > 0 ? '#B91C1C' : 'var(--text-main)'};">${totalRetirados}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-file-excel-2-line"></i></div><div class="widget-info"><h4>Cuaderno STD</h4><div class="value" style="font-size: 1.1rem; color: var(--accent-green);">Sincronizado</div></div></div></div><div class="table-container" style="margin-top: 24px;"><div style="padding: 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><span style="color: var(--primary-blue); display: flex; align-items: center; gap: 8px;"><i class="ri-list-check-2"></i> Resumen de Grupos Activos en DB.json</span><span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 400;">Total: ${totalGrupos} grupo(s)</span></div><table class="custom-table"><thead><tr><th>Código de Grupo</th><th>Carrera / Evento</th><th>Turno</th><th>Activos</th><th>Retirados</th><th>Total Alumnos</th></tr></thead><tbody>${totalGrupos === 0 ? `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No hay ningún grupo registrado en el sistema.</td></tr>` : grupos.map(g => { const act = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Activo').length : 0; const ret = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Retirado').length : 0; return `<tr><td><strong>${g.nombre}</strong></td><td>${g.carrera}</td><td>${g.turno}</td><td><span class="badge-status activo">${act} activos</span></td><td><span class="badge-status retirado">${ret} retirados</span></td><td><strong>${g.estudiantes ? g.estudiantes.length : 0}</strong></td></tr>`; }).join('')}</tbody></table></div></div>`;
+        // ── 2 · Visualizaciones (justo debajo de los KPIs) ─────────────
+        const barras = typeof StatsEngine !== 'undefined'
+          ? grupos.map(g => {
+              const n = UI.listaEstudiantes(g.estudiantes).length;
+              const max = Math.max(...grupos.map(o => UI.listaEstudiantes(o.estudiantes).length), 1);
+              return StatsEngine.barraCSS(Math.round((n / max) * 100), n === 0 ? '--text-muted' : '--primary-blue', `${g.nombre} — ${n} alumno(s)`);
+            }).join('')
+          : '';
+        const graficos = totalGrupos === 0
+          ? this.estadoVacioHTML({
+              icono: 'ri-bar-chart-box-line',
+              titulo: 'Todavía no hay datos para mostrar.',
+              texto: 'Carga la lista de un grupo: aquí aparecerá la distribución de la matrícula y el tamaño de cada grupo.'
+            })
+          : `<div class="panel-graficos">
+              <div class="chart-box">
+                <h3><i class="ri-donut-chart-line"></i> Distribución de la matrícula ${this.ayudaHTML('activos')}</h3>
+                <p class="chart-nota">Cómo se reparte el total registrado entre activos y retirados.</p>
+                ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#10b981', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`)}
+                ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, '#ef4444', 'Retirados', `${totalRetirados} bajas registradas`)}
+              </div>
+              <div class="chart-box">
+                <h3><i class="ri-bar-chart-2-line"></i> Alumnos por grupo ${this.ayudaHTML('grupos')}</h3>
+                <p class="chart-nota">Tamaño de cada grupo cargado en la base compartida.</p>
+                ${barras || `<p class="chart-nota">Carga el listado de un grupo para ver su tamaño.</p>`}
+              </div>
+            </div>`;
+        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start;"><div><h1>¡Hola de nuevo, ${this.nombreDocente()}! 👋</h1><p>Bienvenido al panel principal de gestión docente en el <strong>${this.nombreCentro()}</strong>.</p></div><div style="text-align: right;"><span class="badge-status activo" style="padding: 6px 12px; font-size: 0.8rem;"><i class="ri-checkbox-circle-fill"></i> Sistema en línea</span><p style="font-size: 0.72rem; color: rgba(255, 255, 255, 0.78); margin-top: 4px;">Última actualización: ${fechaSync}</p></div></div><div class="grid-cards"><div class="card-widget"><div class="widget-icon blue"><i class="ri-team-line"></i></div><div class="widget-info"><h4>Grupos Registrados ${this.ayudaHTML('grupos')}</h4><div class="value">${totalGrupos}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-user-follow-line"></i></div><div class="widget-info"><h4>Estudiantes Activos ${this.ayudaHTML('activos')}</h4><div class="value">${totalActivos} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">/ ${totalEstudiantes}</span></div></div></div><div class="card-widget"><div class="widget-icon navy"><i class="ri-user-unfollow-line"></i></div><div class="widget-info"><h4>Estudiantes Retirados ${this.ayudaHTML('retirados')}</h4><div class="value" style="color: ${totalRetirados > 0 ? '#B91C1C' : 'var(--text-main)'};">${totalRetirados}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-file-excel-2-line"></i></div><div class="widget-info"><h4>Cuaderno STD ${this.ayudaHTML('cuaderno')}</h4><div class="value" style="font-size: 1.1rem; color: var(--accent-green);">Sincronizado</div></div></div></div>${graficos}<div class="table-container" style="margin-top: 24px;"><div style="padding: 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><span style="color: var(--primary-blue); display: flex; align-items: center; gap: 8px;"><i class="ri-list-check-2"></i> Resumen de Grupos Activos en DB.json</span><span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 400;">Total: ${totalGrupos} grupo(s)</span></div><table class="custom-table"><thead><tr><th>Código de Grupo</th><th>Carrera / Evento</th><th>Turno</th><th>Activos</th><th>Retirados</th><th>Total Alumnos</th></tr></thead><tbody>${totalGrupos === 0 ? `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No hay ningún grupo registrado en el sistema.</td></tr>` : grupos.map(g => { const act = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Activo').length : 0; const ret = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Retirado').length : 0; return `<tr><td><strong>${g.nombre}</strong></td><td>${g.carrera}</td><td>${g.turno}</td><td><span class="badge-status activo">${act} activos</span></td><td><span class="badge-status retirado">${ret} retirados</span></td><td><strong>${g.estudiantes ? g.estudiantes.length : 0}</strong></td></tr>`; }).join('')}</tbody></table></div></div>`;
       },
 
       renderGruposView() {
@@ -1203,19 +1275,43 @@ actualizarNavActivo(modulo) {
 
       renderEstudiantesView() {
         const allStudents = DataEngine.getEstudiantes();
-        return `<div class="module-fade-enter"><div class="view-header"><h1>Directorio General de Estudiantes</h1><p>Total registrado en el sistema: ${allStudents.length} alumnos.</p></div>
-        <div class="group-header-card" data-section-settings data-settings-title="Filtro de estudiantes" style="gap:12px; flex-wrap:wrap;">
+        // El filtro no se pierde al repintar: vive en la URL y en los chips.
+        const filtros = this.filtrosGuardados('estudiantes');
+        const estadoGuardado = filtros.estado && filtros.estado !== 'todos' ? filtros.estado : 'todos';
+        const marcado = valor => (estadoGuardado === valor ? 'selected' : '');
+        const etiquetaEstado = valor => `Estado: ${valor === 'Activo' ? 'Activos' : valor === 'Retirado' ? 'Retirados' : 'Todos'}`;
+        const chips = this.chipsFiltrosHTML('estudiantes', filtros, { estado: etiquetaEstado });
+        return `<div class="module-fade-enter"><div class="view-header"><h1>Directorio General de Estudiantes <span style="font-weight:400; font-size:0.6em; opacity:0.85;">${allStudents.length} alumnos registrados</span></h1><p>Busca y actualiza cualquier estudiante del centro. Los filtros de esta vista se conservan en el enlace para poder compartirlos.</p></div>
+        <div class="barra-filtros no-imprimir" data-section-settings data-settings-title="Filtro de estudiantes">
           <div style="display:flex; gap:8px; align-items:center;">
-            <label class="tb-label"><i class="ri-filter-3-line"></i> Estado:</label>
+            <label class="tb-label" for="est-filtro-estado"><i class="ri-filter-3-line"></i> Estado</label>
             <select id="est-filtro-estado" class="form-control" style="width:170px;" onchange="UI.filtrarDirectorioEstudiantes()">
-              <option value="todos">Todos</option>
-              <option value="Activo">Solo Activos</option>
-              <option value="Retirado">Solo Retirados</option>
+              <option value="todos" ${marcado('todos')}>Todos</option>
+              <option value="Activo" ${marcado('Activo')}>Solo Activos</option>
+              <option value="Retirado" ${marcado('Retirado')}>Solo Retirados</option>
             </select>
+            ${this.ayudaHTML('estudiantes')}
           </div>
           <div id="est-contador-filtro" style="font-size:0.78rem; color: var(--text-muted);">${allStudents.length} estudiante(s)</div>
+          <div class="barra-acciones">
+            <button type="button" class="btn-ghost" onclick="UI.exportarDirectorioCSV()"><i class="ri-file-download-line"></i> CSV</button>
+            <button type="button" class="btn-ghost" onclick="UI.imprimirVista()"><i class="ri-printer-line"></i> PDF</button>
+            <button type="button" class="btn-ghost" onclick="UI.copiarEnlaceVista()"><i class="ri-link"></i> Compartir vista</button>
+          </div>
         </div>
-        <div class="table-container"><table class="custom-table"><thead><tr><th>Grupo</th><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acción</th></tr></thead><tbody id="tbody-directorio-estudiantes">${allStudents.map(s => `<tr data-est-id="${s.id}" data-estado="${s.estado}"><td><span class="badge-status activo">${s.grupoNombre}</span></td><td><strong>${s.nombres}</strong></td><td>${s.apellidos}</td><td>${s.correo}</td><td>${s.telefono}</td><td>${UI.renderBadgeEstado(s)}</td><td style="text-align: center;"><button class="btn-icon" onclick="UI.openEditStudentModal('${s.grupoId}', '${s.id}')"><i class="ri-pencil-line" style="color: var(--secondary-blue);"></i></button></td></tr>`).join('')}</tbody></table></div></div>`;
+        <div id="dir-chips" class="chips-activos" ${chips ? '' : 'hidden'}>${chips}</div>
+        <div class="table-container"><table class="custom-table"><thead><tr><th>Grupo</th><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acción</th></tr></thead><tbody id="tbody-directorio-estudiantes">${allStudents.map(s => `<tr data-est-id="${s.id}" data-estado="${s.estado}"><td><span class="badge-status activo">${s.grupoNombre}</span></td><td><strong>${s.nombres}</strong></td><td>${s.apellidos}</td><td>${s.correo}</td><td>${s.telefono}</td><td>${UI.renderBadgeEstado(s)}</td><td style="text-align: center;"><button class="btn-icon" onclick="UI.openEditStudentModal('${s.grupoId}', '${s.id}')"><i class="ri-pencil-line" style="color: var(--secondary-blue);"></i></button></td></tr>`).join('')}</tbody></table></div>
+        <div class="estado-panel estado-vacio" id="dir-estado-vacio" role="status" hidden>
+          <i class="ri-user-search-line" aria-hidden="true"></i>
+          <h3>No hay estudiantes con ese estado.</h3>
+          <p>Prueba con otro filtro o límpialo para volver a ver la lista completa.</p>
+          <div class="estado-acciones">
+            <button type="button" class="btn-ghost" data-limpiar-filtros data-vista-filtro="estudiantes">
+              <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
+            </button>
+          </div>
+        </div>
+      </div>`;
       },
 
       filtrarDirectorioEstudiantes() {
@@ -1229,6 +1325,41 @@ actualizarNavActivo(modulo) {
         });
         const contador = document.getElementById('est-contador-filtro');
         if (contador) contador.textContent = `${visibles} estudiante(s)`;
+        // El filtro queda en la URL (y en memoria) para poder volver o
+        // compartir la lista ya filtrada. «Todos» = sin filtro.
+        this.fijarFiltros('estudiantes', filtro === 'todos' ? {} : { estado: filtro });
+        // Los chips se repintan sin recargar la vista entera.
+        const zonaChips = document.getElementById('dir-chips');
+        if (zonaChips) {
+          const guardados = this.filtrosGuardados('estudiantes');
+          zonaChips.innerHTML = this.chipsFiltrosHTML('estudiantes', guardados, {
+            estado: valor => `Estado: ${valor === 'Activo' ? 'Activos' : valor === 'Retirado' ? 'Retirados' : valor}`
+          });
+          zonaChips.hidden = !Object.keys(guardados).length;
+        }
+        const vacio = document.getElementById('dir-estado-vacio');
+        if (vacio) vacio.hidden = visibles > 0;
+      },
+
+      // Exporta el directorio respetando el filtro de estado activo.
+      exportarDirectorioCSV() {
+        try {
+          const filtro = document.getElementById('est-filtro-estado')?.value || 'todos';
+          const estudiantes = DataEngine.getEstudiantes()
+            .filter(s => filtro === 'todos' || s.estado === filtro);
+          if (!estudiantes.length) {
+            this.showToast('No hay estudiantes para exportar con este filtro.', 'warning');
+            return;
+          }
+          const filas = estudiantes.map(s => [s.grupoNombre || '', s.nombres || '', s.apellidos || '',
+            s.correo || '', s.telefono || '', s.estado || 'Activo']);
+          this.descargarCSV('directorio-estudiantes',
+            ['Grupo', 'Nombres', 'Apellidos', 'Correo', 'Teléfono', 'Estado'], filas);
+          this.showToast(`✅ CSV generado con ${estudiantes.length} estudiante(s).`);
+        } catch (error) {
+          console.error('No se pudo exportar el directorio:', error);
+          this.showToast(`No se pudo exportar el directorio: ${error.message}`, 'error');
+        }
       },
 
 renderCuadernoDocente() {
@@ -1561,5 +1692,269 @@ renderCuadernoDocente() {
           warning: { clase: 'warning', icono: 'ri-alert-line',        titulo: 'Revisa esto',          duracion: 6200 },
           info:    { clase: 'info',    icono: 'ri-information-line',  titulo: 'Aviso',                duracion: 5000 }
         }[tipo] || null;
+      },
+
+      /* ═══════════════════════════════════════════════════════════
+         1 · JERARQUÍA, FILTROS Y ESTADOS DE LAS VISTAS
+         ─────────────────────────────────────────────────────────
+         Los filtros son persistentes (se recuerdan durante la
+         sesión), reversibles (chip con ×, más «Limpiar filtros»)
+         y compartibles (se reflejan en la URL: #/seccion?clave=valor).
+         ═══════════════════════════════════════════════════════════ */
+      _paramsVista: {},
+
+      // Glosario: toda métrica del panel se explica aquí para que un
+      // número sin definición no se interprete al revés.
+      INDICADORES: {
+        grupos: { titulo: 'Grupos de clase', texto: 'Grupos con listado cargado en la base compartida del centro. No cuenta los grupos sin alumnos.' },
+        activos: { titulo: 'Estudiantes activos', texto: 'Alumnos con matrícula vigente en el periodo. Son los que cuentan para el seguimiento y las estadísticas de rendimiento.' },
+        retirados: { titulo: 'Estudiantes retirados', texto: 'Bajas registradas (con motivo o no). Se muestran por trazabilidad y quedan fuera del cálculo de promedios.' },
+        estudiantes: { titulo: 'Estudiantes', texto: 'Total de alumnos matriculados que cumplen el filtro activo (activos y retirados juntos).' },
+        rendimiento: { titulo: 'Rendimiento académico', texto: 'Promedio de las calificaciones registradas, en escala 0 a 100. 60 es la nota mínima aprobatoria. Solo promedian los módulos que ya tienen notas.' },
+        cobertura: { titulo: 'Cobertura de evaluación', texto: 'Porcentaje de estudiantes que ya tienen al menos una calificación. Mide qué tan completo está el registro, no la calidad del aprendizaje.' },
+        convalidaciones: { titulo: 'Convalidaciones', texto: 'Módulos reconocidos sin cursar (traslado de crédito u otra institución). No se promedian: se dan por cubiertos.' },
+        enRiesgo: { titulo: 'Estudiantes en riesgo', texto: 'Alumnos con promedio inferior a 60 en los módulos con notas. Sirven para priorizar el seguimiento.' },
+        sinNotas: { titulo: 'Sin calificaciones', texto: 'Estudiantes sin ninguna nota registrada todavía: su promedio no existe, no es cero.' },
+        promedioModulo: { titulo: 'Promedio por módulo', texto: 'Media de los promedios de los alumnos que tienen notas en ese módulo. Los módulos sin importar quedan en 0 y se marcan como vacíos.' },
+        asistencia: { titulo: 'Asistencia', texto: 'Proporción de sesiones asistidas sobre las programadas. Este panel no la captura todavía: se reporta en el Informe de Avance de INATEC.' },
+        usoTIC: { titulo: 'Uso de TIC', texto: 'Frecuencia con que se usan herramientas digitales en las clases. Se reporta en el Informe de Avance; el panel no lo calcula automáticamente.' },
+        periodo: { titulo: 'Periodo reportado', texto: 'Etiqueta del periodo académico que se escribe en los informes oficiales (ej. «Agosto 2026»).' },
+        cuaderno: { titulo: 'Cuaderno STD', texto: 'Libro Excel del cuaderno docente: su marca «Sincronizado» indica que coincide con la base compartida.' }
+      },
+
+      // Consulta actual de la URL → { vista, params }. Tolera entornos
+      // sin location/history (pruebas) y URLs mal formadas.
+      rutaLeer() {
+        const salida = { vista: '', params: {} };
+        try {
+          if (typeof location === 'undefined' || !location) return salida;
+          const crudo = String(location.hash || '').replace(/^#\/?/, '');
+          const partes = crudo.split('?');
+          salida.vista = decodeURIComponent(partes[0] || '');
+          const consulta = partes[1];
+          if (consulta) {
+            if (typeof URLSearchParams !== 'undefined') {
+              new URLSearchParams(consulta).forEach((valor, clave) => { salida.params[clave] = valor; });
+            } else {
+              consulta.split('&').filter(Boolean).forEach(par => {
+                const mitad = par.split('=');
+                salida.params[decodeURIComponent(mitad[0])] = decodeURIComponent(mitad[1] || '');
+              });
+            }
+          }
+        } catch (e) { /* URL ilegible: se usa la vista por defecto */ }
+        return salida;
+      },
+
+      // Guarda los filtros de una sección, los recuerda y los escribe
+      // en la URL (reemplazando, sin ensuciar el historial).
+      fijarFiltros(vista, params) {
+        const limpio = {};
+        Object.keys(params || {}).forEach(clave => {
+          const valor = params[clave];
+          if (valor !== '' && valor !== null && valor !== undefined) limpio[clave] = String(valor);
+        });
+        this._paramsVista[vista] = limpio;
+        this.rutaEscribir(vista, limpio);
+        return limpio;
+      },
+
+      filtrosGuardados(vista) {
+        return this._paramsVista[vista] || {};
+      },
+
+      rutaEscribir(vista, params) {
+        try {
+          if (typeof history === 'undefined' || !history || typeof history.replaceState !== 'function') return;
+          const consulta = (typeof URLSearchParams !== 'undefined')
+            ? new URLSearchParams(params || {}).toString()
+            : Object.keys(params || {}).map(clave => `${encodeURIComponent(clave)}=${encodeURIComponent(params[clave])}`).join('&');
+          history.replaceState(null, '', `#/${encodeURIComponent(vista || '')}${consulta ? `?${consulta}` : ''}`);
+        } catch (e) { /* sin historial disponible */ }
+      },
+
+      // Recupera la vista y los filtros del enlace con el que se abrió
+      // el panel (#/estadisticas?grupo=3A). Devuelve true si cambió.
+      aplicarRuta(rePintar) {
+        const ruta = this.rutaLeer();
+        if (!ruta.vista || typeof Secciones === 'undefined') return false;
+        const seccion = Secciones.obtener(ruta.vista);
+        if (!seccion || !Secciones.puedeVer(seccion, AuthManager.profile)) return false;
+        this._paramsVista[ruta.vista] = ruta.params;
+        if (seccion.id !== this.currentModule) {
+          this.currentModule = seccion.id;
+          this.actualizarNavActivo(seccion.id);
+          this.renderCurrentModule();
+          return true;
+        }
+        if (rePintar) this.renderCurrentModule({ background: true });
+        return true;
+      },
+
+      // Quita un filtro concreto o todos y vuelve a pintar la sección.
+      quitarFiltro(vista, clave) {
+        const params = { ...this.filtrosGuardados(vista) };
+        delete params[clave];
+        this.fijarFiltros(vista, params);
+        this.refrescarSeccion(vista);
+      },
+
+      limpiarFiltros(vista) {
+        this.fijarFiltros(vista, {});
+        this.refrescarSeccion(vista);
+      },
+
+      refrescarSeccion(vista) {
+        if (this.currentModule === vista) this.renderCurrentModule({ background: true });
+        else this.irA(vista);
+      },
+
+      // Chips de los filtros activos + botón «Limpiar filtros».
+      // `etiquetas` traduce cada clave a un texto legible.
+      chipsFiltrosHTML(vista, params, etiquetas = {}) {
+        const claves = Object.keys(params || {}).filter(clave => {
+          const valor = params[clave];
+          return valor !== '' && valor !== null && valor !== undefined;
+        });
+        if (!claves.length) return '';
+        const chips = claves.map(clave => {
+          const traductor = etiquetas[clave];
+          const texto = typeof traductor === 'function' ? traductor(params[clave]) : `${clave}: ${params[clave]}`;
+          const seguro = this.escaparTexto(texto);
+          return `<span class="chip chip-filtro">${seguro}` +
+            `<button type="button" class="chip-remove" data-quitar-filtro="${this.escaparTexto(clave)}"` +
+            ` data-vista-filtro="${this.escaparTexto(vista)}" aria-label="Quitar filtro ${seguro}">` +
+            `<i class="ri-close-line" aria-hidden="true"></i></button></span>`;
+        }).join('');
+        return `<div class="chips-activos" role="status" aria-label="Filtros aplicados">` +
+          `<span class="chips-rotulo"><i class="ri-filter-3-line" aria-hidden="true"></i> Filtros activos</span>${chips}` +
+          `<button type="button" class="btn-ghost btn-limpiar-filtros" data-limpiar-filtros` +
+          ` data-vista-filtro="${this.escaparTexto(vista)}" title="Quita todos los filtros">` +
+          `<i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros</button>` +
+          `</div>`;
+      },
+
+      // Ícono ⓘ con la glosa del indicador (teclado y táctil incluidos).
+      ayudaHTML(clave) {
+        const info = this.INDICADORES ? this.INDICADORES[clave] : null;
+        if (!info) return '';
+        this._ayudaSeq = (this._ayudaSeq || 0) + 1;
+        const id = `ayuda-${this._ayudaSeq}`;
+        return `<span class="metrica-ayuda">` +
+          `<button type="button" class="ayuda-btn" aria-expanded="false" aria-controls="${id}"` +
+          ` aria-label="Qué significa: ${this.escaparTexto(info.titulo)}"><i class="ri-question-line" aria-hidden="true"></i></button>` +
+          `<span class="ayuda-pop" id="${id}" role="tooltip" hidden>` +
+          `<strong>${this.escaparTexto(info.titulo)}</strong>${this.escaparTexto(info.texto)}</span></span>`;
+      },
+
+      // Abre/cierra la glosa de un indicador (solo una a la vez).
+      alternarAyuda(boton) {
+        const contenedor = boton && boton.closest ? boton.closest('.metrica-ayuda') : null;
+        if (!contenedor) return;
+        const abierta = boton.getAttribute('aria-expanded') === 'true';
+        this.cerrarAyudas(boton);
+        boton.setAttribute('aria-expanded', String(!abierta));
+        const glosa = contenedor.querySelector('.ayuda-pop');
+        if (glosa) glosa.hidden = abierta;
+      },
+
+      cerrarAyudas(excepto) {
+        if (typeof document === 'undefined' || !document.querySelectorAll) return;
+        document.querySelectorAll('.ayuda-btn[aria-expanded="true"]').forEach(boton => {
+          if (boton === excepto) return;
+          boton.setAttribute('aria-expanded', 'false');
+          const contenedor = boton.closest ? boton.closest('.metrica-ayuda') : boton.parentElement;
+          const glosa = contenedor ? contenedor.querySelector('.ayuda-pop') : null;
+          if (glosa) glosa.hidden = true;
+        });
+      },
+
+      escaparTexto(valor) {
+        return String(valor === null || valor === undefined ? '' : valor)
+          .replace(/[&<>"']/g, car => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[car]));
+      },
+
+      // Estado vacío: dice qué pasó y ofrece la salida (filtro, rango…).
+      estadoVacioHTML(opciones = {}) {
+        return `<div class="estado-panel estado-vacio" role="status">` +
+          `<i class="${opciones.icono || 'ri-database-2-line'}" aria-hidden="true"></i>` +
+          `<h3>${this.escaparTexto(opciones.titulo || 'No hay datos para este periodo.')}</h3>` +
+          `<p>${this.escaparTexto(opciones.texto || 'Prueba otro rango o quita algún filtro.')}</p>` +
+          (opciones.accion ? `<div class="estado-acciones">${opciones.accion}</div>` : '') +
+          `</div>`;
+      },
+
+      // Estado de error: detalle visible + botón de reintento, para no
+      // dejar una pantalla en blanco sin explicación.
+      estadoErrorHTML(detalle) {
+        return `<div class="estado-panel estado-error" role="alert">` +
+          `<i class="ri-error-warning-line" aria-hidden="true"></i>` +
+          `<h3>No se pudieron cargar los datos</h3>` +
+          `<p>Ocurrió un problema al preparar esta vista. No se modificó ninguna información.</p>` +
+          `<p class="estado-error-detalle"><strong>Detalle:</strong> ${this.escaparTexto(detalle)}</p>` +
+          `<div class="estado-acciones">` +
+          `<button type="button" class="btn-primary" onclick="UI.renderCurrentModule({ background: true })">` +
+          `<i class="ri-refresh-line" aria-hidden="true"></i> Reintentar</button></div></div>`;
+      },
+
+      descargarBlob(blob, nombreArchivo) {
+        try {
+          const url = URL.createObjectURL(blob);
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = nombreArchivo;
+          document.body.appendChild(enlace);
+          enlace.click();
+          enlace.remove();
+          setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) { /* ya liberado */ } }, 1500);
+        } catch (error) {
+          console.error('No se pudo descargar el archivo:', error);
+          this.showToast(`No se pudo descargar el archivo: ${error.message}`, 'error');
+        }
+      },
+
+      // CSV con «;» y BOM: Excel en español lo abre con los acentos bien.
+      descargarCSV(nombreArchivo, encabezados, filas) {
+        const celda = valor => {
+          const texto = String(valor === null || valor === undefined ? '' : valor);
+          return /[";\n\r]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+        };
+        const lineas = [(encabezados || []).map(celda).join(';')];
+        (filas || []).forEach(fila => lineas.push((fila || []).map(celda).join(';')));
+        const blob = new Blob(['\uFEFF' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        this.descargarBlob(blob, `${nombreArchivo}.csv`);
+        return Math.max(lineas.length - 1, 0);
+      },
+
+      // Imprime la vista actual: el diálogo del navegador permite
+      // guardarla como PDF con el papel y la orientación elegidos.
+      imprimirVista() {
+        try {
+          if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
+        } catch (error) {
+          this.showToast(`No se pudo abrir el diálogo de impresión: ${error.message}`, 'error');
+        }
+      },
+
+      // Copia el enlace exacto de la vista (con sus filtros) para
+      // compartirla: al abrirla se recuperan los mismos datos.
+      async copiarEnlaceVista() {
+        let enlace = '';
+        try { enlace = (typeof location !== 'undefined' && location) ? String(location.href) : ''; } catch (e) { enlace = ''; }
+        try {
+          if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(enlace);
+          } else if (typeof document !== 'undefined' && document.createElement) {
+            const caja = document.createElement('textarea');
+            caja.value = enlace;
+            document.body.appendChild(caja);
+            caja.select();
+            if (typeof document.execCommand === 'function') document.execCommand('copy');
+            caja.remove();
+          }
+          this.showToast('🔗 Enlace de esta vista copiado: al abrirlo se ven los mismos filtros.');
+        } catch (error) {
+          this.showToast(`No se pudo copiar el enlace: ${error.message}`, 'error');
+        }
       }
     };

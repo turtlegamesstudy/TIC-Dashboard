@@ -9774,3 +9774,406 @@ html[data-theme="dark"] .custom-table tbody tr:hover { background: rgba(24, 184,
 
   .view-header { box-shadow: 0 8px 18px -12px rgba(52, 40, 90, 0.6); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   9 · PANEL ANALÍTICO · jerarquía, filtros, glosario y estados
+   KPIs → filtros (chips + limpiar) → visualizaciones → tabla detalle
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Bloques de la vista ─────────────────────────────────────────── */
+.bloque-analisis { margin-bottom: var(--s-6); }
+
+.bloque-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin: 0 0 var(--s-4);
+}
+
+.bloque-titulo h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.bloque-titulo h2 i { color: var(--p-400); }
+
+.bloque-nota {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── 1 · KPIs esenciales ─────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: var(--s-4);
+}
+
+.kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: var(--s-4);
+  background: var(--campus-card, var(--bg-card));
+  border: 1px solid var(--campus-border, var(--border-default));
+  border-radius: 16px;
+  box-shadow: var(--campus-shadow, 0 4px 14px rgba(24, 54, 76, 0.055));
+  transition: transform var(--t-base, 0.2s), box-shadow var(--t-base, 0.2s);
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--campus-shadow-raised, 0 10px 24px rgba(24, 54, 76, 0.1));
+}
+
+.kpi-icono {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  background: rgba(20, 87, 139, 0.12);
+  color: var(--p-400);
+}
+
+.kpi-icono.verde  { background: rgba(22, 189, 153, 0.16); color: #0f9e82; }
+.kpi-icono.rojo   { background: rgba(220, 38, 38, 0.12);  color: #dc2626; }
+.kpi-icono.cyan   { background: rgba(24, 184, 231, 0.16); color: var(--campus-cyan, #119dc9); }
+.kpi-icono.ambar  { background: rgba(217, 119, 6, 0.14);  color: #b45309; }
+.kpi-icono.morado { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
+
+.kpi-cuerpo { display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 26px; }
+
+.kpi-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.kpi-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.35;
+  color: var(--campus-muted, var(--text-muted));
+}
+
+/* El texto puede ocupar dos líneas sin chocar con el ⓘ. */
+.kpi-texto { min-width: 0; }
+
+/* En las tarjetas KPI el ⓘ vive en la esquina inferior derecha: la
+   etiqueta (p. ej. «CONVALIDACIONES») gana todo el ancho de la tarjeta
+   y el glosario se abre hacia arriba sin tapar a los vecinos. */
+.kpi-card .kpi-etiqueta { align-items: center; padding-right: 6px; }
+.kpi-card .kpi-etiqueta .metrica-ayuda { position: absolute; bottom: 13px; right: 12px; }
+
+.kpi-valor {
+  font-size: 1.7rem;
+  font-weight: 750;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.kpi-valor small {
+  margin-left: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kpi-delta { font-size: 0.7rem; font-weight: 700; }
+.kpi-delta.sube  { color: #0f9e82; }
+.kpi-delta.baja  { color: #dc2626; }
+.kpi-delta.igual { color: var(--text-muted); }
+.kpi-delta span { font-weight: 500; color: var(--text-muted); }
+
+/* ── Ayuda de cada métrica (tooltip + texto de apoyo) ────────────── */
+.metrica-ayuda { position: relative; display: inline-flex; line-height: 1; }
+
+.ayuda-btn {
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: 1px solid var(--campus-line, var(--border-default));
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--t-fast, 0.15s), color var(--t-fast, 0.15s);
+}
+
+.ayuda-btn i { font-size: 0.7rem; pointer-events: none; }
+
+.ayuda-btn:hover,
+.ayuda-btn[aria-expanded="true"] {
+  background: var(--brand-cyan, #18b8e7);
+  border-color: transparent;
+  color: #fff;
+}
+
+.ayuda-btn:focus-visible { outline: 2px solid var(--brand-cyan, #18b8e7); outline-offset: 2px; }
+
+.ayuda-pop {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 320;
+  width: 254px;
+  padding: 10px 12px;
+  border: 1px solid var(--campus-line, var(--border-default));
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 14px 32px rgba(15, 35, 55, 0.18);
+  backdrop-filter: blur(8px);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.ayuda-pop strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--p-400);
+}
+
+.ayuda-pop[hidden] { display: none; }
+
+html[data-theme="dark"] .ayuda-pop {
+  background: rgba(13, 36, 56, 0.98);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #cfe3f2;
+}
+
+/* ── 2 · Barra de filtros ────────────────────────────────────────── */
+.barra-filtros {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  margin-bottom: var(--s-3);
+  background: var(--campus-card, var(--bg-card));
+  border: 1px solid var(--campus-border, var(--border-default));
+  border-radius: 16px;
+  box-shadow: var(--campus-shadow, 0 4px 14px rgba(24, 54, 76, 0.055));
+}
+
+.campo-filtro { display: flex; flex-direction: column; gap: 5px; flex: 1 1 150px; min-width: 132px; max-width: 250px; }
+
+.campo-filtro .tb-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.campo-filtro .form-control { width: 100%; min-width: 0; height: 36px; font-size: 0.82rem; }
+
+.barra-acciones { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; margin-left: auto; flex-wrap: wrap; }
+
+.barra-acciones .btn-ghost { height: 36px; }
+
+.btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-ghost:disabled:hover { background: transparent; border-color: var(--border-default); }
+
+/* ── Chips activos (filtros persistentes y reversibles) ──────────── */
+.chips-activos {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: var(--s-5);
+}
+
+.chips-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.chip-filtro {
+  padding: 4px 6px 4px 11px;
+  font-size: 0.73rem;
+  background: rgba(24, 184, 231, 0.14);
+  border-color: rgba(24, 184, 231, 0.35);
+  color: var(--campus-blue, var(--p-400));
+}
+
+.chip-filtro:hover { border-color: var(--campus-cyan, #119dc9); color: var(--campus-blue, var(--p-400)); }
+
+.chip .chip-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.chip .chip-remove:hover { background: rgba(220, 38, 38, 0.14); color: var(--neon-red); }
+.chip .chip-remove:focus-visible { outline: 2px solid var(--brand-cyan, #18b8e7); outline-offset: 1px; }
+
+/* ── Estados vacío / error (nunca pantalla en blanco) ────────────── */
+.estado-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--s-8) var(--s-5);
+  text-align: center;
+  background: var(--campus-card, var(--bg-card));
+  border: 1px dashed var(--campus-line, var(--border-default));
+  border-radius: 18px;
+  color: var(--text-muted);
+}
+
+.estado-panel > i { font-size: 2.4rem; color: var(--p-400); opacity: 0.8; }
+.estado-panel h3 { margin: 4px 0 0; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.estado-panel p { margin: 0; max-width: 56ch; font-size: 0.84rem; line-height: 1.55; }
+.estado-acciones { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+.estado-error { border-style: solid; border-color: rgba(220, 38, 38, 0.35); background: rgba(220, 38, 38, 0.05); }
+.estado-error > i { color: #dc2626; }
+
+.estado-error-detalle {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.09);
+  padding: 6px 12px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme="dark"] .estado-error-detalle { color: #fca5a5; }
+
+/* ── Visualizaciones ─────────────────────────────────────────────── */
+.panel-graficos,
+.rejilla-graficas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: var(--s-6);
+}
+
+.panel-graficos > .estado-panel { grid-column: 1 / -1; }
+
+.chart-nota { margin: -6px 0 var(--s-4); font-size: 0.74rem; color: var(--text-muted); }
+
+/* ── Glosario de indicadores ─────────────────────────────────────── */
+.glosario-panel {
+  margin-top: var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  background: var(--campus-card, var(--bg-card));
+  border: 1px solid var(--campus-border, var(--border-default));
+  border-radius: 16px;
+  box-shadow: var(--campus-shadow, 0 4px 14px rgba(24, 54, 76, 0.055));
+}
+
+.glosario-panel summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.glosario-panel summary::-webkit-details-marker { display: none; }
+.glosario-panel summary i { color: var(--p-400); }
+.glosario-panel summary::after {
+  content: '\25BE';
+  margin-left: auto;
+  color: var(--text-muted);
+  transition: transform var(--t-fast, 0.15s);
+}
+.glosario-panel[open] summary::after { transform: rotate(180deg); }
+.glosario-panel summary:focus-visible { outline: 2px solid var(--brand-cyan, #18b8e7); outline-offset: 3px; }
+
+.glosario-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--s-4);
+  margin-top: var(--s-4);
+}
+
+.glosario-item h4 {
+  margin: 0 0 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--p-400);
+}
+
+.glosario-item p { margin: 0; font-size: 0.8rem; line-height: 1.55; color: var(--text-secondary); }
+
+/* ── Impresión / PDF: solo el contenido analítico ────────────────── */
+@media print {
+  .no-imprimir,
+  .glosario-panel,
+  .ayuda-btn,
+  .ayuda-pop,
+  .chips-rotulo,
+  .btn-limpiar-filtros { display: none !important; }
+
+  .kpi-card,
+  .chart-box,
+  .barra-filtros {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+
+  .estado-panel { border-style: solid; border-color: #ccc; }
+}
+
+/* El atributo `hidden` manda aunque la clase pinte `display: flex`:
+   sin esto los estados vacíos y los glosarios ocultos se verían siempre. */
+[hidden] { display: none !important; }
+
+/* Filas de la tabla de detalle que no entran al promedio (retirados
+   sin filtro de estado): se atenúan para que no se lean como activas. */
+.custom-table tr.fila-excluida { opacity: 0.62; }
+.custom-table tr.fila-excluida:hover { opacity: 1; }
+
+/* Animaciones de los gráficos (barras y donuts) en TODAS las vistas:
+   antes solo existían dentro de Estadísticas, así que en el Dashboard
+   el donut salía vacío. El valor final es el del `style` en línea, de
+   modo que con animaciones desactivadas el gráfico sigue correcto. */
+@keyframes growBar { from { transform: scaleX(0); } }
+@keyframes drawCircle { from { stroke-dashoffset: 251.33; } }

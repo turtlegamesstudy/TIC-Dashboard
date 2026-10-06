@@ -812,7 +812,24 @@
 
       getGrupos() { return this.db.grupos || []; },
       getGrupoById(grupoId) { return this.getGrupos().find(g => g.id === grupoId); },
-      getEstudiantesByGrupo(grupoId) { const grupo = this.getGrupoById(grupoId); return grupo ? (grupo.estudiantes || []) : []; },
+      // Orden oficial de nombres en toda la app: primero los NOMBRES
+      // completos y después los APELLIDOS. Se comparan los dos bloques
+      // enteros (no la primera palabra) porque hay nombres de dos o tres
+      // palabras como «Juan de los Ángeles» que no llevan apellidos ahí.
+      cmpNombres(a, b) {
+        const txt = v => String(v === null || v === undefined ? '' : v).trim().toLowerCase();
+        const cmp = txt(a && a.nombres).localeCompare(txt(b && b.nombres));
+        if (cmp !== 0) return cmp;
+        return txt(a && a.apellidos).localeCompare(txt(b && b.apellidos));
+      },
+      ordenarEstudiantes(lista) { return [...(lista || [])].sort((x, y) => this.cmpNombres(x, y)); },
+
+      // Devuelve SIEMPRE una copia ordenada: el orden del archivo importado
+      // no vuelve a aparecer en el directorio, el cuaderno ni las listas.
+      getEstudiantesByGrupo(grupoId) {
+        const grupo = this.getGrupoById(grupoId);
+        return grupo ? this.ordenarEstudiantes(grupo.estudiantes || []) : [];
+      },
 
       getEstudiantes() {
         let all = [];
@@ -821,7 +838,7 @@
             g.estudiantes.forEach(e => { all.push({ ...e, grupoId: g.id, grupoNombre: g.nombre }); });
           }
         });
-        return all;
+        return this.ordenarEstudiantes(all);
       },
 
       getEstudianteById(estudianteId) {
@@ -850,7 +867,7 @@
         // [OPT] Construir el HTML por concatenación interna en vez de
         // re-analizar el <select> completo en cada iteración.
         const opcionesEst = ['<option value="">-- Seleccionar Estudiante --</option>'];
-        estudiantes.forEach(e => { opcionesEst.push(`<option value="${e.id}">${e.apellidos}, ${e.nombres}</option>`); });
+        estudiantes.forEach(e => { opcionesEst.push(`<option value="${e.id}">${e.nombres} ${e.apellidos}</option>`); });
         selectEst.innerHTML = opcionesEst.join('');
         const opcionesMod = ['<option value="">-- Seleccionar Módulo --</option>'];
         MODULOS_TRANSVERSALES.forEach(m => { opcionesMod.push(`<option value="${m}">${m}</option>`); });
@@ -869,7 +886,7 @@
           if (est.convalidaciones && Object.keys(est.convalidaciones).length > 0) {
             Object.entries(est.convalidaciones).forEach(([modulo, estaConvalidado]) => {
               if (estaConvalidado) {
-                htmlRows += `<tr style="border-bottom: 1px solid #f0f0f0;"><td style="padding: 8px 12px;"><strong>${est.apellidos}</strong>, ${est.nombres}</td><td style="padding: 8px 12px;"><span class="badge-modulo">${modulo}</span></td><td style="padding: 8px 12px; text-align: center;"><button class="btn-icon" title="Quitar convalidación" style="color: #dc3545;" onclick="DataEngine.eliminarConvalidacion('${est.id}', '${modulo}', '${grupoId}')"><i class="ri-delete-bin-line"></i></button></td></tr>`;
+                htmlRows += `<tr style="border-bottom: 1px solid #f0f0f0;"><td style="padding: 8px 12px;"><strong>${est.nombres}</strong> ${est.apellidos}</td><td style="padding: 8px 12px;"><span class="badge-modulo">${modulo}</span></td><td style="padding: 8px 12px; text-align: center;"><button class="btn-icon" title="Quitar convalidación" style="color: #dc3545;" onclick="DataEngine.eliminarConvalidacion('${est.id}', '${modulo}', '${grupoId}')"><i class="ri-delete-bin-line"></i></button></td></tr>`;
               }
             });
           }
@@ -1293,6 +1310,16 @@
       _separarNombreCompleto(nombreCompleto) {
         const partes = String(nombreCompleto === null || nombreCompleto === undefined ? '' : nombreCompleto)
           .trim().split(/\s+/).filter(Boolean);
+        // Partículas que pertenecen al NOMBRE, nunca al apellido:
+        // «Juan de los Ángeles Pérez» → nombres «Juan de los Ángeles».
+        const particulas = ['de', 'del', 'la', 'los', 'las', 'el', 'y', 'di', 'da', 'dos', 'das', 'do'];
+        if (partes.length >= 3 && particulas.includes(partes[1].toLowerCase())) {
+          let fin = 1;
+          while (fin < partes.length && particulas.includes(partes[fin].toLowerCase())) fin++;
+          if (fin < partes.length) fin++;   // la partícula se cierra con su nombre
+          if (fin >= partes.length) return { nombres: partes.join(' '), apellidos: '---' };
+          return { nombres: partes.slice(0, fin).join(' '), apellidos: partes.slice(fin).join(' ') };
+        }
         if (partes.length >= 4) return { nombres: partes.slice(0, 2).join(' '), apellidos: partes.slice(2).join(' ') };
         if (partes.length === 3) return { nombres: partes[0], apellidos: partes.slice(1).join(' ') };
         if (partes.length === 2) return { nombres: partes[0], apellidos: partes[1] };
