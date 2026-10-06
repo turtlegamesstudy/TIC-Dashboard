@@ -57,16 +57,34 @@
   </section>
 
   <div class="app-loading is-entering" id="app-loading" role="status" aria-live="polite" aria-label="Cargando aplicación">
+    <!-- Fondo gráfico: cuadrícula de cuaderno muy tenue con dos guías
+         que barren despacio (elemento decorativo, sin ruido visual) -->
+    <div class="cargador-fondo" aria-hidden="true">
+      <span class="cargador-guia-h"></span>
+      <span class="cargador-guia-v"></span>
+    </div>
+
     <div class="cargador">
-      <header class="cargador-marca">
+      <!-- Órbita: pista que se dibuja, arco institucional girando y
+           un satélite rosado más lento -->
+      <div class="cargador-orbita">
+        <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+          <circle class="cargador-pista" cx="50" cy="50" r="46"></circle>
+          <circle class="cargador-arco" cx="50" cy="50" r="46"></circle>
+          <g class="cargador-satelite">
+            <circle class="cargador-punto" cx="50" cy="4" r="2.6"></circle>
+          </g>
+        </svg>
         <span class="cargador-monograma" aria-hidden="true">TIC</span>
+      </div>
+
+      <header class="cargador-marca">
         <span class="cargador-marca-texto">
           <strong>INATEC</strong>
+          <span class="cargador-regla" aria-hidden="true"></span>
           <small id="loading-center-name">Centro tecnológico</small>
         </span>
       </header>
-
-      <div class="cargador-aro" aria-hidden="true"></div>
 
       <div class="cargador-copy">
         <p class="cargador-titulo" id="app-loading-message">Preparando tu espacio...</p>
