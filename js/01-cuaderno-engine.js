@@ -1266,12 +1266,11 @@
               if (typeof fmt === 'number') notasNum.push({ valor: fmt });
             });
 
-            // Calificación Final
+            // Calificación Final: nunca NSP. Si hay nota se exporta tal cual
+            // (total del módulo o media de las columnas) y si no hay, 0.
             const cF = ws.getCell(dataRow.number, COL_FINAL);
             let notaFinal;
-            if (ret) {
-              notaFinal = 'NSP';
-            } else if (e.convalidaciones && e.convalidaciones[mNombre]) {
+            if (e.convalidaciones && e.convalidaciones[mNombre]) {
               notaFinal = 'Cov';
             } else {
               const colT = colsTotal[0];
@@ -1523,8 +1522,10 @@
               row.push(fmt);
               if (typeof fmt === 'number') notasProm.push(fmt);
             });
-            let prom = esRetirado(e) ? 'NSP' : 'S/N';
-            if (notasProm.length > 0) prom = Math.round(notasProm.reduce((a, b) => a + b, 0) / notasProm.length);
+            // Promedio Final: igual que la calificación final, sin NSP.
+            let prom = notasProm.length > 0
+              ? Math.round(notasProm.reduce((a, b) => a + b, 0) / notasProm.length)
+              : 0;
             row.push(fmtNota(prom));
 
             const dataRow = ws.addRow(row); dataRow.height = cfg.rowData || 16;
