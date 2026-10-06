@@ -65,7 +65,7 @@ const ExamenesEngine = {
     const tel = MessageEngine.normalizarTelefono(est.telefono);
     if(!tel){ UI.showToast('⚠️ Sin teléfono'); return; }
     const nombre = est.nombres.split(' ')[0] + ' ' + est.apellidos.split(' ')[0];
-    const msg = `*Centro Tecnológico Ariel Darce — INATEC*\n\nHola *${nombre}*,\n\n📢 Tienes *examen de reparación* pendiente en:\n\n*${modulo}*\n\n📅 El docente te contactará con fecha y lugar.\n\nResponde este mensaje si tienes dudas.\n\n*Docente TIC*\nHanzell Mayorga`;
+    const msg = MessageEngine.personalizar(`*Centro Tecnológico Ariel Darce — INATEC*\n\nHola *${nombre}*,\n\n📢 Tienes *examen de reparación* pendiente en:\n\n*${modulo}*\n\n📅 El docente te contactará con fecha y lugar.\n\nResponde este mensaje si tienes dudas.\n\n*Docente TIC*\nHanzell Mayorga`);
     window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
   },
 

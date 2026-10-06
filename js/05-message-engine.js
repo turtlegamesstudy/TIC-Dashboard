@@ -191,6 +191,22 @@ const MessageEngine = {
       }
     },
     {
+      id: 'invitacion-grupo-wa',
+      nombre: '💬 Invitación al Grupo de WhatsApp',
+      icono: 'ri-whatsapp-line',
+      descripcion: 'Invita al estudiante al grupo de WhatsApp con un enlace que puedes cambiar.',
+      camposExtra: [
+        { id: 'wa-link', label: 'Enlace de invitación (cámbialo aquí)', placeholder: 'https://chat.whatsapp.com/...' },
+        { id: 'wa-nota', label: 'Aviso adicional (opcional)', placeholder: 'ej: Primera clase virtual el lunes 7:00 AM' }
+      ],
+      generar: (est, extra, grupo) => {
+        const nombre = `${est.nombres.split(' ')[0]} ${est.apellidos.split(' ')[0]}`;
+        const link = String(extra.link || '').trim();
+        const aviso = String(extra.aviso || '').trim();
+        return `*{CENTRO}*\n\nHola *${nombre}*! 👋\n\n📲 *Te invito a unirte al grupo de WhatsApp* del grupo *${grupo?.nombre || 'TIC'}* — *${grupo?.carrera || 'Técnico General'}*.\n\nAllí se publican los avisos, las fechas de cuestionarios, las notas y cualquier cambio de horario.\n\n🔗 *Enlace de invitación:*\n${link || 'https://chat.whatsapp.com/...'}\n\n📌 *Datos del grupo:*\n• Grupo: ${grupo?.nombre || 'N/A'}\n• Turno: ${grupo?.turno || 'General'}\n• Docente: {DOCENTE}\n\n${aviso ? `📢 *Aviso:* ${aviso}\n\n` : ''}Si tienes dudas antes de entrar, escríbeme por aquí. ¡Te esperamos! 🎓\n\n*Docente TIC*\n{DOCENTE}`;
+      }
+    },
+    {
       id: 'personalizado',
       nombre: '✏️ Mensaje Personalizado',
       icono: 'ri-chat-3-line',
@@ -221,6 +237,87 @@ const MessageEngine = {
   grupoSeleccionado: null,
   equipoSeleccionado: null, // [NUEVO] Equipo Innovatec/Hackathon cuando se envían mensajes solo a un equipo
   plantillaActual: null,
+  enviados: new Set(),   // estudiantes cuyo WhatsApp ya se abrió en este grupo
+  memoriaExtras: {},     // valores escritos por el docente (enlace, fechas, textos…)
+  LOTE: 5,               // cuántos mensajes abre de golpe el botón "Ir con próximos 5"
+
+  // ── Centro real (AuthManager) y docente real (sesión) ─────────────
+  centroTitulo() {
+    let nombre = '';
+    try {
+      if (typeof AuthManager !== 'undefined' && typeof AuthManager.getActiveCenterName === 'function') {
+        nombre = AuthManager.getActiveCenterName();
+      }
+    } catch (e) { nombre = ''; }
+    nombre = String(nombre || '').trim();
+    if (!nombre || nombre === 'Centro asignado') nombre = 'Centro Tecnológico Ariel Darce';
+    return /INATEC/i.test(nombre) ? nombre : `${nombre} — INATEC`;
+  },
+
+  nombreDocente() {
+    try {
+      if (typeof AuthManager !== 'undefined') {
+        const sp = AuthManager.staffProfile;
+        const pf = AuthManager.profile;
+        const us = AuthManager.user;
+        const nombre = [sp?.firstName, sp?.lastName].filter(Boolean).join(' ').trim()
+          || String(pf?.displayName || '').trim()
+          || [pf?.firstName, pf?.lastName].filter(Boolean).join(' ').trim()
+          || String(us?.displayName || '').trim();
+        if (nombre) return nombre;
+      }
+    } catch (e) { /* sin sesión */ }
+    return 'Docente TIC';
+  },
+
+  // Encabezado y firma de cualquier plantilla con datos reales
+  personalizar(txt) {
+    if (typeof txt !== 'string' || !txt) return txt;
+    const centro = this.centroTitulo();
+    const docente = this.nombreDocente();
+    return txt
+      .replace(/\{CENTRO\}/g, centro)
+      .replace(/\{DOCENTE\}/g, docente)
+      .replace(/\*?Centro Tecnológico Ariel Darce(\s*—\s*INATEC)?\*/g, `*${centro}*`)
+      .replace(/Hanzell Mayorga/g, docente);
+  },
+
+  // Única vía de generar mensajes (preview, copia y envío comparten texto)
+  generarMensaje(est, extra) {
+    if (!this.plantillaActual) return null;
+    const msg = this.plantillaActual.generar(est, extra, this.grupoParaPlantilla());
+    return (msg === null || msg === undefined) ? null : this.personalizar(String(msg));
+  },
+
+  // Lee los campos extra del formulario
+  leerExtras() {
+    const extra = {};
+    (this.plantillaActual?.camposExtra || []).forEach(c => {
+      const el = document.getElementById(`extra-${c.id}`);
+      extra[c.id] = el ? String(el.value) : (c.defaultValue || '');
+    });
+    return {
+      user: extra['campus-user'], pass: extra['campus-pass'],
+      fecha: extra['fecha-limite'] || extra['exam-fecha'] || extra['eq-fecha'],
+      lugar: extra['exam-lugar'] || extra['eq-lugar'],
+      modulo: extra['exam-modulo'],
+      detalle: extra['eq-detalle'],
+      mensaje: extra['msg-personalizado'],
+      link: extra['wa-link'],
+      aviso: extra['wa-nota']
+    };
+  },
+
+  // Guarda lo escrito antes de volver a pintar los campos (el enlace no se pierde)
+  _guardarExtras() {
+    document.querySelectorAll('#msg-campos-extra [id^="extra-"]').forEach(el => {
+      this.memoriaExtras[el.id.replace(/^extra-/, '')] = String(el.value);
+    });
+  },
+
+  _esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  },
 
   normalizarTelefono(tel) {
     let num = String(tel || '').replace(/\D/g, '');
@@ -325,7 +422,10 @@ const MessageEngine = {
             <!-- Preview del mensaje -->
             <div class="table-container" style="flex: 1; display: flex; flex-direction: column;">
               <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-default); font-weight: 600; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center;">
-                <span><i class="ri-whatsapp-line" style="color: #25D366;"></i> Vista Previa</span>
+                <span style="display:flex; flex-direction:column; line-height:1.3;">
+                  <span><i class="ri-whatsapp-line" style="color: #25D366;"></i> Vista Previa</span>
+                  <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">${MessageEngine.centroTitulo()} · ${MessageEngine.nombreDocente()}</span>
+                </span>
                 <span id="msg-preview-estado" style="font-size: 0.75rem; color: var(--text-muted);">Selecciona un estudiante</span>
               </div>
               <div style="flex: 1; padding: 16px; background: #0b141a; border-radius: 0 0 var(--r-xl) var(--r-xl); position: relative;">
@@ -339,10 +439,12 @@ const MessageEngine = {
             </div>
 
             <!-- Acciones -->
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+              <span id="msg-cola-info" style="font-size: 0.75rem; color: var(--text-muted); margin-right: auto;"><i class="ri-list-check-2"></i> Selecciona una plantilla para armar la cola</span>
               <button class="btn-secondary" onclick="MessageEngine.copiarMensaje()"><i class="ri-file-copy-line"></i> Copiar Texto</button>
-              <button class="btn-primary" id="btn-enviar-wa" onclick="MessageEngine.abrirWhatsApp()" disabled style="background: linear-gradient(135deg, #25D366, #128C7E); box-shadow: 0 0 20px rgba(37,211,102,0.25);">
-                <i class="ri-whatsapp-fill"></i> Abrir WhatsApp
+              <button class="btn-secondary" id="btn-enviar-wa" onclick="MessageEngine.abrirWhatsApp()" disabled><i class="ri-whatsapp-fill"></i> Abrir WhatsApp (todos)</button>
+              <button class="btn-primary" id="btn-siguientes-5" onclick="MessageEngine.abrirSiguientesCinco()" disabled style="background: linear-gradient(135deg, #25D366, #128C7E); box-shadow: 0 0 20px rgba(37,211,102,0.25);">
+                <i class="ri-skip-forward-line"></i> Ir con próximos 5
               </button>
             </div>
           </div>
@@ -394,12 +496,18 @@ const MessageEngine = {
         .msg-est-nombre { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .msg-est-meta { font-size: 0.72rem; color: var(--text-muted); }
         .msg-est-telefono { font-size: 0.72rem; color: var(--neon-green); font-family: var(--font-mono); }
+        .msg-check-enviado { color: #25D366; font-size: 1.05rem; flex-shrink: 0; display: flex; align-items: center; }
+        .msg-estudiante-item.enviado { opacity: 0.72; border-color: rgba(37,211,102,0.35); background: rgba(37,211,102,0.07); }
+        .msg-estudiante-item.enviado .msg-est-telefono { color: #25D366; }
+        #btn-siguientes-5:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
       </style>
     `;
   },
 
   cambiarGrupo() {
     const val = document.getElementById('msg-select-grupo')?.value;
+    // Cada grupo arranca su propia cola de envío
+    this.enviados = new Set();
     if (val && val.startsWith('EQUIPO:')) {
       const eqId = val.split(':')[1];
       this.equipoSeleccionado = DataEngine.getEquipoById(eqId) || null;
@@ -439,6 +547,11 @@ const MessageEngine = {
   },
 
   filtrarEstudiantes() {
+    this._pintarLista();
+    this.actualizarContador();
+  },
+
+  _pintarLista() {
     const val = document.getElementById('msg-select-grupo')?.value;
     const filtro = document.getElementById('msg-select-filtro')?.value;
     const contenedor = document.getElementById('msg-lista-estudiantes');
@@ -489,8 +602,9 @@ const MessageEngine = {
   _renderItemEstudiante(e) {
     const iniciales = `${e.nombres?.[0]||''}${e.apellidos?.[0]||''}`.toUpperCase();
     const tel = this.normalizarTelefono(e.telefono);
+    const enviado = this.enviados.has(e.id);
     return `
-        <div class="msg-estudiante-item" onclick="MessageEngine.toggleEstudiante('${e.id}', this)" id="msg-item-${e.id}" data-id="${e.id}">
+        <div class="msg-estudiante-item${enviado ? ' enviado' : ''}" onclick="MessageEngine.toggleEstudiante('${e.id}', this)" id="msg-item-${e.id}" data-id="${e.id}">
           <input type="checkbox" id="chk-${e.id}" onchange="event.stopPropagation(); MessageEngine.toggleEstudiante('${e.id}')" style="cursor: pointer;">
           <div class="msg-avatar-mini">${iniciales}</div>
           <div class="msg-est-info">
@@ -498,6 +612,7 @@ const MessageEngine = {
             <div class="msg-est-meta">${e.estado}${e.rol ? ' • ' + e.rol : ''} • ${e.correo}</div>
           </div>
           <div class="msg-est-telefono">${tel ? '+' + tel : 'Sin teléfono'}</div>
+          ${enviado ? '<span class="msg-check-enviado" title="Ya se abrió su WhatsApp"><i class="ri-check-double-line"></i></span>' : ''}
         </div>
       `;
   },
@@ -559,9 +674,92 @@ const MessageEngine = {
     if (el) el.textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
     const btn = document.getElementById('btn-enviar-wa');
     if (btn) btn.disabled = count === 0 || !this.plantillaActual;
+
+    // Cola "Ir con próximos 5"
+    const btnLote = document.getElementById('btn-siguientes-5');
+    const info = document.getElementById('msg-cola-info');
+    const haySeleccion = document.querySelectorAll('.msg-estudiante-item.selected').length > 0;
+    const pendientes = this.plantillaActual ? this.colaPendiente() : [];
+    if (btnLote) btnLote.disabled = pendientes.length === 0;
+    if (info) {
+      info.innerHTML = !this.plantillaActual
+        ? `<i class="ri-mail-star-line"></i> Elige un tipo de mensaje para armar la cola`
+        : pendientes.length === 0
+          ? (this.enviados.size > 0
+              ? `<i class="ri-checkbox-circle-fill" style="color:#25D366;"></i> Cola terminada · ${this.enviados.size} mensaje(s) abiertos`
+              : `<i class="ri-list-check-2"></i> Sin mensajes pendientes`)
+          : `<i class="ri-list-check-2"></i> Quedan ${pendientes.length} por enviar${haySeleccion ? ' en tu selección' : ' en la lista visible'}${this.enviados.size ? ` · ${this.enviados.size} ya abiertos` : ''}`;
+    }
+  },
+
+  // Orden de la cola: los seleccionados (si los hay) o toda la lista visible,
+  // sin los que ya se abrieron ni los que no tienen teléfono.
+  colaPendiente() {
+    let lista = [];
+    try { lista = this.getListaActual() || []; } catch (e) { lista = []; }
+    const items = Array.from(document.querySelectorAll('#msg-lista-estudiantes .msg-estudiante-item'));
+    const seleccionados = items.filter(i => i.classList.contains('selected'));
+    const base = seleccionados.length > 0 ? seleccionados : items;
+    return base.filter(i => {
+      if (i.classList.contains('enviado')) return false;
+      const est = lista.find(e => e.id === i.getAttribute('data-id'));
+      return est ? !!this.normalizarTelefono(est.telefono) : false;
+    });
+  },
+
+  // Marca en la lista a los que ya se les abrió WhatsApp
+  pintarEnviados() {
+    document.querySelectorAll('#msg-lista-estudiantes .msg-estudiante-item').forEach(item => {
+      const enviado = this.enviados.has(item.getAttribute('data-id'));
+      item.classList.toggle('enviado', enviado);
+      const badge = item.querySelector('.msg-check-enviado');
+      if (enviado && !badge) {
+        const span = document.createElement('span');
+        span.className = 'msg-check-enviado';
+        span.title = 'Ya se abrió su WhatsApp';
+        span.innerHTML = '<i class="ri-check-double-line"></i>';
+        item.appendChild(span);
+      } else if (!enviado && badge) {
+        badge.remove();
+      }
+    });
+  },
+
+  // Botón principal: abre WhatsApp con los próximos 5 mensajes de la cola
+  abrirSiguientesCinco() {
+    if (!this.plantillaActual) { UI.showToast('⚠️ Selecciona un tipo de mensaje.'); return; }
+    const pendientes = this.colaPendiente();
+    if (pendientes.length === 0) { UI.showToast('✅ No quedan mensajes pendientes en esta lista.'); return; }
+
+    const lista = this.getListaActual();
+    const extraAdaptado = this.leerExtras();
+    let abiertos = 0;
+
+    pendientes.slice(0, this.LOTE).forEach(item => {
+      const est = lista.find(e => e.id === item.getAttribute('data-id'));
+      if (!est) return;
+      const mensaje = this.generarMensaje(est, extraAdaptado);
+      if (!mensaje) return;
+      const tel = this.normalizarTelefono(est.telefono);
+      if (!tel) return;
+      window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`, '_blank');
+      this.enviados.add(est.id);
+      abiertos++;
+    });
+
+    this.pintarEnviados();
+    this.actualizarContador();
+
+    if (abiertos > 0) {
+      const quedan = this.colaPendiente().length;
+      UI.showToast(quedan > 0
+        ? `📤 WhatsApp abierto con ${abiertos} mensaje(s) · quedan ${quedan}`
+        : `🎉 Se abrieron los últimos ${abiertos} mensaje(s): cola terminada`);
+    }
   },
 
   seleccionarPlantilla(plantillaId) {
+    this._guardarExtras(); // lo que ya escribió el docente no se pierde
     this.plantillaActual = this.plantillas.find(p => p.id === plantillaId);
     
     // UI activa
@@ -575,15 +773,17 @@ const MessageEngine = {
       extraContainer.innerHTML = `
         <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 10px;"><i class="ri-edit-box-line"></i> Datos adicionales:</label>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          ${this.plantillaActual.camposExtra.map(c => `
+          ${this.plantillaActual.camposExtra.map(c => {
+            const valor = this.memoriaExtras[c.id] ?? c.defaultValue ?? '';
+            return `
             <div class="form-group" style="margin-bottom: 0;">
               <label style="font-size: 0.75rem; margin-bottom: 4px;">${c.label}</label>
               ${c.type === 'textarea' 
-                ? `<textarea id="extra-${c.id}" class="form-control" rows="3" placeholder="${c.placeholder}" oninput="MessageEngine.generarPreview()" style="resize: vertical;">${c.defaultValue || ''}</textarea>`
-                : `<input type="text" id="extra-${c.id}" class="form-control" placeholder="${c.placeholder}" value="${c.defaultValue || ''}" oninput="MessageEngine.generarPreview()">`
+                ? `<textarea id="extra-${c.id}" class="form-control" rows="3" placeholder="${this._esc(c.placeholder)}" oninput="MessageEngine.generarPreview()" style="resize: vertical;">${this._esc(valor)}</textarea>`
+                : `<input type="text" id="extra-${c.id}" class="form-control" placeholder="${this._esc(c.placeholder)}" value="${this._esc(valor)}" oninput="MessageEngine.generarPreview()">`
               }
             </div>
-          `).join('')}
+          `; }).join('')}
         </div>
       `;
     } else {
@@ -608,26 +808,7 @@ const MessageEngine = {
     }
 
     const est = this.estudianteSeleccionado;
-    const extra = {};
-    if (this.plantillaActual.camposExtra) {
-      this.plantillaActual.camposExtra.forEach(c => {
-        const el = document.getElementById(`extra-${c.id}`);
-        extra[c.id] = el ? el.value : (c.defaultValue || '');
-      });
-    }
-
-    // Adaptar nombres de campos extra para las plantillas
-    const extraAdaptado = {
-      user: extra['campus-user'],
-      pass: extra['campus-pass'],
-      fecha: extra['fecha-limite'] || extra['exam-fecha'] || extra['eq-fecha'],
-      lugar: extra['exam-lugar'] || extra['eq-lugar'],
-      modulo: extra['exam-modulo'],
-      detalle: extra['eq-detalle'],
-      mensaje: extra['msg-personalizado']
-    };
-
-    const mensaje = this.plantillaActual.generar(est, extraAdaptado, this.grupoParaPlantilla());
+    const mensaje = this.generarMensaje(est, this.leerExtras());
     
     if (mensaje === null) {
       bubble.style.display = 'none';
@@ -645,20 +826,7 @@ const MessageEngine = {
 
   getMensajeActual() {
     if (!this.estudianteSeleccionado || !this.plantillaActual) return '';
-    const est = this.estudianteSeleccionado;
-    const extra = {};
-    this.plantillaActual.camposExtra.forEach(c => {
-      const el = document.getElementById(`extra-${c.id}`);
-      extra[c.id] = el ? el.value : (c.defaultValue || '');
-    });
-    const extraAdaptado = {
-      user: extra['campus-user'], pass: extra['campus-pass'],
-      fecha: extra['fecha-limite'] || extra['exam-fecha'] || extra['eq-fecha'],
-      lugar: extra['exam-lugar'] || extra['eq-lugar'], modulo: extra['exam-modulo'],
-      detalle: extra['eq-detalle'],
-      mensaje: extra['msg-personalizado']
-    };
-    return this.plantillaActual.generar(est, extraAdaptado, this.grupoParaPlantilla()) || '';
+    return this.generarMensaje(this.estudianteSeleccionado, this.leerExtras()) || '';
   },
 
   copiarMensaje() {
@@ -684,20 +852,9 @@ const MessageEngine = {
       const est = todos.find(e => e.id === id);
       if (!est) return;
       
-      const extra = {};
-      this.plantillaActual.camposExtra.forEach(c => {
-        const el = document.getElementById(`extra-${c.id}`);
-        extra[c.id] = el ? el.value : (c.defaultValue || '');
-      });
-      const extraAdaptado = {
-        user: extra['campus-user'], pass: extra['campus-pass'],
-        fecha: extra['fecha-limite'] || extra['exam-fecha'] || extra['eq-fecha'],
-        lugar: extra['exam-lugar'] || extra['eq-lugar'], modulo: extra['exam-modulo'],
-        detalle: extra['eq-detalle'],
-        mensaje: extra['msg-personalizado']
-      };
+      const extraAdaptado = this.leerExtras();
       
-      const mensaje = this.plantillaActual.generar(est, extraAdaptado, this.grupoParaPlantilla());
+      const mensaje = this.generarMensaje(est, extraAdaptado);
       if (!mensaje) return;
       
       const tel = this.normalizarTelefono(est.telefono);
@@ -705,8 +862,12 @@ const MessageEngine = {
       
       const url = `https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`;
       window.open(url, '_blank');
+      this.enviados.add(est.id);
       enviados++;
     });
+
+    this.pintarEnviados();
+    this.actualizarContador();
     
     if (enviados > 0) UI.showToast(`📤 Abriendo WhatsApp para ${enviados} estudiante(s)...`);
   }
