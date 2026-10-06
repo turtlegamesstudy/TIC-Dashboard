@@ -360,6 +360,59 @@ test('detects a concurrent edit and reloads rather than overwriting it', async (
   assert.equal(engine.getGrupoById('group-1').nombre, 'Cambio remoto');
 });
 
+// [FIX] El administrador debe poder borrar grupos creados por otra cuenta.
+// La nube devuelve la forma cruda del registro (sin arreglos vacíos ni los
+// campos que la aplicación rellena al leer); antes esa diferencia bastaba
+// para que la transacción se negara con "Otro usuario modificó el mismo
+// registro" y el grupo reapareciera.
+test('deletes a group created by another account without a false conflict', async () => {
+  const { engine, database } = createHarness({ appData: sharedData() });
+  database.setForTest('appData/grupos/group-2', {
+    id: 'group-2',
+    nombre: 'Creado por otra cuenta',
+    estudiantes: [{ id: 'student-9', nombres: 'Ana', apellidos: 'Pérez' }]
+  });
+
+  await engine.init();
+  engine.db.grupos = engine.db.grupos.filter(group => group.id !== 'group-2');
+  await engine.save();
+
+  assert.equal(database.getForTest('appData/grupos/group-2'), null);
+  assert.equal(engine.getGrupoById('group-2'), undefined);
+  assert.equal(engine.getGrupoById('group-1').nombre, 'Primero');
+});
+
+test('repairs an incomplete remote order so the first save is not blocked', async () => {
+  const { engine, database } = createHarness({ appData: sharedData() });
+
+  // El orden remoto solo nombraba al primer grupo: la sesión local arrancaba
+  // con una lista distinta y cualquier borrado chocaba contra esa transacción.
+  await engine.init();
+  assert.deepEqual(Array.from(database.getForTest('appData/gruposOrden')), ['group-1', 'group-2']);
+
+  engine.db.grupos = engine.db.grupos.filter(group => group.id !== 'group-2');
+  await engine.save();
+
+  assert.equal(database.getForTest('appData/grupos/group-2'), null);
+  assert.deepEqual(Array.from(database.getForTest('appData/gruposOrden')), ['group-1']);
+});
+
+test('still refuses to delete a group another user changed while it was open', async () => {
+  const { engine, database } = createHarness({ appData: sharedData() });
+  await engine.init();
+  engine.db.grupos = engine.db.grupos.filter(group => group.id !== 'group-2');
+  // Otro usuario le agrega un alumno mientras el administrador tenía la
+  // sección abierta: ahí sí debe mandar el conflicto y conservar los datos.
+  database.setForTest('appData/grupos/group-2/estudiantes/0', {
+    id: 'student-9', nombres: 'Luis', apellidos: 'Gómez', estado: 'Activo'
+  });
+
+  await assert.rejects(engine.save(), { code: 'app/write-conflict' });
+
+  assert.equal(database.getForTest('appData/grupos/group-2/id'), 'group-2');
+  assert.equal(engine.getGrupoById('group-2').estudiantes.length, 1);
+});
+
 test('lets a teacher upgrade legacy shared data without an administrator session', async () => {
   const { engine, database } = createHarness({});
   const legacyData = {

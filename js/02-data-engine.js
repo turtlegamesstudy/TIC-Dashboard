@@ -115,11 +115,18 @@
           this.db = this._deserializeDatabase(remoteData);
           this._migrarEsquema();
           const normalized = this._serializeDatabase(this.db);
+          const idsDe = collection => {
+            const guardado = remoteData[collection];
+            if (Array.isArray(guardado)) return guardado.filter(Boolean).map(record => String(record?.id ?? ''));
+            return Object.keys(guardado || {});
+          };
           const usesLegacyFormat = Array.isArray(remoteData.grupos) ||
             Array.isArray(remoteData.equipos) ||
             !Array.isArray(remoteData.gruposOrden) ||
             !Array.isArray(remoteData.equiposOrden) ||
-            remoteData.firebaseKeyEncoding !== 1;
+            remoteData.firebaseKeyEncoding !== 1 ||
+            this._ordenDesactualado(remoteData.gruposOrden, idsDe('grupos')) ||
+            this._ordenDesactualado(remoteData.equiposOrden, idsDe('equipos'));
           if (usesLegacyFormat) {
             // [ACCESO] La actualización de formato reescribe exactamente los
             // mismos datos en el orden que la aplicación espera; no crea ni
@@ -216,6 +223,18 @@
           if (!included.has(String(record.id))) ordered.push(record);
         });
         return ordered;
+      },
+
+      // [FIX] ¿El orden guardado en la nube cubre exactamente los registros
+      // que existen? Un orden incompleto (datos viejos, registros añadidos a
+      // mano o borrados sin actualizar la lista) hacía que la sesión local
+      // arrancara con un orden distinto al remoto: al borrar un grupo la
+      // transacción del orden se negaba y el borrado completo se revertía,
+      // aunque nadie hubiera tocado nada. Se repara en el arranque.
+      _ordenDesactualado(orden, ids) {
+        if (!Array.isArray(orden)) return true;
+        const conjunto = new Set(orden.map(String));
+        return conjunto.size !== ids.length || ids.some(id => !conjunto.has(String(id)));
       },
 
       _deserializeDatabase(remoteData) {
@@ -499,6 +518,30 @@
         };
       },
 
+      // [FIX] Dos formas del mismo registro pueden diferir sin que nadie lo
+      // haya editado: Firebase no conserva los arreglos vacíos, las bases
+      // antiguas traen campos faltantes y la aplicación rellena esos huecos
+      // al leer. Antes esa diferencia se interpretaba como una edición
+      // concurrente, así que el administrador no podía borrar (ni editar)
+      // un grupo creado por otra cuenta: la transacción se negaba y el
+      // grupo volvía a aparecer. Aquí se comparan ya rellenados.
+      _registrosEquivalentes(coleccion, a, b) {
+        if (a === b) return true;
+        if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return this._iguales(a, b);
+        return this._iguales(this._formaSincronizada(coleccion, a), this._formaSincronizada(coleccion, b));
+      },
+
+      // Forma completa de un registro tal como la espera la sesión.
+      _formaSincronizada(coleccion, registro) {
+        if (coleccion === 'grupos') {
+          const copia = { ...registro };
+          if (typeof copia.docenteGuia !== 'string') copia.docenteGuia = '';
+          return this._normalizarGrupo(copia);
+        }
+        if (coleccion === 'equipos') return this._normalizarEquipo(registro);
+        return registro;
+      },
+
       async _mutateGroupAndSave(grupoId, mutate) {
         const grupo = this.getGrupoById(grupoId);
         if (!grupo) return null;
@@ -555,7 +598,7 @@
               if (this._iguales(oldValue, newValue)) continue;
               const result = await reference.child(`${collection}/${key}`).transaction(current => {
                 const currentValue = current ?? null;
-                if (!this._iguales(currentValue, oldValue)) return;
+                if (!this._registrosEquivalentes(collection, currentValue, oldValue)) return;
                 return newValue;
               }, undefined, false);
               if (!result.committed) {
