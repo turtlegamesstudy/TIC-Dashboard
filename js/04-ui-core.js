@@ -1198,7 +1198,7 @@ actualizarNavActivo(modulo) {
           }
         });
         const fechaSync = DataEngine.db.lastUpdated ? new Date(DataEngine.db.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-        // ── 2 · Visualizaciones (justo debajo de los KPIs) ─────────────
+        // ── 1 · Barras del gráfico «Alumnos por grupo» ────────────────
         const barras = typeof StatsEngine !== 'undefined'
           ? grupos.map(g => {
               const n = UI.listaEstudiantes(g.estudiantes).length;
@@ -1206,7 +1206,35 @@ actualizarNavActivo(modulo) {
               return StatsEngine.barraCSS(Math.round((n / max) * 100), n === 0 ? '--text-muted' : '--primary-blue', `${g.nombre} — ${n} alumno(s)`);
             }).join('')
           : '';
-        const graficos = totalGrupos === 0
+        // Tarjetas KPI con el mismo lenguaje visual que Estadísticas:
+        // etiqueta + ayuda (ⓘ), icono de tono, cifra y una línea de apoyo.
+        const tarjeta = ({ valor, sufijo = '', etiqueta, ayuda, icono, tono, pie, texto }) => `
+          <div class="kpi-card">
+            <span class="kpi-etiqueta"><span class="kpi-texto">${this.escaparTexto(etiqueta)}</span>${this.ayudaHTML(ayuda)}</span>
+            <span class="kpi-cuerpo">
+              <span class="kpi-icono ${tono}"><i class="${icono}" aria-hidden="true"></i></span>
+              <span class="kpi-datos">
+                <span class="kpi-valor${texto ? ' kpi-valor--texto' : ''}">${valor}${sufijo ? `<small>${sufijo}</small>` : ''}</span>
+                <span class="kpi-pie">${pie}</span>
+              </span>
+            </span>
+          </div>`;
+        const pctActivos = totalEstudiantes > 0 ? Math.round((totalActivos / totalEstudiantes) * 100) : 0;
+        const kpis = [
+          tarjeta({ valor: totalGrupos, etiqueta: 'Grupos registrados', ayuda: 'grupos',
+            icono: 'ri-team-line', tono: 'azul', pie: 'Con listado cargado en la base' }),
+          tarjeta({ valor: totalActivos, sufijo: `/${totalEstudiantes}`, etiqueta: 'Estudiantes activos', ayuda: 'activos',
+            icono: 'ri-user-follow-line', tono: 'verde',
+            pie: totalEstudiantes ? `${pctActivos}% de la matrícula` : 'Aún sin matrícula cargada' }),
+          tarjeta({ valor: totalRetirados, etiqueta: 'Estudiantes retirados', ayuda: 'retirados',
+            icono: 'ri-user-unfollow-line', tono: totalRetirados > 0 ? 'rojo' : 'azul',
+            pie: 'Quedan fuera del cálculo de promedios' }),
+          tarjeta({ valor: 'Sincronizado', etiqueta: 'Cuaderno STD', ayuda: 'cuaderno',
+            icono: 'ri-file-excel-2-line', tono: 'verde', pie: `Actualizado ${fechaSync}`, texto: true })
+        ].join('');
+
+        // ── 3 · Visualizaciones (justo debajo de los KPIs) ─────────────
+        const resumenVisual = totalGrupos === 0
           ? this.estadoVacioHTML({
               icono: 'ri-bar-chart-box-line',
               titulo: 'Todavía no hay datos para mostrar.',
@@ -1214,18 +1242,95 @@ actualizarNavActivo(modulo) {
             })
           : `<div class="panel-graficos">
               <div class="chart-box">
-                <h3><i class="ri-donut-chart-line"></i> Distribución de la matrícula ${this.ayudaHTML('activos')}</h3>
+                <h3><i class="ri-donut-chart-line" aria-hidden="true"></i> Distribución de la matrícula ${this.ayudaHTML('activos')}</h3>
                 <p class="chart-nota">Cómo se reparte el total registrado entre activos y retirados.</p>
-                ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#10b981', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`)}
-                ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, '#ef4444', 'Retirados', `${totalRetirados} bajas registradas`)}
+                <div class="dash-donuts">
+                  ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#10b981', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`)}
+                  ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, '#ef4444', 'Retirados', `${totalRetirados} bajas registradas`)}
+                </div>
               </div>
               <div class="chart-box">
-                <h3><i class="ri-bar-chart-2-line"></i> Alumnos por grupo ${this.ayudaHTML('grupos')}</h3>
+                <h3><i class="ri-bar-chart-2-line" aria-hidden="true"></i> Alumnos por grupo ${this.ayudaHTML('grupos')}</h3>
                 <p class="chart-nota">Tamaño de cada grupo cargado en la base compartida.</p>
                 ${barras || `<p class="chart-nota">Carga el listado de un grupo para ver su tamaño.</p>`}
               </div>
             </div>`;
-        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start;"><div><h1>¡Hola de nuevo, ${this.nombreDocente()}! 👋</h1><p>Bienvenido al panel principal de gestión docente en el <strong>${this.nombreCentro()}</strong>.</p></div><div style="text-align: right;"><span class="badge-status activo" style="padding: 6px 12px; font-size: 0.8rem;"><i class="ri-checkbox-circle-fill"></i> Sistema en línea</span><p style="font-size: 0.72rem; color: rgba(255, 255, 255, 0.78); margin-top: 4px;">Última actualización: ${fechaSync}</p></div></div><div class="grid-cards"><div class="card-widget"><div class="widget-icon blue"><i class="ri-team-line"></i></div><div class="widget-info"><h4>Grupos Registrados ${this.ayudaHTML('grupos')}</h4><div class="value">${totalGrupos}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-user-follow-line"></i></div><div class="widget-info"><h4>Estudiantes Activos ${this.ayudaHTML('activos')}</h4><div class="value">${totalActivos} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted);">/ ${totalEstudiantes}</span></div></div></div><div class="card-widget"><div class="widget-icon navy"><i class="ri-user-unfollow-line"></i></div><div class="widget-info"><h4>Estudiantes Retirados ${this.ayudaHTML('retirados')}</h4><div class="value" style="color: ${totalRetirados > 0 ? '#B91C1C' : 'var(--text-main)'};">${totalRetirados}</div></div></div><div class="card-widget"><div class="widget-icon green"><i class="ri-file-excel-2-line"></i></div><div class="widget-info"><h4>Cuaderno STD ${this.ayudaHTML('cuaderno')}</h4><div class="value" style="font-size: 1.1rem; color: var(--accent-green);">Sincronizado</div></div></div></div>${graficos}<div class="table-container" style="margin-top: 24px;"><div style="padding: 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><span style="color: var(--primary-blue); display: flex; align-items: center; gap: 8px;"><i class="ri-list-check-2"></i> Resumen de Grupos Activos en DB.json</span><span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 400;">Total: ${totalGrupos} grupo(s)</span></div><table class="custom-table"><thead><tr><th>Código de Grupo</th><th>Carrera / Evento</th><th>Turno</th><th>Activos</th><th>Retirados</th><th>Total Alumnos</th></tr></thead><tbody>${totalGrupos === 0 ? `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No hay ningún grupo registrado en el sistema.</td></tr>` : grupos.map(g => { const act = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Activo').length : 0; const ret = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Retirado').length : 0; return `<tr><td><strong>${g.nombre}</strong></td><td>${g.carrera}</td><td>${g.turno}</td><td><span class="badge-status activo">${act} activos</span></td><td><span class="badge-status retirado">${ret} retirados</span></td><td><strong>${g.estudiantes ? g.estudiantes.length : 0}</strong></td></tr>`; }).join('')}</tbody></table></div></div>`;
+
+        // ── 4 · Tabla de detalle (al final, como en todo panel) ────────
+        const filasGrupos = totalGrupos === 0
+          ? `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No hay ningún grupo registrado en el sistema.</td></tr>`
+          : grupos.map(g => {
+              const act = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Activo').length : 0;
+              const ret = g.estudiantes ? g.estudiantes.filter(s => s.estado === 'Retirado').length : 0;
+              const total = g.estudiantes ? g.estudiantes.length : 0;
+              const pct = total > 0 ? Math.round((act / total) * 100) : 0;
+              return `<tr>
+                <td><strong>${g.nombre}</strong></td>
+                <td>${g.carrera}</td>
+                <td>${g.turno}</td>
+                <td><span class="badge-status activo">${act} activos</span></td>
+                <td><span class="badge-status ${ret > 0 ? 'retirado' : ''}">${ret} retirados</span></td>
+                <td style="text-align: center;"><span class="dash-talla"><b>${total}</b> <span>${pct}% activos</span></span></td>
+              </tr>`;
+            }).join('');
+
+        return `
+          <div class="module-fade-enter dashboard-vista">
+            <header class="view-header dash-hero">
+              <div class="dash-hero-copy">
+                <h1>¡Hola de nuevo, ${this.escaparTexto(this.nombreDocente())}! <span class="dash-emoji" aria-hidden="true">👋</span></h1>
+                <p>Bienvenido al panel principal de gestión docente en el <strong>${this.escaparTexto(this.nombreCentro())}</strong>.</p>
+                <div class="dash-acciones">
+                  <button type="button" class="dash-accion primaria" onclick="UI.irA('estadisticas')"><i class="ri-bar-chart-2-line" aria-hidden="true"></i> Ver estadísticas</button>
+                  <button type="button" class="dash-accion" onclick="UI.irA('grupos')"><i class="ri-file-excel-line" aria-hidden="true"></i> Cargar lista de grupo</button>
+                  <button type="button" class="dash-accion" onclick="UI.irA('cuaderno-docente')"><i class="ri-book-2-line" aria-hidden="true"></i> Cuaderno Docente</button>
+                </div>
+              </div>
+              <div class="header-actions dash-hero-estado">
+                <span class="admin-stat dash-linea"><span class="dash-punto" aria-hidden="true"></span> Sistema en línea</span>
+                <span class="admin-stat"><i class="ri-refresh-line" aria-hidden="true"></i> <b>${fechaSync}</b> sincronizado</span>
+                <span class="admin-stat"><i class="ri-group-line" aria-hidden="true"></i> <b>${totalEstudiantes}</b> matriculados</span>
+              </div>
+            </header>
+
+            <section class="bloque-analisis dash-kpis" aria-label="Indicadores esenciales">
+              <div class="bloque-titulo">
+                <h2><i class="ri-dashboard-3-line" aria-hidden="true"></i> Resumen general</h2>
+                <span class="bloque-nota">${totalGrupos} grupo(s) · ${totalEstudiantes} estudiante(s) registrados</span>
+              </div>
+              <div class="kpi-grid">${kpis}</div>
+            </section>
+
+            <section class="bloque-analisis dash-visual" aria-label="Visualizaciones principales">
+              <div class="bloque-titulo">
+                <h2><i class="ri-pie-chart-2-line" aria-hidden="true"></i> Visualizaciones</h2>
+                <span class="bloque-nota">Distribución de la matrícula y tamaño de cada grupo</span>
+              </div>
+              ${resumenVisual}
+            </section>
+
+            <section class="bloque-analisis dash-detalle" aria-label="Detalle por grupo">
+              <div class="bloque-titulo">
+                <h2><i class="ri-table-line" aria-hidden="true"></i> Detalle por grupo</h2>
+                <span class="bloque-nota">Total: ${totalGrupos} grupo(s) · ${totalEstudiantes} estudiante(s)</span>
+              </div>
+              <div class="table-container">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Código de Grupo</th>
+                      <th>Carrera / Evento</th>
+                      <th>Turno</th>
+                      <th>Activos</th>
+                      <th>Retirados</th>
+                      <th style="text-align: center;">Total Alumnos</th>
+                    </tr>
+                  </thead>
+                  <tbody>${filasGrupos}</tbody>
+                </table>
+              </div>
+            </section>
+          </div>`;
       },
 
       renderGruposView() {
