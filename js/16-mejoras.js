@@ -3,7 +3,7 @@
    16 · MEJORAS DE INTERFAZ
    ───────────────────────────────────────────────────────────────
    Diez incrementos de usabilidad agrupados en un solo módulo para
-   no dispersar los cambios por todo el panel:
+   no dispersar los cambios por todo el panel (hoy trece):
 
     1 · Esqueletos de carga          6 · Paleta de comandos (Ctrl/Cmd + K)
     2 · Tarjetas KPI clicable        7 · Barra de filtros global
@@ -279,6 +279,7 @@ const Mejoras = (() => {
     mejorarTablas();
     marcarKPIs();
     actualizarBarraFiltros();
+    try { pintarSeguimiento(); } catch (e) { console.warn('Mejoras · seguimiento:', e); }
     try {
       pintarMantenimiento();
       // La bandera se relee como mucho una vez por minuto.
@@ -893,11 +894,17 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '1.7.0';
+  const VERSION = '1.8.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '1.8.0', fecha: '2026-10-07', titulo: 'Seguimiento y proyección de notas', notas: [
+      'Tarjeta «Pulso de hoy» en el panel principal con alertas automáticas de seguimiento.',
+      'Reglas: rendimiento bajo, alcance imposible, estudiante sin notas, módulo sin notas y grupo sin matrícula.',
+      'Alertas marcables como revisadas (se guardan en el navegador) con expansión y restablecimiento.',
+      'Proyección de notas en la ficha: promedio, pendientes y la nota mínima para cerrar en el umbral.'
+    ] },
     { version: '1.7.0', fecha: '2026-10-07', titulo: 'Modo mantenimiento', notas: [
       'Bandera en Firebase con copia local para el arranque sin conexión.',
       'Los usuarios que no son administradores ven una pantalla de bloqueo con motivo y reintentos.',
@@ -1562,6 +1569,7 @@ const Mejoras = (() => {
         : '<span class="detalle-vacio">Aún sin notas</span>')}
         ${fila('Módulos con nota', String(notasDeEstudiante(est)))}
       </dl>
+      ${proyeccionHTML(est, grupo)}
       <div class="detalle-acciones">
         <button class="btn-primary-soft" type="button" data-detalle-accion="estadisticas">
           <i class="ri-bar-chart-line" aria-hidden="true"></i> Ver en estadísticas</button>
@@ -1806,6 +1814,397 @@ const Mejoras = (() => {
   /* ═══════════════════════════════════════════════════════════
      9 · TECLADO Y ACCESIBILIDAD
      ═══════════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════
+     13 · SEGUIMIENTO — ALERTAS AUTOMÁTICAS Y PROYECCIÓN
+     ───────────────────────────────────────────────────────────
+     Cinco reglas se recalculan en cada pintado del panel
+     principal: rendimiento bajo, alcance imposible, estudiante
+     sin notas, módulo sin notas y grupo sin matrícula. Cada
+     alerta se puede marcar como revisada (se guarda en local) y
+     la proyección responde a lo que un docente pregunta antes
+     de cerrar un corte: «¿qué nota necesita para llegar al
+     mínimo?». Todo es de solo lectura sobre DataEngine: no
+     escribe en la base ni cambia el cálculo de nadie.
+     ═══════════════════════════════════════════════════════════ */
+  const CLAVE_SEGUIMIENTO = 'tic-seguimiento-revisados';
+  // Columnas que no son evaluaciones (totales, firmas, fechas…):
+  // no cuentan como nota cargada ni como pendiente.
+  const COL_NO_EVALUACION = /^(total|subtotal|promedio|general|firmas|firma|fecha|pagina|listado|observaciones|detalle|encabezado)/;
+  const ORDEN_GRAVEDAD = { alta: 0, media: 1, baja: 2 };
+  let segAlertas = [];
+  let segFirma = '';
+  let segExpandido = false;
+  let segRevisadasVisible = false;
+
+  function umbralAprobacion() {
+    const campo = document.getElementById('input-umbral');
+    const enDOM = campo ? Number(campo.value) : NaN;
+    if (Number.isFinite(enDOM) && enDOM > 0) return Math.round(enDOM);
+    try {
+      if (typeof CuadernoEngine !== 'undefined' && CuadernoEngine && typeof CuadernoEngine.cargarPreferenciasExportacion === 'function') {
+        const guardado = Number(CuadernoEngine.cargarPreferenciasExportacion().umbral);
+        if (Number.isFinite(guardado) && guardado > 0) return Math.round(guardado);
+      }
+    } catch (e) { /* sin preferencias guardadas */ }
+    const db = (typeof DataEngine !== 'undefined' && DataEngine && DataEngine.db) || {};
+    const informe = Number(db.informe && db.informe.umbral);
+    return Number.isFinite(informe) && informe > 0 ? Math.round(informe) : 60;
+  }
+
+  function modulosDeEstudiante(est) {
+    const base = (typeof MODULOS_TRANSVERSALES !== 'undefined' && Array.isArray(MODULOS_TRANSVERSALES))
+      ? MODULOS_TRANSVERSALES : [];
+    const lista = base.slice();
+    Object.keys((est && est.evaluacionesPorModulo) || {}).forEach(modulo => {
+      if (lista.indexOf(modulo) < 0) lista.push(modulo);
+    });
+    return lista;
+  }
+
+  const esColumnaEvaluacion = nombre => {
+    const texto = normalizar(String(nombre || '').trim());
+    return Boolean(texto) && !COL_NO_EVALUACION.test(texto);
+  };
+
+  /* Modelo lineal de proyección: X es la nota que sacará en todo
+     lo pendiente. El promedio proyectado es la media de los
+     promedios modulares con esas X puestas, así que basta despejar
+     X para saber qué exige el mínimo aprobatorio. */
+  function proyeccionEstudiante(est, grupo) {
+    const umbral = umbralAprobacion();
+    const evaluaciones = (est && est.evaluacionesPorModulo) || {};
+    const filas = [];
+
+    modulosDeEstudiante(est).forEach(modulo => {
+      if (est.convalidaciones && est.convalidaciones[modulo]) return;
+      const registro = evaluaciones[modulo] || null;
+      const notas = (registro && (registro.notas || registro.evaluaciones)) || null;
+      const conocidas = [];
+      const conocer = nombre => {
+        if (esColumnaEvaluacion(nombre) && conocidas.indexOf(nombre) < 0) conocidas.push(nombre);
+      };
+      if (notas) Object.keys(notas).forEach(conocer);
+      const estructura = grupo && grupo.estructuraModulos && grupo.estructuraModulos[modulo];
+      ((estructura && estructura.columnasOrdenadas) || [])
+        .forEach(col => conocer(col && col.nombreDisplay ? col.nombreDisplay : col));
+
+      let suma = 0, hechas = 0;
+      if (notas) Object.keys(notas).forEach(col => {
+        const valor = notas[col];
+        if (typeof valor === 'number' && isFinite(valor)) { suma += valor; hechas++; }
+      });
+      let pendientes = conocidas.filter(col => {
+        const valor = notas ? notas[col] : null;
+        return !(typeof valor === 'number' && isFinite(valor));
+      }).length;
+      // Módulo sin nada cargado: falta al menos una evaluación.
+      if (!pendientes && !hechas) pendientes = 1;
+
+      filas.push({ modulo, suma, hechas, pendientes, promedio: hechas ? suma / hechas : null });
+    });
+
+    let a = 0, b = 0, modulos = 0, pendientes = 0, sumaActual = 0, modulosConNota = 0;
+    filas.forEach(f => {
+      modulos++; pendientes += f.pendientes;
+      if (f.hechas > 0) {
+        sumaActual += f.promedio; modulosConNota++;
+        if (f.pendientes > 0) {
+          const total = f.hechas + f.pendientes;
+          a += f.suma / total; b += f.pendientes / total;
+        } else a += f.promedio;
+      } else b += 1;
+    });
+
+    const promedio = modulosConNota ? Math.round(sumaActual / modulosConNota) : null;
+    const base = { umbral, filas, promedio, pendientes, modulos };
+    if (!modulos) return Object.assign(base, { estado: 'sin-datos', necesita: null, mejor: null, peor: null });
+    if (!pendientes) return Object.assign(base, { estado: 'cerrado', necesita: null, mejor: promedio, peor: promedio });
+
+    // Promedio proyectado = media de los promedios modulares:
+    // rango y despeje se expresan siempre sobre esa media.
+    const peor = Math.round(a / modulos);
+    const mejor = Math.round((a + b * 100) / modulos);
+    const requerido = b > 0 ? (umbral * modulos - a) / b : Infinity;
+    let estado = 'en-alcance';
+    if (requerido <= 0) estado = 'seguro';
+    else if (requerido > 100 || mejor < umbral) estado = 'imposible';
+    return Object.assign(base, {
+      estado,
+      necesita: estado === 'imposible' ? null : Math.max(0, Math.ceil(requerido)),
+      mejor, peor
+    });
+  }
+
+  const revisadosSeguimiento = () => {
+    try {
+      const dato = JSON.parse(leerLocal(CLAVE_SEGUIMIENTO, '{}'));
+      return dato && typeof dato === 'object' ? dato : {};
+    } catch (e) { return {}; }
+  };
+
+  function calcularSeguimiento() {
+    const umbral = umbralAprobacion();
+    const alertas = [];
+    const modulos = (typeof MODULOS_TRANSVERSALES !== 'undefined' && Array.isArray(MODULOS_TRANSVERSALES))
+      ? MODULOS_TRANSVERSALES : [];
+
+    gruposDb().forEach(grupo => {
+      const matricula = (Array.isArray(grupo.estudiantes) ? grupo.estudiantes : []).filter(Boolean);
+      if (!matricula.length) {
+        alertas.push({
+          id: `grupo-vacio|${grupo.id}`, regla: 'grupo-vacio', gravedad: 'baja',
+          icono: 'ri-team-line', titulo: `Grupo ${grupo.nombre} sin matrícula`,
+          texto: 'Todavía no se ha cargado la lista de este grupo.',
+          accion: { tipo: 'grupos', etiqueta: 'Abrir grupos' }
+        });
+        return;
+      }
+      modulos.forEach(modulo => {
+        let evaluables = 0, conNotas = 0;
+        matricula.forEach(est => {
+          if (est.estado === 'Retirado') return;
+          if (est.convalidaciones && est.convalidaciones[modulo]) return;
+          evaluables++;
+          const registro = est.evaluacionesPorModulo && est.evaluacionesPorModulo[modulo];
+          const notas = registro && (registro.notas || registro.evaluaciones);
+          if (notas && Object.keys(notas).some(col => typeof notas[col] === 'number' && isFinite(notas[col]))) conNotas++;
+        });
+        if (evaluables && !conNotas) {
+          alertas.push({
+            id: `modulo-sin-notas|${grupo.id}|${modulo}`, regla: 'modulo-sin-notas', gravedad: 'baja',
+            icono: 'ri-book-2-line', titulo: `${grupo.nombre} · ${modulo}`,
+            texto: 'Ningún estudiante de este grupo tiene notas en el módulo.',
+            accion: { tipo: 'estadisticas', grupo: grupo.id, modulo: modulo, etiqueta: 'Ver en estadísticas' }
+          });
+        }
+      });
+      matricula.forEach(est => {
+        if (est.estado === 'Retirado') return;
+        const nombre = `${est.nombres || ''} ${est.apellidos || ''}`.trim() || 'Estudiante sin nombre';
+        const proy = proyeccionEstudiante(est, grupo);
+        const ficha = { tipo: 'ficha', estId: est.id, etiqueta: 'Ver ficha' };
+        if (proy.estado === 'imposible') {
+          alertas.push({
+            id: `sin-alcance|${est.id}`, regla: 'sin-alcance', gravedad: 'alta',
+            icono: 'ri-error-warning-line', titulo: `${nombre}: no alcanza el mínimo`,
+            texto: `Lo máximo posible con lo cargado es ${proy.mejor}/100 y el mínimo es ${umbral}.`,
+            accion: ficha
+          });
+        } else if (proy.promedio === null) {
+          alertas.push({
+            id: `sin-notas|${est.id}`, regla: 'sin-notas', gravedad: 'media',
+            icono: 'ri-file-list-3-line', titulo: `${nombre}: sin notas`,
+            texto: `Grupo ${grupo.nombre}: ninguna evaluación cargada en ${proy.modulos} módulo(s).`,
+            accion: ficha
+          });
+        } else if (proy.promedio < umbral) {
+          alertas.push({
+            id: `rendimiento-bajo|${est.id}`, regla: 'rendimiento-bajo', gravedad: 'media',
+            icono: 'ri-line-chart-line', titulo: `${nombre}: promedio ${proy.promedio}/100`,
+            texto: proy.estado === 'cerrado'
+              ? `Cerró en ${proy.promedio} con un mínimo aprobatorio de ${umbral}.`
+              : proy.estado === 'seguro'
+                ? `Va en ${proy.promedio} pero lo pendiente ya le asegura cerrar en ${umbral} o más.`
+                : proy.pendientes
+                  ? `Faltan ${proy.pendientes} evaluación(es): necesita ${proy.necesita} o más para cerrar en ${umbral}.`
+                  : `Va por debajo del mínimo aprobatorio de ${umbral}.`,
+            accion: ficha
+          });
+        }
+      });
+    });
+
+    alertas.sort((x, y) =>
+      (ORDEN_GRAVEDAD[x.gravedad] - ORDEN_GRAVEDAD[y.gravedad]) || String(x.titulo).localeCompare(String(y.titulo)));
+    segAlertas = alertas;
+    return { alertas: alertas, umbral: umbral };
+  }
+
+  function marcarSeguimiento(clave, volver) {
+    const revisados = revisadosSeguimiento();
+    if (volver) delete revisados[clave];
+    else revisados[clave] = Date.now();
+    escribirLocal(CLAVE_SEGUIMIENTO, JSON.stringify(revisados));
+    pintarSeguimiento(true);
+    UI.showToast(volver ? '👁️ Alerta devuelta a la lista de pendientes.' : '✅ Alerta marcada como revisada.', 'success');
+  }
+
+  function restablecerSeguimiento() {
+    escribirLocal(CLAVE_SEGUIMIENTO, null);
+    segRevisadasVisible = false;
+    pintarSeguimiento(true);
+    UI.showToast('↺ Se restauraron todas las alertas del seguimiento.', 'info');
+  }
+
+  function ejecutarAccionSeguimiento(clave) {
+    const alerta = segAlertas.filter(a => a.id === clave)[0];
+    if (!alerta || !alerta.accion) return;
+    const accion = alerta.accion;
+    if (accion.tipo === 'ficha') {
+      const idBuscado = String(accion.estId);
+      let estudiante = null;
+      gruposDb().forEach(g => {
+        if (estudiante) return;
+        estudiante = (Array.isArray(g.estudiantes) ? g.estudiantes : []).filter(Boolean)
+          .filter(e => String(e.id) === idBuscado)[0] || null;
+      });
+      if (!estudiante && typeof DataEngine !== 'undefined' && DataEngine && typeof DataEngine.getEstudiantes === 'function') {
+        estudiante = DataEngine.getEstudiantes().filter(e => String(e.id) === idBuscado)[0];
+      }
+      if (estudiante) abrirDetalleEstudiante(estudiante);
+      else UI.showToast('ℹ️ Ese estudiante ya no está en la base.', 'info');
+      return;
+    }
+    if (accion.tipo === 'estadisticas') {
+      const params = {};
+      if (accion.grupo) params.grupo = accion.grupo;
+      if (accion.modulo) params.modulo = accion.modulo;
+      UI.fijarFiltros('estadisticas', params);
+      UI.irA('estadisticas');
+      UI.showToast(`📊 Estadísticas${accion.modulo ? ` de ${accion.modulo}` : ''} con los filtros de la alerta.`, 'info');
+      return;
+    }
+    if (accion.tipo === 'grupos') UI.irA('grupos');
+  }
+
+  function segItemHTML(a) {
+    return `<li class="seg-item ${esc(a.gravedad)}${a.revisada ? ' revisada' : ''}">
+      <span class="seg-icono" aria-hidden="true"><i class="${esc(a.icono)}"></i></span>
+      <div class="seg-datos">
+        <strong>${esc(a.titulo)}</strong>
+        <p>${esc(a.texto)}</p>
+      </div>
+      <div class="seg-acciones">
+        <button type="button" class="btn-primary-soft" data-seg-accion="${esc(a.id)}">
+          <i class="ri-arrow-right-line" aria-hidden="true"></i> ${esc(a.accion ? a.accion.etiqueta : 'Ver detalle')}</button>
+        <button type="button" class="btn-icon" data-seg-revisar="${esc(a.id)}"${a.revisada ? ' data-seg-valor="1"' : ''}
+          title="${a.revisada ? 'Devolver a pendientes' : 'Marcar como revisado'}"
+          aria-label="${a.revisada ? 'Devolver alerta a pendientes' : 'Marcar alerta como revisada'}">
+          <i class="${a.revisada ? 'ri-eye-line' : 'ri-check-double-line'}" aria-hidden="true"></i></button>
+      </div>
+    </li>`;
+  }
+
+  /* La tarjeta se reconstruye solo cuando algo cambia de verdad
+     (alertas, contadores o expansión): así no se roba el foco. */
+  function pintarSeguimiento(forzar) {
+    const workspace = document.getElementById('workspace');
+    if (!workspace || typeof UI === 'undefined' || !UI) return;
+    let panel = document.getElementById('seg-panel');
+    const ancla = $('.dash-kpis', workspace);
+    if (UI.currentModule !== 'dashboard' || !ancla) { if (panel) panel.remove(); segFirma = ''; return; }
+
+    const calculo = calcularSeguimiento();
+    const umbral = calculo.umbral;
+    const revisados = revisadosSeguimiento();
+    const pendientes = calculo.alertas.filter(a => !revisados[a.id]);
+    const revisadas = calculo.alertas.filter(a => Boolean(revisados[a.id]));
+    // El orden de gravedad se respeta también al enseñar revisadas.
+    const visibles = segRevisadasVisible
+      ? calculo.alertas.map(a => (revisados[a.id] ? Object.assign({}, a, { revisada: true }) : a))
+      : pendientes;
+    const mostrar = visibles.slice(0, segExpandido ? visibles.length : 6);
+    const firma = [umbral, pendientes.length, revisadas.length, visibles.length,
+      segExpandido, segRevisadasVisible, mostrar.map(a => a.id).join('|')].join('¦');
+    if (panel && !forzar && firma === segFirma) return;
+    segFirma = firma;
+
+    const cuenta = g => pendientes.filter(a => a.gravedad === g).length;
+    const chip = (tipo, texto) => {
+      const n = cuenta(tipo);
+      return n ? `<span class="seg-chip ${tipo}"><b>${n}</b> ${texto}</span>` : '';
+    };
+    const cuerpo = mostrar.length
+      ? `<ul class="seg-lista">${mostrar.map(segItemHTML).join('')}</ul>`
+      : `<div class="seg-vacio"><i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+          <p><strong>Todo al día.</strong> Ninguna regla dispara alertas ahora mismo
+          (mínimo aprobatorio ${umbral}/100, ${gruposDb().length} grupo(s) revisados).</p></div>`;
+
+    const html = `
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-alarm-warning-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Pulso de hoy</p>
+          <h3>Seguimiento automático</h3>
+          <p class="panel-lema">Reglas sobre notas y matrícula · mínimo aprobatorio <b>${umbral}/100</b>.
+            Se recalcula con cada pintado del panel.</p>
+        </div>
+        <div class="seg-chips">
+          ${chip('alta', 'por revisar')}${chip('media', 'atención')}${chip('baja', 'informativas')}
+          ${pendientes.length ? '' : '<span class="seg-chip limpia"><b>0</b> alertas</span>'}
+        </div>
+      </header>
+      <div class="panel-cuerpo">${cuerpo}</div>
+      <footer class="panel-acciones split">
+        <span class="seg-nota"><i class="ri-history-line" aria-hidden="true"></i>
+          ${pendientes.length} sin revisar${revisadas.length ? ` · ${revisadas.length} revisada(s)` : ''}</span>
+        <div class="seg-botones">
+          ${revisadas.length ? `<button type="button" class="btn-ghost" data-seg-ver-revisadas>${
+            segRevisadasVisible ? 'Ocultar revisadas' : `Ver revisadas (${revisadas.length})`}</button>` : ''}
+          ${revisadas.length ? '<button type="button" class="btn-ghost" data-seg-restablecer><i class="ri-arrow-go-back-line" aria-hidden="true"></i> Restablecer</button>' : ''}
+          ${visibles.length > 6 ? `<button type="button" class="btn-primary-soft" data-seg-expandir>${
+            segExpandido ? 'Ver menos' : `Ver las ${visibles.length} alertas`}</button>` : ''}
+        </div>
+      </footer>`;
+
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.id = 'seg-panel';
+      panel.className = 'seg-panel';
+      panel.setAttribute('aria-label', 'Seguimiento y alertas automáticas');
+      ancla.parentNode.insertBefore(panel, ancla.nextSibling);
+    }
+    panel.innerHTML = html;
+  }
+
+  /* Bloque de proyección dentro del cajón de detalle. */
+  function proyeccionHTML(est, grupo) {
+    if (!est || est.estado === 'Retirado') return '';
+    const proy = proyeccionEstudiante(est, grupo);
+    const dato = (rotulo, valor, tono) =>
+      `<div class="seg-dato${tono ? ' ' + tono : ''}"><span>${esc(rotulo)}</span><b>${esc(valor)}</b></div>`;
+
+    let mensaje = '';
+    if (proy.estado === 'sin-datos') {
+      mensaje = 'Módulos convalidados o sin evaluaciones: no aplica la proyección.';
+    } else if (proy.estado === 'cerrado') {
+      mensaje = proy.promedio >= proy.umbral
+        ? `Sin evaluaciones pendientes: cierra con <b>${proy.promedio}</b> y supera el mínimo de ${proy.umbral}.`
+        : `Sin evaluaciones pendientes: cierra con <b>${proy.promedio}</b> y el mínimo aprobatorio es ${proy.umbral}.`;
+    } else if (proy.estado === 'imposible') {
+      mensaje = `Con lo cargado lo máximo posible es <b>${proy.mejor}</b>: ni cerrando en 100 se llega al mínimo de ${proy.umbral}.`;
+    } else if (proy.estado === 'seguro') {
+      mensaje = `Seguro: incluso con <b>0</b> en lo pendiente cierra en <b>${proy.peor}</b> y el mínimo es ${proy.umbral}.`;
+    } else {
+      mensaje = `Para cerrar en <b>${proy.umbral}</b> necesita <b>${proy.necesita}</b> o más en las ` +
+        `<b>${proy.pendientes}</b> evaluación(es) pendientes. Rango posible: ${proy.peor}–${proy.mejor}.`;
+    }
+
+    const pendientesFilas = proy.filas.filter(f => f.pendientes > 0);
+    const lista = pendientesFilas.length ? `<ul class="seg-modulos">${pendientesFilas.map(f => {
+      const requerido = f.hechas > 0 ? Math.ceil(proy.umbral * (f.hechas + 1) - f.suma) : proy.umbral;
+      const nota = requerido <= 0 ? 'ya asegurada' : (requerido > 100 ? 'no alcanzable' : `próxima ≥ ${requerido}`);
+      return `<li${requerido > 100 ? ' class="seg-mod-imposible"' : ''}>
+        <span class="seg-mod-nombre">${esc(f.modulo)}</span>
+        <span class="seg-mod-vals"><b>${f.hechas ? Math.round(f.promedio) : '—'}</b> · ${f.pendientes} pend. · <em>${nota}</em></span>
+      </li>`;
+    }).join('')}</ul>` : '';
+
+    return `<section class="seg-proyeccion ${esc(proy.estado)}">
+      <h4><i class="ri-line-chart-line" aria-hidden="true"></i> Proyección de notas
+        <span class="seg-umbral">mínimo ${proy.umbral}</span></h4>
+      <div class="seg-datos-row">
+        ${dato('Promedio', proy.promedio === null ? '—' : String(proy.promedio),
+          proy.promedio === null ? '' : (proy.promedio >= proy.umbral ? 'bien' : 'mal'))}
+        ${dato('Pendientes', String(proy.pendientes))}
+        ${dato('Necesario', proy.estado === 'en-alcance' ? String(proy.necesita)
+          : (proy.estado === 'seguro' ? '0' : '—'), proy.estado === 'en-alcance' ? 'mal' : 'bien')}
+      </div>
+      <p class="seg-nota-p">${mensaje}</p>
+      ${lista}
+    </section>`;
+  }
+
   function instalarEventos() {
     // ── Barra superior ──────────────────────────────────────────
     document.addEventListener('click', event => {
@@ -1850,6 +2249,14 @@ const Mejoras = (() => {
         return;
       }
       if (destino.id === 'modal-actualizaciones') { cerrarActualizaciones(); return; }
+      // Seguimiento: alertas del panel principal
+      const segRevisar = destino.closest('[data-seg-revisar]');
+      if (segRevisar) { marcarSeguimiento(segRevisar.dataset.segRevisar, segRevisar.dataset.segValor === '1'); return; }
+      if (destino.closest('[data-seg-restablecer]')) { restablecerSeguimiento(); return; }
+      if (destino.closest('[data-seg-ver-revisadas]')) { segRevisadasVisible = !segRevisadasVisible; pintarSeguimiento(true); return; }
+      if (destino.closest('[data-seg-expandir]')) { segExpandido = !segExpandido; pintarSeguimiento(true); return; }
+      const segAccion = destino.closest('[data-seg-accion]');
+      if (segAccion) { ejecutarAccionSeguimiento(segAccion.dataset.segAccion); return; }
       const chipTipo = destino.closest('[data-avisos-tipo]');
       if (chipTipo) { filtrosAvisos.tipo = chipTipo.dataset.avisosTipo || 'todos'; pintarCentroAvisos(); return; }
       if (destino.closest('[data-avisos-todo-leido]')) {
@@ -2101,9 +2508,14 @@ const Mejoras = (() => {
     alternarMantenimiento,
     refrescarMantenimiento,
     pintarMantenimiento,
+    calcularSeguimiento,
+    pintarSeguimiento,
+    proyeccionEstudiante,
+    umbralAprobacion,
     VERSION,
     _avisos: avisos,
     _filtrosAvisos: filtrosAvisos,
-    _mantenimiento: mantenimiento
+    _mantenimiento: mantenimiento,
+    _seguimiento: () => segAlertas
   };
 })();
