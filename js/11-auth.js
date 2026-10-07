@@ -126,7 +126,12 @@ const AuthManager = {
       const loadingCenterName = document.getElementById('loading-center-name');
       if (loadingCenterName) loadingCenterName.textContent = this.getActiveCenterName();
       document.title = `INATEC | ${this.getActiveCenterName()} | Cuaderno Docente`;
-      document.querySelector('.avatar').textContent = displayName.trim().charAt(0).toLocaleUpperCase('es');
+      const avatarTopbar = document.querySelector('.avatar');
+      if (avatarTopbar) avatarTopbar.textContent = displayName.trim().charAt(0).toLocaleUpperCase('es');
+      // Foto del perfil institucional en la barra superior (si existe).
+      if (typeof ProfileManager !== 'undefined' && ProfileManager.applyAvatar) {
+        ProfileManager.applyAvatar();
+      }
       // El botón «Cargar DB.json» lleva data-permiso="cargarBase" y lo oculta
       // Permisos.aplicar() (que se ejecuta en UI.init()). El enlace de
       // Administración tampoco se oculta a mano: el menú se genera desde el

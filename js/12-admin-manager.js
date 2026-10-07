@@ -47,6 +47,59 @@ const AdminManager = {
           <p class="admin-center-note">Abre la base compartida de otro centro tecnológico para consultarlo o actualizarlo.</p>
         </div>
 
+        <div class="admin-resumen kpi-grid" aria-label="Resumen de administración">
+          <article class="kpi-card">
+            <span class="kpi-etiqueta">Cuentas registradas</span>
+            <div class="kpi-cuerpo">
+              <span class="kpi-icono cyan"><i class="ri-group-line" aria-hidden="true"></i></span>
+              <div class="kpi-datos">
+                <span class="kpi-valor" data-admin-kpi="cuentas">—</span>
+                <span class="kpi-pie">Perfiles con acceso al panel</span>
+              </div>
+            </div>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-etiqueta">Cuentas activas</span>
+            <div class="kpi-cuerpo">
+              <span class="kpi-icono verde"><i class="ri-user-follow-line" aria-hidden="true"></i></span>
+              <div class="kpi-datos">
+                <span class="kpi-valor" data-admin-kpi="activas">—</span>
+                <span class="kpi-pie" data-admin-kpi-pie="activas">Pueden entrar hoy</span>
+              </div>
+            </div>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-etiqueta">Docentes</span>
+            <div class="kpi-cuerpo">
+              <span class="kpi-icono"><i class="ri-presentation-line" aria-hidden="true"></i></span>
+              <div class="kpi-datos">
+                <span class="kpi-valor" data-admin-kpi="docentes">—</span>
+                <span class="kpi-pie">Cuentas con rol docente</span>
+              </div>
+            </div>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-etiqueta">Administradores</span>
+            <div class="kpi-cuerpo">
+              <span class="kpi-icono morado"><i class="ri-shield-user-line" aria-hidden="true"></i></span>
+              <div class="kpi-datos">
+                <span class="kpi-valor" data-admin-kpi="admins">—</span>
+                <span class="kpi-pie">Gestionan cuentas y centros</span>
+              </div>
+            </div>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-etiqueta">Centros activos</span>
+            <div class="kpi-cuerpo">
+              <span class="kpi-icono ambar"><i class="ri-building-2-line" aria-hidden="true"></i></span>
+              <div class="kpi-datos">
+                <span class="kpi-valor" data-admin-kpi="centros">—</span>
+                <span class="kpi-pie">Espacios de datos abiertos</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
         <div class="admin-users-layout">
           <section class="admin-panel" aria-labelledby="admin-create-heading">
             <div class="admin-panel-heading">
@@ -123,6 +176,27 @@ const AdminManager = {
                 <i class="ri-refresh-line" aria-hidden="true"></i><span class="btn-label">Actualizar</span>
               </button>
             </div>
+            <div class="admin-toolbar">
+              <label class="admin-search" for="admin-search">
+                <i class="ri-search-line" aria-hidden="true"></i>
+                <input id="admin-search" type="search" data-admin-search
+                       placeholder="Buscar por nombre, correo o UID…" autocomplete="off">
+              </label>
+              <select data-admin-filter-rol aria-label="Filtrar por rol">
+                <option value="todos">Todos los roles</option>
+                <option value="docente">Docentes</option>
+                <option value="admin">Administradores</option>
+              </select>
+              <select data-admin-filter-estado aria-label="Filtrar por estado">
+                <option value="todos">Cualquier estado</option>
+                <option value="activas">Solo activas</option>
+                <option value="inactivas">Solo inactivas</option>
+              </select>
+              <button class="btn-primary-soft" type="button" data-admin-action="clear-filters">
+                <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar
+              </button>
+            </div>
+            <p class="admin-resultados" data-admin-results aria-live="polite"></p>
             <div id="admin-users-list" aria-live="polite">
               <p class="admin-users-message">Cargando cuentas...</p>
             </div>
@@ -177,6 +251,7 @@ const AdminManager = {
       if (!button) return;
       const { adminAction: action, uid } = button.dataset;
       if (action === 'refresh') this.cargarUsuarios();
+      else if (action === 'clear-filters') this.limpiarFiltros();
       else if (action === 'switch-center') this.switchCenter();
       else if (action === 'close-profile') this.closeStaffProfile();
       else if (action === 'edit-profile') this.openStaffProfile(uid);
@@ -191,7 +266,38 @@ const AdminManager = {
         this.updateRole(uid, role);
       }
     });
+    /* Buscador y filtros: se delegan en el workspace para que sigan
+       funcionando cada vez que se repinta la lista de cuentas. */
+    workspace.addEventListener('input', event => {
+      if (!event.target || !event.target.matches?.('[data-admin-search]')) return;
+      this._filtros.texto = event.target.value;
+      this._repintarCuentas();
+    });
+    workspace.addEventListener('change', event => {
+      const destino = event.target;
+      if (!destino || !destino.matches) return;
+      if (destino.matches('[data-admin-filter-rol]')) this._filtros.rol = destino.value;
+      else if (destino.matches('[data-admin-filter-estado]')) this._filtros.estado = destino.value;
+      else return;
+      this._repintarCuentas();
+    });
     this._workspaceBound = true;
+  },
+
+  _repintarCuentas() {
+    const list = document.getElementById('admin-users-list');
+    if (list) this._renderUsers(list);
+  },
+
+  limpiarFiltros() {
+    this._filtros = { texto: '', rol: 'todos', estado: 'todos' };
+    const buscar = document.querySelector?.('[data-admin-search]');
+    if (buscar) buscar.value = '';
+    const rol = document.querySelector?.('[data-admin-filter-rol]');
+    if (rol) rol.value = 'todos';
+    const estado = document.querySelector?.('[data-admin-filter-estado]');
+    if (estado) estado.value = 'todos';
+    this._repintarCuentas();
   },
 
   async cargarUsuarios() {
@@ -236,14 +342,52 @@ const AdminManager = {
     if (activeCenter) activeCenter.innerHTML = options(AuthManager.activeCenterId);
   },
 
+  /* Filtros de la lista de cuentas (texto, rol y estado). */
+  _filtros: { texto: '', rol: 'todos', estado: 'todos' },
+
+  _filtrarCuentas(entries) {
+    const { texto, rol, estado } = this._filtros;
+    const busqueda = String(texto || '').trim().toLowerCase();
+    return entries.filter(([uid, profile]) => {
+      if (rol !== 'todos' && (profile.role === 'admin' ? 'admin' : 'docente') !== rol) return false;
+      if (estado === 'activas' && profile.active !== true) return false;
+      if (estado === 'inactivas' && profile.active === true) return false;
+      if (!busqueda) return true;
+      const staff = (this.staffProfiles && this.staffProfiles[uid]) || {};
+      const nombreStaff = [staff.firstName, staff.lastName].filter(Boolean).join(' ');
+      const contenido = [
+        profile.displayName, profile.email, nombreStaff, profile.centerId
+      ].filter(Boolean).join(' ').toLowerCase();
+      return contenido.includes(busqueda);
+    });
+  },
+
   _renderUsers(container) {
     const entries = Object.entries(this.users)
       .filter(([, profile]) => profile && typeof profile === 'object')
       .sort((left, right) => String(left[1].displayName || left[1].email || left[0])
         .localeCompare(String(right[1].displayName || right[1].email || right[0]), 'es'));
     this._actualizarResumen(entries);
+    const filtrados = this._filtrarCuentas(entries);
+    const resumen = document.querySelector?.('[data-admin-results]');
+    if (resumen) {
+      resumen.textContent = filtrados.length === entries.length
+        ? `${entries.length} cuenta${entries.length === 1 ? '' : 's'} en este centro.`
+        : `${filtrados.length} de ${entries.length} cuentas coinciden con el filtro.`;
+    }
     if (entries.length === 0) {
       container.innerHTML = `<div class="admin-empty"><i class="ri-user-search-line" aria-hidden="true"></i><p>Todavía no hay perfiles registrados.</p></div>`;
+      return;
+    }
+    if (filtrados.length === 0) {
+      container.innerHTML = `
+        <div class="admin-sin-resultados">
+          <i class="ri-user-search-line" aria-hidden="true"></i>
+          <p>Ninguna cuenta coincide con «${this._escape(this._filtros.texto || 'los filtros elegidos')}».</p>
+          <button class="btn-primary-soft" type="button" data-admin-action="clear-filters">
+            <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
+          </button>
+        </div>`;
       return;
     }
 
@@ -253,7 +397,7 @@ const AdminManager = {
         <table class="admin-users-table">
           <thead><tr><th>Usuario</th><th>Rol y permisos</th><th>Centro y acciones</th></tr></thead>
           <tbody>
-            ${entries.map(([uid, profile]) => this._renderUserRow(uid, profile, activeAdmins)).join('')}
+            ${filtrados.map(([uid, profile]) => this._renderUserRow(uid, profile, activeAdmins)).join('')}
           </tbody>
         </table>
       </div>`;
@@ -264,15 +408,27 @@ const AdminManager = {
     const lista = Array.isArray(entries) ? entries : [];
     const cuentas = lista.length;
     const activas = lista.filter(([, profile]) => profile && profile.active === true).length;
+    const docentes = lista.filter(([, profile]) => profile && profile.role !== 'admin').length;
+    const admins = lista.filter(([, profile]) => profile && profile.role === 'admin').length;
     const centros = Object.values(this.centers || {})
       .filter(center => center && center.active !== false).length;
     const poner = (clave, valor) => {
       const celda = document.querySelector?.(`[data-admin-stat="${clave}"]`);
       if (celda) celda.textContent = String(valor);
+      const tarjeta = document.querySelector?.(`[data-admin-kpi="${clave}"]`);
+      if (tarjeta) tarjeta.textContent = String(valor);
     };
     poner('cuentas', cuentas);
     poner('activas', activas);
+    poner('docentes', docentes);
+    poner('admins', admins);
     poner('centros', centros);
+    const pieActivas = document.querySelector?.('[data-admin-kpi-pie="activas"]');
+    if (pieActivas) {
+      pieActivas.textContent = cuentas
+        ? `${Math.round((activas / cuentas) * 100)}% del total de cuentas`
+        : 'Todavía no hay cuentas';
+    }
     const resumen = document.querySelector?.('[data-admin-summary]');
     if (resumen) {
       resumen.textContent = `${cuentas} cuenta${cuentas === 1 ? '' : 's'} · ${activas} activa${activas === 1 ? '' : 's'} · ${centros} centro${centros === 1 ? '' : 's'}.`;
@@ -303,10 +459,11 @@ const AdminManager = {
       <tr data-user-row data-uid="${safeUid}">
         <td class="admin-cell-user">
           <div class="admin-user-cell">
-            <span class="admin-avatar" aria-hidden="true">${this._escape(iniciales)}</span>
+            <span class="admin-avatar ${role === 'admin' ? 'admin' : 'docente'}" aria-hidden="true">${this._escape(iniciales)}</span>
             <span class="admin-user-copy">
               <span class="admin-user-name">${this._escape(name)}${isCurrentUser ? '<span class="admin-you">tú</span>' : ''}</span>
               <span class="admin-user-email">${this._escape(email)}</span>
+              <span class="admin-rol-badge${role === 'admin' ? ' es-admin' : ''}">${role === 'admin' ? 'Administrador' : 'Docente'}</span>
               <span class="admin-user-uid" title="Identificador de la cuenta: ${safeUid}">UID: ${safeUid}</span>
             </span>
           </div>
@@ -577,8 +734,12 @@ const AdminManager = {
         !['general', 'ingles', 'tic', 'otra'].includes(profile.area)) {
         throw new Error('Completa nombres, apellidos y un área docente válida.');
       }
-      await window.FirebaseServices.database.ref(`staffProfiles/${uid}`).set(profile);
-      this.staffProfiles[uid] = profile;
+      /* Se mezcla con lo ya guardado para no borrar campos que este
+         formulario no edita (foto, biografía, horario…). */
+      const guardado = this.staffProfiles[uid] || {};
+      const perfilCompleto = { ...guardado, ...profile };
+      await window.FirebaseServices.database.ref(`staffProfiles/${uid}`).set(perfilCompleto);
+      this.staffProfiles[uid] = perfilCompleto;
       this.closeStaffProfile();
       const list = document.getElementById('admin-users-list');
       if (list) this._renderUsers(list);

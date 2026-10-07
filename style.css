@@ -10388,3 +10388,319 @@ html[data-theme="dark"] .dash-detalle .custom-table thead th { background: rgba(
   /* «Sincronizado» cabe entero sin partirse a mitad de palabra. */
   .dash-kpis .kpi-valor--texto { font-size: 0.88rem; }
 }
+
+/* ----------------------------------------------------------------
+   11 � MEN� LATERAL � estable al desplegar varios grupos
+   ----------------------------------------------------------------
+   Corrige dos defectos reales:
+   � los encabezados de grupo se encog�an (flex-shrink) y su etiqueta
+     se montaba sobre la l�nea separadora;
+   � las subsecciones se desbordaban 20px a la derecha y su borde
+     se recortaba contra el caj�n.
+   ---------------------------------------------------------------- */
+.sidebar-nav { gap: 6px; }
+
+.sidebar-nav > .nav-section,
+.sidebar-nav > .nav-grupo-items,
+.nav-grupo-items > .nav-item,
+.nav-grupo-items > .nav-con-hijos { flex: 0 0 auto; }
+
+.nav-grupo-items { gap: 4px; }
+
+.nav-section.nav-grupo {
+  flex: 0 0 auto;
+  overflow: visible;
+  margin-top: 14px;
+  padding: 14px 9px 7px;
+  border-top: 0;
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+.nav-section.nav-grupo:first-child { margin-top: 4px; padding-top: 6px; }
+
+/* La l�nea gu�a va despu�s de la etiqueta: nunca cruza el texto. */
+.nav-section.nav-grupo > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.nav-section.nav-grupo > span::after {
+  content: '';
+  flex: 1 0 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+}
+
+.sidebar .nav-section.nav-grupo,
+.sidebar.expanded .nav-section.nav-grupo,
+.sidebar.expanded .nav-section.nav-grupo:not(:first-child) { border-top: 0; }
+.sidebar.expanded .nav-section.nav-grupo { max-height: 64px; }
+
+/* Subsecciones: el bloque mide exactamente el ancho disponible. */
+.nav-hijos {
+  flex: 1 0 calc(100% - 20px);
+  margin: 3px 0 5px 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0 10px 10px 0;
+}
+.nav-hijos:not([hidden]) { animation: menuAbierto 200ms ease both; }
+
+@keyframes menuAbierto {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: none; }
+}
+html[data-motion="off"] .nav-hijos:not([hidden]) { animation: none !important; }
+
+.nav-item.nav-hijo {
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  min-height: 36px;
+  padding: 8px 10px 8px 6px;
+  color: rgba(226, 240, 250, 0.78);
+}
+.nav-item.nav-hijo i { width: 20px; font-size: 1rem; color: rgba(160, 220, 245, 0.8); }
+.nav-item.nav-hijo:hover { color: #fff; background: rgba(255, 255, 255, 0.09); }
+.nav-item.nav-hijo.active,
+.nav-item.nav-hijo[aria-current="page"] {
+  background: rgba(1, 165, 228, 0.18);
+  color: #fff;
+  box-shadow: inset 2px 0 var(--brand-cyan, #01a5e4);
+}
+.nav-item.nav-hijo.active i { color: var(--brand-cyan, #01a5e4); }
+
+.nav-chevron {
+  flex: 0 0 auto;
+  width: 30px;
+  min-height: 34px;
+  align-self: center;
+  border-radius: 9px;
+}
+
+/* Borde visible en claro (antes casi no se ve�a) y sombra de scroll. */
+html[data-theme="light"] .nav-hijos { border-left-color: rgba(20, 87, 139, 0.18); }
+
+/* ----------------------------------------------------------------
+   12 � MODO OSCURO � correcciones globales
+   ----------------------------------------------------------------
+   Las variables �campus� solo exist�an en claro: las tarjetas KPI
+   quedaban blancas con texto casi blanco (ilegible).
+   ---------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --campus-page: #071523;
+  --campus-card: #0d2438;
+  --campus-text: #dfeaf4;
+  --campus-muted: #9db4c8;
+  --campus-border: rgba(1, 165, 228, 0.18);
+  --campus-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
+  --campus-shadow-raised: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --nav-linea: rgba(255, 255, 255, 0.24);
+}
+
+html[data-theme="dark"] .kpi-card {
+  background: linear-gradient(160deg, #10283f 0%, #0c2135 100%);
+  border-color: rgba(1, 165, 228, 0.2);
+}
+html[data-theme="dark"] .kpi-card:hover { border-color: rgba(1, 165, 228, 0.4); }
+html[data-theme="dark"] .kpi-valor,
+html[data-theme="dark"] .kpi-valor small { color: #f2f8fd; }
+html[data-theme="dark"] .kpi-valor small { color: #93aac0; }
+html[data-theme="dark"] .kpi-etiqueta,
+html[data-theme="dark"] .kpi-pie { color: #9db4c8; }
+html[data-theme="dark"] .kpi-icono { background: rgba(1, 165, 228, 0.16); color: #4fc6ef; }
+html[data-theme="dark"] .kpi-icono.verde  { background: rgba(46, 204, 113, 0.18); color: #6fdc9c; }
+html[data-theme="dark"] .kpi-icono.rojo   { background: rgba(255, 107, 107, 0.16); color: #ff9b9b; }
+html[data-theme="dark"] .kpi-icono.ambar  { background: rgba(245, 166, 35, 0.18); color: #f7c05a; }
+html[data-theme="dark"] .kpi-icono.morado { background: rgba(167, 139, 250, 0.18); color: #c3b1fb; }
+
+/* Insignias: en oscuro se usan tintes oscuros en vez de pastillas claras */
+html[data-theme="dark"] .badge-status.activo {
+  color: #79e2b1; background: rgba(46, 204, 113, 0.16); border-color: rgba(46, 204, 113, 0.35);
+}
+html[data-theme="dark"] .badge-status.retirado {
+  color: #ff9ba5; background: rgba(255, 107, 107, 0.16); border-color: rgba(255, 107, 107, 0.35);
+}
+html[data-theme="dark"] .badge-status.pendiente {
+  color: #f7c05a; background: rgba(245, 166, 35, 0.16); border-color: rgba(245, 166, 35, 0.35);
+}
+html[data-theme="dark"] .badge-status.inactivo {
+  color: #a9bfd2; background: rgba(169, 191, 210, 0.14); border-color: rgba(169, 191, 210, 0.28);
+}
+html[data-theme="dark"] .badge-modulo {
+  color: #6fd0f0; background: rgba(1, 165, 228, 0.16); border: 1px solid rgba(1, 165, 228, 0.3);
+}
+
+html[data-theme="dark"] .custom-table tbody tr:hover { background: rgba(1, 165, 228, 0.08); }
+html[data-theme="dark"] .group-accordion { background: #0d2438; }
+html[data-theme="dark"] .admin-area-chip { background: rgba(1, 165, 228, 0.16); color: #6fd0f0; }
+html[data-theme="dark"] .admin-user-status { background: rgba(46, 204, 113, 0.16); color: #79e2b1; }
+html[data-theme="dark"] .admin-user-status.is-inactive { background: rgba(169, 191, 210, 0.14); color: #a9bfd2; }
+html[data-theme="dark"] .admin-avatar { color: #e9f2fa; }
+
+/* ----------------------------------------------------------------
+   13 � PERFIL � ficha con foto y presentaci�n
+   ---------------------------------------------------------------- */
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  gap: var(--s-4, 16px);
+  align-items: start;
+}
+
+.profile-identity {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  text-align: center;
+}
+.profile-cover {
+  height: 96px;
+  background:
+    radial-gradient(120px 70px at 20% 10%, rgba(255, 255, 255, 0.28), transparent 70%),
+    linear-gradient(135deg, #0f5b8a 0%, #1487b8 45%, #e30b7b 100%);
+}
+.profile-avatar-wrap { margin-top: -46px; position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 20px; }
+.profile-avatar {
+  width: 92px; height: 92px; flex: 0 0 auto; border-radius: 26px;
+  display: grid; place-items: center;
+  font-size: 1.9rem; font-weight: 750; color: #fff;
+  background: linear-gradient(135deg, #145e8d, #1a9ad6);
+  border: 4px solid var(--campus-card, #fff);
+  box-shadow: 0 10px 26px rgba(13, 59, 94, 0.3);
+  background-size: cover; background-position: center;
+  overflow: hidden;
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.profile-photo-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: var(--r-full, 999px);
+  background: rgba(1, 165, 228, 0.12); color: var(--p-600, #0b6a9f);
+  font-size: 0.72rem; font-weight: 700; cursor: pointer;
+  border: 1px solid rgba(1, 165, 228, 0.28);
+  transition: background 160ms ease, transform 160ms ease;
+}
+.profile-photo-btn:hover { background: rgba(1, 165, 228, 0.22); transform: translateY(-1px); }
+.profile-photo-btn.is-quiet { background: rgba(138, 147, 166, 0.14); border-color: rgba(138, 147, 166, 0.3); color: var(--campus-muted, #71808b); }
+.profile-identity-copy { padding: 4px 20px 18px; }
+.profile-identity-copy h2 { margin: 8px 0 2px; font-size: 1.15rem; color: var(--text-primary, #304354); }
+.profile-identity-role { margin: 0 0 10px; font-size: 0.78rem; font-weight: 700; color: var(--p-600, #0b6a9f); }
+.profile-identity-meta {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin: 5px 0; font-size: 0.75rem; color: var(--campus-muted, #71808b);
+  overflow-wrap: anywhere;
+}
+.profile-identity-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+.profile-identity-bio {
+  margin: 14px 20px 20px; padding: 12px 14px;
+  border-radius: 14px; background: rgba(1, 165, 228, 0.07);
+  border: 1px solid rgba(1, 165, 228, 0.14);
+  font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary, #4a5b6b);
+  text-align: left; white-space: pre-wrap;
+}
+.profile-identity-bio.is-empty { color: var(--campus-muted, #71808b); font-style: italic; text-align: center; }
+.profile-completitud { margin: 0 20px 20px; }
+.profile-completitud-barra { height: 7px; border-radius: 999px; background: rgba(138, 147, 166, 0.22); overflow: hidden; }
+.profile-completitud-barra span { display: block; height: 100%; background: linear-gradient(90deg, #1a9ad6, #87c540); transition: width 400ms ease; }
+.profile-completitud small { display: block; margin-top: 6px; font-size: 0.68rem; color: var(--campus-muted, #71808b); }
+
+.profile-form { padding: var(--s-4, 16px); }
+.profile-fieldset { border: 1px solid var(--campus-border, #e3e9ed); border-radius: 16px; padding: 14px 16px 18px; margin: 0 0 16px; }
+.profile-fieldset legend {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 0 8px; font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--p-700, #095577);
+}
+.profile-fields-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.profile-field-wide { grid-column: 1 / -1; }
+.profile-readonly input { background: rgba(138, 147, 166, 0.1); cursor: not-allowed; }
+.profile-actions {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  padding-top: 6px;
+}
+.profile-actions p { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 0.74rem; color: var(--campus-muted, #71808b); }
+.profile-bio-counter { display: block; margin-top: 5px; font-size: 0.68rem; color: var(--campus-muted, #71808b); text-align: right; }
+
+@media (max-width: 1100px) { .profile-layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .profile-cover { height: 74px; }
+  .profile-avatar { width: 78px; height: 78px; font-size: 1.6rem; }
+  .profile-fields-grid { grid-template-columns: minmax(0, 1fr); }
+  .profile-actions { flex-direction: column; align-items: stretch; }
+  .profile-actions .btn-primary { width: 100%; justify-content: center; }
+}
+
+/* ----------------------------------------------------------------
+   14 � ADMINISTRACI�N � resumen, buscador y cuentas
+   ---------------------------------------------------------------- */
+.admin-resumen { margin-bottom: var(--s-4, 16px); }
+.admin-resumen .kpi-card { padding: 14px 16px; gap: 6px; }
+.admin-resumen .kpi-valor { font-size: 1.5rem; }
+.admin-resumen .kpi-etiqueta { font-size: 0.6rem; }
+
+.admin-toolbar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin: 4px 0 14px; padding: 10px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 14px;
+  background: rgba(1, 165, 228, 0.05);
+}
+.admin-search {
+  position: relative; flex: 1 1 190px; min-width: 170px;
+  display: flex; align-items: center;
+}
+.admin-search i { position: absolute; left: 11px; color: var(--campus-muted, #71808b); pointer-events: none; }
+.admin-search input {
+  width: 100%; padding: 9px 12px 9px 34px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 10px; background: var(--bg-input, #fff);
+  color: inherit; font-size: 0.8rem;
+}
+.admin-toolbar select {
+  flex: 0 1 auto; max-width: 168px; padding: 9px 10px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 10px; background: var(--bg-input, #fff); color: inherit; font-size: 0.78rem;
+}
+.admin-toolbar .btn-primary-soft { flex: 0 0 auto; white-space: nowrap; }
+.admin-resultados { margin: 0 0 10px; font-size: 0.74rem; color: var(--campus-muted, #71808b); }
+.admin-sin-resultados {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 34px 16px; text-align: center;
+  border: 1px dashed var(--campus-border, #e3e9ed); border-radius: 14px;
+}
+.admin-sin-resultados i { font-size: 1.9rem; opacity: 0.55; }
+.admin-sin-resultados p { margin: 0; font-size: 0.84rem; }
+
+.admin-avatar.admin { background: linear-gradient(135deg, #e30b7b, #8e2f8c); }
+.admin-avatar.docente { background: linear-gradient(135deg, #0f5b8a, #1a9ad6); }
+
+.admin-rol-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 999px;
+  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  background: rgba(20, 87, 139, 0.12); color: var(--p-700, #095577);
+}
+.admin-rol-badge.es-admin { background: rgba(227, 11, 123, 0.14); color: #c32a88; }
+html[data-theme="dark"] .admin-rol-badge { background: rgba(1, 165, 228, 0.16); color: #6fd0f0; }
+html[data-theme="dark"] .admin-rol-badge.es-admin { background: rgba(227, 11, 123, 0.2); color: #ff8ac6; }
+html[data-theme="dark"] .admin-toolbar { background: rgba(1, 165, 228, 0.07); border-color: rgba(1, 165, 228, 0.2); }
+html[data-theme="dark"] .profile-identity-bio { background: rgba(1, 165, 228, 0.1); }
+html[data-theme="dark"] .profile-identity-copy h2 { color: #e9f2fa; }
+html[data-theme="dark"] .profile-fieldset { border-color: rgba(1, 165, 228, 0.18); }
+html[data-theme="dark"] .profile-fieldset legend { color: #6fd0f0; }
+html[data-theme="dark"] .profile-photo-btn { background: rgba(1, 165, 228, 0.18); color: #6fd0f0; }
+html[data-theme="dark"] .profile-avatar { border-color: #0d2438; }
+
+@media (max-width: 1100px) {
+  .admin-users-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .admin-toolbar { flex-direction: column; align-items: stretch; }
+  .admin-toolbar select, .admin-search { width: 100%; }
+}
