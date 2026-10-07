@@ -12319,3 +12319,144 @@ html[data-theme="dark"] .logo-imagen-oscuro { display: block; }
 @media print {
   body::before { display: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   29 · REFRESCO DE INTERFAZ — Parte 1: barra lateral y barra superior
+   · Menú y topbar en vidrio tintado (el fondo animado asoma al borde)
+   · Navegación con píldora activa degradada y brillo institucional
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Barra lateral: azul INATEC en cristal esmerilado ── */
+.sidebar {
+  background: linear-gradient(180deg, rgba(20, 87, 139, .9) 0%, rgba(16, 70, 116, .94) 60%, rgba(14, 62, 103, .96) 100%);
+  backdrop-filter: blur(20px) saturate(165%);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  border-right-color: rgba(255, 255, 255, .16);
+  box-shadow: 4px 0 24px rgba(13, 59, 94, .18);
+}
+
+.sidebar::before {
+  background: linear-gradient(180deg, rgba(1, 165, 228, .16), transparent 26%, transparent 74%, rgba(225, 11, 123, .14));
+}
+
+.sidebar-header {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0));
+}
+
+.sidebar-footer {
+  background: linear-gradient(0deg, rgba(7, 30, 49, .42), rgba(7, 30, 49, .18));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.user-card {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.user-card:hover { background: rgba(255, 255, 255, .16); }
+
+/* ── Ítems: píldora suave y activa con degradado de marca ── */
+.nav-item {
+  border-radius: 12px;
+  background: transparent;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .16);
+}
+
+.nav-item.active,
+.nav-item.active:hover {
+  background: linear-gradient(135deg, #e30b7b 0%, #c0146f 55%, #8f2f8f 100%);
+  border-color: rgba(255, 255, 255, .22);
+  box-shadow: 0 10px 22px -12px rgba(227, 11, 123, .95),
+              inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+
+.nav-section {
+  letter-spacing: .12em;
+  color: rgba(255, 255, 255, .62);
+}
+
+/* ── Modo oscuro: mismo cristal, tono profundo ── */
+html[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, rgba(10, 44, 71, .9) 0%, rgba(8, 34, 58, .94) 60%, rgba(6, 26, 45, .96) 100%);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-right-color: rgba(1, 165, 228, .34);
+}
+
+html[data-theme="dark"] .sidebar-footer {
+  background: linear-gradient(0deg, rgba(0, 0, 0, .46), rgba(0, 0, 0, .2));
+}
+
+html[data-theme="dark"] .user-card {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .14);
+}
+
+html[data-theme="dark"] .nav-item:hover {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(1, 165, 228, .3);
+}
+
+html[data-theme="dark"] .nav-item.active,
+html[data-theme="dark"] .nav-item.active:hover {
+  background: linear-gradient(135deg, #e30b7b 0%, #a51f6d 55%, #3b3d8b 100%);
+  border-color: rgba(1, 165, 228, .4);
+  box-shadow: 0 10px 22px -12px rgba(227, 11, 123, .8),
+              inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+/* ── Barra superior: franja de cristal con la paleta institucional ── */
+.topbar {
+  background: linear-gradient(90deg, rgba(24, 184, 231, .92) 0%, rgba(20, 87, 139, .9) 100%);
+  backdrop-filter: blur(14px) saturate(170%);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  border-bottom-color: rgba(255, 255, 255, .24);
+  box-shadow: 0 10px 30px -20px rgba(13, 59, 94, .9);
+}
+
+.topbar.scrolled {
+  background: linear-gradient(90deg, rgba(17, 157, 201, .96) 0%, rgba(16, 66, 110, .96) 100%);
+}
+
+.search-box {
+  background: rgba(255, 255, 255, .18);
+  border-color: rgba(255, 255, 255, .45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+
+html[data-theme="dark"] .topbar {
+  background: linear-gradient(90deg, rgba(11, 45, 72, .88) 0%, rgba(7, 21, 35, .9) 100%);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border-bottom-color: rgba(1, 165, 228, .3);
+}
+
+html[data-theme="dark"] .topbar.scrolled {
+  background: linear-gradient(90deg, rgba(11, 45, 72, .97) 0%, rgba(7, 21, 35, .97) 100%);
+}
+
+html[data-theme="dark"] .search-box {
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .18);
+}
+
+/* ── El botón de tema y las cuentas destacan sobre el cristal ── */
+.topbar .btn-icon {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .22);
+}
+
+.topbar .btn-icon:hover,
+.topbar .btn-icon:focus-visible {
+  background: rgba(255, 255, 255, .22);
+  border-color: rgba(255, 255, 255, .4);
+}
