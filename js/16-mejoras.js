@@ -174,8 +174,24 @@ const Mejoras = (() => {
             ' role="combobox" aria-expanded="true" aria-controls="paleta-lista" aria-autocomplete="list">' +
             '<kbd>Esc</kbd>' +
           '</div>' +
+          '<div class="paleta-modos" role="group" aria-label="Filtrar por tipo de resultado">' +
+            '<button type="button" class="paleta-modo" data-paleta-modo="todo" aria-pressed="true">Todo</button>' +
+            '<button type="button" class="paleta-modo" data-paleta-modo="modulos" aria-pressed="false">Ir a</button>' +
+            '<button type="button" class="paleta-modo" data-paleta-modo="estudiantes" aria-pressed="false">Estudiantes</button>' +
+            '<button type="button" class="paleta-modo" data-paleta-modo="grupos" aria-pressed="false">Grupos</button>' +
+            '<button type="button" class="paleta-modo" data-paleta-modo="acciones" aria-pressed="false">Acciones</button>' +
+          '</div>' +
           '<ul class="paleta-lista" id="paleta-lista" role="listbox" aria-label="Resultados"></ul>' +
-          '<p class="paleta-vacio" id="paleta-vacio" hidden>Sin resultados. Prueba con otro término.</p>' +
+          '<div class="paleta-vacio" id="paleta-vacio" hidden>' +
+            '<i class="ri-search-2-line" aria-hidden="true"></i>' +
+            '<p>Sin resultados para esa búsqueda. Cambia el modo o prueba con:</p>' +
+            '<div class="paleta-sugerencias">' +
+              '<button type="button" data-sugerencia="estad">Estadísticas</button>' +
+              '<button type="button" data-sugerencia="conval">Convalidaciones</button>' +
+              '<button type="button" data-sugerencia="tema">Tema</button>' +
+              '<button type="button" data-sugerencia="perfil">Mi perfil</button>' +
+            '</div>' +
+          '</div>' +
           '<div class="paleta-pie">' +
             '<span><kbd>↑</kbd><kbd>↓</kbd> moverse</span>' +
             '<span><kbd>Intro</kbd> abrir</span>' +
@@ -940,7 +956,40 @@ const Mejoras = (() => {
   /* ═══════════════════════════════════════════════════════════
      6 · PALETA DE COMANDOS (Ctrl / Cmd + K)
      ═══════════════════════════════════════════════════════════ */
-  const paleta = { abierta: false, items: [], sel: 0, ultimoFoco: null };
+  const paleta = { abierta: false, items: [], sel: 0, ultimoFoco: null, modo: 'todo', consulta: '' };
+
+  /* Grupos que controla cada modo de la paleta. */
+  const MODOS = {
+    todo: null,
+    modulos: ['Ir a'],
+    estudiantes: ['Estudiantes'],
+    grupos: ['Grupos'],
+    acciones: ['Acciones']
+  };
+
+  /* Resalta la parte del texto que coincide con la búsqueda, manteniendo
+     la longitud de los caracteres originales (acentos incluidos). */
+  const sinAcento = c => {
+    const d = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return d.length ? d[0] : c;
+  };
+  function resaltar(texto, consulta) {
+    const q = normalizar(consulta);
+    if (!q) return esc(texto);
+    const chars = Array.from(String(texto));
+    const plano = chars.map(sinAcento).join('').toLowerCase();
+    const i = plano.indexOf(q);
+    if (i < 0) return esc(texto);
+    return esc(chars.slice(0, i).join('')) +
+      '<mark>' + esc(chars.slice(i, i + q.length).join('')) + '</mark>' +
+      esc(chars.slice(i + q.length).join(''));
+  }
+
+  function sincronizarModosPaleta() {
+    document.querySelectorAll('[data-paleta-modo]').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.paletaModo === paleta.modo ? 'true' : 'false');
+    });
+  }
 
   const ACCIONES = [
     { texto: 'Cambiar entre tema claro y oscuro', icono: 'ri-contrast-line', accion: () => UI.toggleTheme() },
@@ -954,6 +1003,8 @@ const Mejoras = (() => {
   function construirItems(consulta) {
     const q = normalizar(consulta);
     const acierta = texto => !q || normalizar(texto).indexOf(q) >= 0;
+    const permitidos = MODOS[paleta.modo] || null;
+    const deja = item => !permitidos || permitidos.indexOf(item.grupo) >= 0;
     const items = [];
 
     if (typeof Secciones !== 'undefined' && typeof AuthManager !== 'undefined' && AuthManager.profile) {
@@ -976,8 +1027,10 @@ const Mejoras = (() => {
       });
     }
 
-    if (q && typeof DataEngine !== 'undefined' && typeof DataEngine.getEstudiantes === 'function') {
-      DataEngine.getEstudiantes().filter(est => acierta(`${est.nombres} ${est.apellidos}`)).slice(0, 8)
+    if ((q || paleta.modo === 'estudiantes' || paleta.modo === 'grupos') &&
+        typeof DataEngine !== 'undefined' && typeof DataEngine.getEstudiantes === 'function') {
+      DataEngine.getEstudiantes().filter(est => !q || acierta(`${est.nombres} ${est.apellidos}`))
+        .slice(q ? 8 : 6)
         .forEach(est => items.push({
           grupo: 'Estudiantes', icono: 'ri-user-line',
           texto: `${est.nombres} ${est.apellidos}`,
@@ -985,7 +1038,7 @@ const Mejoras = (() => {
           accion: () => { UI.irA('estudiantes'); window.setTimeout(() => abrirDetalleEstudiante(est), 120); }
         }));
       const grupos = gruposDb();
-      grupos.filter(g => acierta(g.nombre)).slice(0, 5).forEach(g => items.push({
+      grupos.filter(g => !q || acierta(g.nombre)).slice(0, 5).forEach(g => items.push({
         grupo: 'Grupos', icono: 'ri-team-line', texto: g.nombre, meta: `${(g.estudiantes || []).length} estudiante(s)`, peso: 3,
         accion: () => UI.irA('grupos')
       }));
@@ -995,7 +1048,7 @@ const Mejoras = (() => {
       grupo: 'Acciones', icono: a.icono, texto: a.texto, meta: 'Acción', peso: 5, accion: a.accion
     }));
 
-    return items.sort((a, b) => a.peso - b.peso).slice(0, 24);
+    return items.filter(deja).sort((a, b) => a.peso - b.peso).slice(0, 24);
   }
 
   function pintarPaleta() {
@@ -1017,8 +1070,9 @@ const Mejoras = (() => {
         `<li class="paleta-item${i === paleta.sel ? ' activo' : ''}" role="option" id="paleta-op-${i}"` +
         ` aria-selected="${i === paleta.sel}" data-paleta-indice="${i}">` +
         `<i class="${esc(item.icono)}" aria-hidden="true"></i>` +
-        `<span class="paleta-texto">${esc(item.texto)}</span>` +
-        `<span class="paleta-meta">${esc(item.meta || '')}</span></li>`;
+        `<span class="paleta-texto">${resaltar(item.texto, paleta.consulta)}</span>` +
+        `<span class="paleta-meta">${esc(item.meta || '')}</span>` +
+        `<kbd class="paleta-tecla" aria-hidden="true">↵</kbd></li>`;
     }).join('');
     const activo = $(`.paleta-item[data-paleta-indice="${paleta.sel}"]`, lista);
     if (activo && activo.scrollIntoView) activo.scrollIntoView({ block: 'nearest' });
@@ -1032,7 +1086,9 @@ const Mejoras = (() => {
     paleta.ultimoFoco = document.activeElement;
     paleta.abierta = true;
     paleta.sel = 0;
+    paleta.consulta = '';
     fondo.hidden = false;
+    sincronizarModosPaleta();
     const input = document.getElementById('paleta-input');
     if (input) { input.value = ''; input.focus(); }
     paleta.items = construirItems('');
@@ -1159,8 +1215,35 @@ const Mejoras = (() => {
     document.addEventListener('input', event => {
       if (event.target && event.target.id === 'paleta-input') {
         paleta.sel = 0;
+        paleta.consulta = event.target.value;
         paleta.items = construirItems(event.target.value);
         pintarPaleta();
+      }
+    });
+
+    /* Modos (chips) y sugerencias del estado vacío de la paleta. */
+    document.addEventListener('click', event => {
+      const modo = event.target.closest && event.target.closest('[data-paleta-modo]');
+      if (modo) {
+        paleta.modo = modo.dataset.paletaModo || 'todo';
+        paleta.sel = 0;
+        sincronizarModosPaleta();
+        paleta.items = construirItems(paleta.consulta);
+        pintarPaleta();
+        const input = document.getElementById('paleta-input');
+        if (input) input.focus();
+        return;
+      }
+      const sugerencia = event.target.closest && event.target.closest('[data-sugerencia]');
+      if (sugerencia) {
+        const valor = sugerencia.dataset.sugerencia || '';
+        const input = document.getElementById('paleta-input');
+        if (input) input.value = valor;
+        paleta.consulta = valor;
+        paleta.sel = 0;
+        paleta.items = construirItems(valor);
+        pintarPaleta();
+        if (input) input.focus();
       }
     });
 

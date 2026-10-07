@@ -886,12 +886,20 @@
           if (est.convalidaciones && Object.keys(est.convalidaciones).length > 0) {
             Object.entries(est.convalidaciones).forEach(([modulo, estaConvalidado]) => {
               if (estaConvalidado) {
-                htmlRows += `<tr style="border-bottom: 1px solid #f0f0f0;"><td style="padding: 8px 12px;"><strong>${est.nombres}</strong> ${est.apellidos}</td><td style="padding: 8px 12px;"><span class="badge-modulo">${modulo}</span></td><td style="padding: 8px 12px; text-align: center;"><button class="btn-icon" title="Quitar convalidación" style="color: #dc3545;" onclick="DataEngine.eliminarConvalidacion('${est.id}', '${modulo}', '${grupoId}')"><i class="ri-delete-bin-line"></i></button></td></tr>`;
+                const iniciales = `${String(est.nombres || '').charAt(0)}${String(est.apellidos || '').charAt(0)}`.toUpperCase();
+                htmlRows += `<tr class="fila-convalidacion">
+                  <td class="celda-persona"><span class="persona-iniciales" aria-hidden="true">${iniciales}</span><span class="persona-nombre"><strong>${est.nombres}</strong> ${est.apellidos}</span></td>
+                  <td><span class="badge-modulo">${modulo}</span></td>
+                  <td class="celda-accion">
+                    <button type="button" class="btn-icon btn-icon-peligro" title="Quitar convalidación de ${modulo}"
+                      aria-label="Quitar convalidación de ${modulo}"
+                      onclick="DataEngine.eliminarConvalidacion('${est.id}', '${modulo}', '${grupoId}')"><i class="ri-delete-bin-line" aria-hidden="true"></i></button>
+                  </td></tr>`;
               }
             });
           }
         });
-        if (htmlRows === '') htmlRows = `<tr><td colspan="3" style="text-align: center; padding: 15px; color: #888;">No hay convalidaciones registradas en este grupo.</td></tr>`;
+        if (htmlRows === '') htmlRows = `<tr><td colspan="3" class="panel-vacio"><i class="ri-inbox-line" aria-hidden="true"></i> No hay convalidaciones registradas en este grupo.</td></tr>`;
         tbody.innerHTML = htmlRows;
       },
 

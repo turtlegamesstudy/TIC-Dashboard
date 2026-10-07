@@ -235,8 +235,8 @@
     <aside class="section-settings-sidebar" id="section-settings-sidebar" role="dialog" aria-modal="true" aria-labelledby="section-settings-title" aria-hidden="true" hidden inert>
       <div class="section-settings-header">
         <div>
-          <h2 id="section-settings-title">Filtros y ajustes</h2>
-          <p>Opciones de esta sección</p>
+          <h2 id="section-settings-title"><i class="ri-equalizer-2-line" aria-hidden="true"></i> Filtros y ajustes</h2>
+          <p>Ajustes, filtros y vistas de esta sección</p>
         </div>
         <button class="btn-icon" id="btn-close-section-settings" type="button" title="Cerrar ajustes" aria-label="Cerrar ajustes"><i class="ri-close-line" aria-hidden="true"></i></button>
       </div>
@@ -272,60 +272,74 @@
   </div>
 
   <div id="modal-convalidaciones" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 25px;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin:0;"><i class="ri-award-line"></i> Gestión de Convalidaciones</h3>
-        <button class="btn-icon" onclick="UI.cerrarModalConvalidaciones()"><i class="ri-close-line"></i></button>
+    <div class="modal-content panel">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-award-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Cuaderno Docente</p>
+          <h3>Gestión de convalidaciones</h3>
+          <p class="panel-lema">Módulos reconocidos sin cursar: no se promedian y quedan como cubiertos.</p>
+        </div>
+        <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalConvalidaciones()" aria-label="Cerrar convalidaciones"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
+      <div class="panel-cuerpo">
+        <section class="panel-formulario panel-acentuado">
+          <h4 class="panel-titulo"><i class="ri-add-circle-line" aria-hidden="true"></i> Registrar una convalidación</h4>
+          <div class="rejilla-2">
+            <div class="form-group">
+              <label for="select-estudiante-convalidar">Estudiante</label>
+              <select id="select-estudiante-convalidar" class="form-control"><option value="">-- Seleccionar estudiante --</option></select>
+            </div>
+            <div class="form-group">
+              <label for="select-modulo-convalidar">Módulo transversal</label>
+              <select id="select-modulo-convalidar" class="form-control"><option value="">-- Seleccionar módulo --</option></select>
+            </div>
+          </div>
+          <div class="panel-pie">
+            <button class="btn-primary" type="button" onclick="DataEngine.guardarConvalidacion()"><i class="ri-save-line" aria-hidden="true"></i> Guardar convalidación</button>
+          </div>
+        </section>
+        <section class="panel-tabla">
+          <h4 class="panel-titulo"><i class="ri-list-check-2" aria-hidden="true"></i> Convalidaciones registradas</h4>
+          <div class="panel-tabla-scroll">
+            <table class="custom-table panel-tabla-custom">
+              <thead>
+                <tr>
+                  <th scope="col">Estudiante</th>
+                  <th scope="col">Módulo</th>
+                  <th scope="col" style="text-align: center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-convalidaciones-lista">
+                <tr><td colspan="3" class="panel-vacio">No hay convalidaciones registradas en este grupo.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
-      <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 0.95rem; color: #444;">➕ Registrar Nueva Convalidación</h4>
-        <div class="form-group" style="margin-bottom: 10px;">
-          <label for="select-estudiante-convalidar">Estudiante:</label>
-          <select id="select-estudiante-convalidar" class="form-control" style="width: 100%;"><option value="">-- Seleccionar Estudiante --</option></select>
-        </div>
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label for="select-modulo-convalidar">Módulo Transversal:</label>
-          <select id="select-modulo-convalidar" class="form-control" style="width: 100%;"><option value="">-- Seleccionar Módulo --</option></select>
-        </div>
-        <div style="text-align: right;">
-          <button class="btn-primary" onclick="DataEngine.guardarConvalidacion()"><i class="ri-save-line"></i> Guardar Convalidación</button>
-        </div>
-      </div>
-      <div>
-        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 0.95rem; color: #444;">📋 Convalidaciones del Grupo</h4>
-        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
-            <thead>
-              <tr style="background: #f4f6f8; text-align: left; border-bottom: 1px solid #ddd;">
-                <th style="padding: 8px 12px;">Estudiante</th>
-                <th style="padding: 8px 12px;">Módulo</th>
-                <th style="padding: 8px 12px; text-align: center;">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-convalidaciones-lista">
-              <tr><td colspan="3" style="text-align: center; padding: 15px; color: #888;">No hay convalidaciones registradas en este grupo.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-actions" style="margin-top: 20px; text-align: right;">
-        <button class="btn-secondary" onclick="UI.cerrarModalConvalidaciones()">Cerrar</button>
+      <div class="modal-actions panel-acciones">
+        <button class="btn-secondary" type="button" onclick="UI.cerrarModalConvalidaciones()">Cerrar</button>
       </div>
     </div>
   </div>
 
   <!-- MOVIDO DENTRO DEL BODY (antes estaba fuera, causando overlay invisible) -->
   <div id="modal-config-export" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 25px; max-width: 700px;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin:0;"><i class="ri-settings-3-line"></i> Configuración de Exportación Excel</h3>
-        <button class="btn-icon" onclick="UI.cerrarModalConfigExport()"><i class="ri-close-line"></i></button>
-      </div>
+    <div class="modal-content panel panel-export">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-file-excel-2-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Cuaderno Docente</p>
+          <h3>Configuración de exportación</h3>
+          <p class="panel-lema">Tipografía, columnas, alturas y papel de los documentos que genera el panel.</p>
+        </div>
+        <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalConfigExport()" aria-label="Cerrar configuración"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+      <div class="panel-rejilla">
 
-        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
-          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📝 Fuente y Texto</h4>
+        <div class="panel-seccion">
+          <h4 class="panel-titulo">📝 Fuente y Texto</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Fuente:</label>
             <select id="cfg-font-family" class="form-control"><option value="Arial">Arial</option><option value="Calibri">Calibri</option><option value="Times New Roman">Times New Roman</option></select>
@@ -343,8 +357,8 @@
           </div>
         </div>
 
-        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
-          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📐 Bordes y Relleno</h4>
+        <div class="panel-seccion">
+          <h4 class="panel-titulo">📐 Bordes y Relleno</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Color borde tabla:</label>
             <select id="cfg-border-color" class="form-control"><option value="#000000">Negro puro</option><option value="#D9D9D9">Gris claro</option></select>
@@ -361,8 +375,8 @@
           </div>
         </div>
 
-        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
-          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📏 Anchos de Columna (px)</h4>
+        <div class="panel-seccion">
+          <h4 class="panel-titulo">📏 Anchos de Columna (px)</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Columna A (No.):</label>
             <input type="number" id="cfg-col-a" class="form-control" value="227" min="30" max="500">
@@ -381,8 +395,8 @@
           </div>
         </div>
 
-        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
-          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">📐 Altos de Fila (px)</h4>
+        <div class="panel-seccion">
+          <h4 class="panel-titulo">📐 Altos de Fila (px)</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Encabezado tabla principal:</label>
             <input type="number" id="cfg-row-header-main" class="form-control" value="170" min="20" max="300">
@@ -401,8 +415,8 @@
           </div>
         </div>
 
-        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
-          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">🖨️ Configuración de Impresión</h4>
+        <div class="panel-seccion">
+          <h4 class="panel-titulo">🖨️ Configuración de Impresión</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Orientación:</label>
             <select id="cfg-print-orientation" class="form-control">
@@ -437,9 +451,9 @@
           </div>
         </div>
 
-        <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; grid-column: 1 / -1;">
-          <h4 style="margin:0 0 12px 0; font-size: 0.95rem; color: #444;">🏛️ Membrete Institucional</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+        <div class="panel-seccion ancha">
+          <h4 class="panel-titulo">🏛️ Membrete Institucional</h4>
+          <div class="rejilla-3">
             <div class="form-group" style="margin-bottom: 0;">
               <label>Título INATEC (pt):</label>
               <input type="number" id="cfg-title-inatec" class="form-control" value="18" min="10" max="30">
@@ -457,7 +471,7 @@
 
       </div>
 
-      <div class="modal-actions" style="margin-top: 20px; text-align: right; display: flex; justify-content: space-between;">
+      <div class="modal-actions panel-acciones split">
         <button class="btn-secondary" onclick="ConfigExport.resetDefaults()">🔄 Restaurar Predeterminados</button>
         <div>
           <button class="btn-secondary" onclick="UI.cerrarModalConfigExport()">Cancelar</button>
@@ -468,26 +482,31 @@
   </div>
 
   <div id="modal-config-academica" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 25px; max-width: 760px;">
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0;"><i class="ri-government-line"></i> Responsables académicos del centro</h3>
-        <button type="button" class="btn-icon" onclick="CuadernoEngine.cerrarConfiguracionAcademica()" aria-label="Cerrar"><i class="ri-close-line"></i></button>
-      </div>
-      <form onsubmit="CuadernoEngine.guardarConfiguracionAcademica(event)">
+    <div class="modal-content panel panel-responsables">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-government-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Cuaderno Docente</p>
+          <h3>Responsables del centro</h3>
+          <p class="panel-lema">Firmas y cargos que aparecen en los documentos oficiales.</p>
+        </div>
+        <button type="button" class="btn-icon panel-cerrar" onclick="CuadernoEngine.cerrarConfiguracionAcademica()" aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
+      <form class="panel-formulario" onsubmit="CuadernoEngine.guardarConfiguracionAcademica(event)">
         <div class="form-group">
           <label for="cfg-coordinador-academico">Coordinador(a) académico(a)</label>
           <input type="text" id="cfg-coordinador-academico" class="form-control" maxlength="120" placeholder="Nombre completo">
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:18px 0 10px;">
+        <div class="panel-subcabecera">
           <div>
-            <h4 style="margin:0;">Jefes de departamento</h4>
-            <p style="margin:4px 0 0; color:var(--text-muted); font-size:0.82rem;">Indica el nombre de cada jefe y marca los turnos que cubre.</p>
+            <h4 class="panel-titulo">Jefes de departamento</h4>
+            <p class="panel-nota">Indica el nombre de cada jefe y marca los turnos que cubre.</p>
           </div>
           <button type="button" class="btn-secondary" onclick="CuadernoEngine.agregarJefeDepartamentoConfig()"><i class="ri-add-line"></i> Agregar jefe</button>
         </div>
-        <div id="cfg-jefes-departamento-lista" style="display:grid; gap:12px; max-height:45vh; overflow:auto; padding:2px;"></div>
+        <div id="cfg-jefes-departamento-lista" class="panel-lista-scroll"></div>
         <p id="cfg-academica-error" role="alert" style="color:#b91c1c; font-size:0.85rem;" hidden></p>
-        <div class="modal-actions" style="margin-top:20px;">
+        <div class="modal-actions panel-acciones">
           <button type="button" class="btn-secondary" onclick="CuadernoEngine.cerrarConfiguracionAcademica()">Cancelar</button>
           <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar responsables</button>
         </div>
