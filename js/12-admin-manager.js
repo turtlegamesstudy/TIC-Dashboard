@@ -656,6 +656,15 @@ const AdminManager = {
         UI.showToast(`⚠️ La cuenta se creó, pero no se pudo enviar el correo: ${emailError.message}. Usa «Enviar recuperación» para reintentarlo.`);
       }
       form.reset();
+      if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
+        Mejoras.registrarEvento({
+          tipo: 'cambio', titulo: 'Cuenta creada',
+          texto: `${firstName} ${lastName} (${email}) en ${this.centers[centerId].name}.`,
+          afectado: `${firstName} ${lastName}`.trim(),
+          detalle: `Área: ${area}`,
+          seccion: 'administracion', clave: `cuenta-${email}`
+        });
+      }
       await this.cargarUsuarios();
     } catch (error) {
       if (newUser && !profileSaved) {
@@ -770,6 +779,15 @@ const AdminManager = {
       this._preventLockout(uid, profile, undefined, role);
       await window.FirebaseServices.database.ref(`users/${uid}`).update({ role });
       UI.showToast('✅ Rol actualizado.');
+      if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
+        Mejoras.registrarEvento({
+          tipo: 'cambio', titulo: 'Rol de cuenta actualizado',
+          texto: `${profile.displayName || profile.email || uid}: ahora es ${role === 'admin' ? 'administrador' : 'docente'}.`,
+          afectado: profile.displayName || profile.email || uid,
+          detalle: `Rol anterior: ${profile.role || 'sin rol'}`,
+          seccion: 'administracion', clave: `rol-${uid}`
+        });
+      }
       await this.cargarUsuarios();
     } catch (error) {
       console.error('No se pudo actualizar el rol:', error);
@@ -784,6 +802,15 @@ const AdminManager = {
       this._preventLockout(uid, profile, nextActive);
       await window.FirebaseServices.database.ref(`users/${uid}`).update({ active: nextActive });
       UI.showToast(nextActive ? '✅ Cuenta activada.' : '✅ Cuenta desactivada.');
+      if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
+        Mejoras.registrarEvento({
+          tipo: 'cambio', titulo: nextActive ? 'Cuenta activada' : 'Cuenta desactivada',
+          texto: `${profile.displayName || profile.email || uid}: cuenta ${nextActive ? 'activada' : 'desactivada'}.`,
+          afectado: profile.displayName || profile.email || uid,
+          detalle: `Estado anterior: ${profile.active === true ? 'activa' : 'inactiva'}`,
+          seccion: 'administracion', clave: `estado-${uid}`
+        });
+      }
       await this.cargarUsuarios();
     } catch (error) {
       console.error('No se pudo cambiar el estado de la cuenta:', error);

@@ -80,6 +80,17 @@ const Mejoras = (() => {
     try { envolverUI(); } catch (e) { console.warn('Mejoras · envoltorios:', e); }
     try { instalarEventos(); } catch (e) { console.warn('Mejoras · eventos:', e); }
     try { aplicarPreferencias(); } catch (e) { console.warn('Mejoras · preferencias:', e); }
+    try {
+      cargarAvisos();
+      pintarBadge();
+      // Aviso de versión pendiente hasta que alguien la marque como vista.
+      if (actualizacionPendiente()) {
+        registrarAviso(`Hay una versión nueva del panel: v${VERSION}.`, 'sistema',
+          { texto: 'Ver novedades', ejecutar: () => abrirActualizaciones() },
+          { titulo: 'Actualización disponible', detalle: CAMBIOS[0] ? CAMBIOS[0].titulo : '',
+            clave: 'version-nueva', icono: 'ri-award-line' });
+      }
+    } catch (e) { console.warn('Mejoras · avisos:', e); }
   }
 
   /* Nodos propios: enlace de salto, botones de barra, cajones y
@@ -158,6 +169,13 @@ const Mejoras = (() => {
       centro.setAttribute('aria-labelledby', 'avisos-titulo');
       centro.hidden = true;
       document.body.appendChild(centro);
+    }
+
+    if (!$('#modal-actualizaciones')) {
+      const actualizaciones = document.createElement('div');
+      actualizaciones.id = 'modal-actualizaciones';
+      actualizaciones.className = 'modal-overlay hidden';
+      document.body.appendChild(actualizaciones);
     }
 
     if (!$('#paleta-fondo')) {
@@ -492,11 +510,18 @@ const Mejoras = (() => {
       if (typeof UI !== 'undefined' && UI.aplicarMenuGuardado) UI.aplicarMenuGuardado();
     } else return;
     pintarApariencia();
+    const rotulo = clave === 'tema' ? 'Tema' : clave === 'movimiento' ? 'Animaciones' : clave === 'densidad' ? 'Densidad' : 'Menú';
     UI.showToast(
-      `${clave === 'tema' ? 'Tema' : clave === 'movimiento' ? 'Animaciones' : clave === 'densidad' ? 'Densidad' : 'Menú'}: ` +
+      `${rotulo}: ` +
       `${(etiquetas[clave] || {})[valor] || valor}.`,
       'success',
       { texto: 'Deshacer', ejecutar: () => restaurarApariencia(antes) });
+    registrarEvento({
+      tipo: 'cambio', titulo: 'Apariencia modificada',
+      texto: `${rotulo}: ${(etiquetas[clave] || {})[valor] || valor}.`,
+      detalle: `Anterior: ${(etiquetas[clave] || {})[antes[clave]] || antes[clave] || 'sin cambiar'}`,
+      clave: `apariencia-${clave}`
+    });
   }
 
   function abrirApariencia() {
@@ -526,7 +551,62 @@ const Mejoras = (() => {
   /* ═══════════════════════════════════════════════════════════
      5 · CENTRO DE AVISOS
      ═══════════════════════════════════════════════════════════ */
-  function registrarAviso(texto, tipo, accion) {
+  const CLAVE_AVISOS = 'tic-avisos';
+  const TOPE_AVISOS = 150;
+  const filtrosAvisos = { texto: '', tipo: 'todos', periodo: 'todo', persona: 'todas', leido: 'todos' };
+
+  /* Tipos que se pueden filtrar y su rótulo visible. */
+  const TIPOS_AVISO = {
+    confirmacion: 'Confirmaciones',
+    cambio: 'Cambios',
+    error: 'Errores',
+    advertencia: 'Advertencias',
+    info: 'Información',
+    sistema: 'Sistema'
+  };
+
+  function usuarioActual() {
+    try {
+      if (typeof AuthManager === 'undefined' || !AuthManager) return null;
+      const perfil = AuthManager.profile || {};
+      return perfil.displayName || (AuthManager.user && AuthManager.user.displayName) || null;
+    } catch (e) { return null; }
+  }
+
+  /* La lista de avisos sobrevive a los recargas: se guarda en el
+     equipo y se cuenta cuántos quedan sin leer. */
+  function cargarAvisos() {
+    let crudos = null;
+    try { crudos = JSON.parse(localStorage.getItem(CLAVE_AVISOS) || 'null'); } catch (e) { crudos = null; }
+    if (Array.isArray(crudos)) {
+      crudos.slice(0, TOPE_AVISOS).forEach(a => {
+        if (a && a.id && typeof a.ts === 'number') avisos.push(a);
+      });
+    }
+    noLeidos = avisos.filter(a => !a.leido).length;
+  }
+
+  function guardarAvisos() {
+    try { localStorage.setItem(CLAVE_AVISOS, JSON.stringify(avisos.slice(0, TOPE_AVISOS))); }
+    catch (e) { /* almacenamiento lleno o bloqueado */ }
+  }
+
+  function contarNoLeidos() {
+    noLeidos = avisos.filter(a => !a.leido).length;
+    pintarBadge();
+  }
+
+  function marcarLeido(id) {
+    const aviso = avisos.find(a => a.id === id);
+    if (!aviso || aviso.leido) return;
+    aviso.leido = true;
+    contarNoLeidos();
+    guardarAvisos();
+    pintarCentroAvisos();
+  }
+
+  function registrarAviso(texto, tipo, accion, extra) {
+    extra = extra || {};
     let meta = { titulo: 'Aviso', clase: 'info', icono: 'ri-information-line' };
     if (typeof UI !== 'undefined' && typeof UI.metaAviso === 'function') {
       const tipoAviso = typeof UI.tipoDeAviso === 'function' ? UI.tipoDeAviso(texto, tipo) : String(tipo || 'info');
@@ -534,24 +614,55 @@ const Mejoras = (() => {
     }
     const limpio = String(texto === null || texto === undefined ? '' : texto)
       .replace(/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2139}\u{FE0F}\s]+/u, '').trim() || String(texto);
+    const clase = String(extra.clase || meta.clase || 'info').replace(/^aviso-/, '');
+    const porClase = { success: 'confirmacion', error: 'error', warning: 'advertencia' };
+    const tipoFinal = TIPOS_AVISO[extra.tipo] ? extra.tipo : (porClase[clase] || 'info');
+    const ahora = Date.now();
     const aviso = {
-      id: `av-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      titulo: meta.titulo,
+      id: `av-${ahora}-${Math.random().toString(36).slice(2, 7)}`,
+      ts: ahora,
+      hora: new Date(ahora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      tipo: tipoFinal,
+      clase,
+      icono: extra.icono || meta.icono || 'ri-information-line',
+      titulo: extra.titulo || meta.titulo || 'Aviso',
       texto: limpio,
-      clase: meta.clase || 'info',
-      icono: meta.icono || 'ri-information-line',
-      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      conAccion: Boolean(accion && typeof accion.ejecutar === 'function')
+      persona: extra.persona || usuarioActual() || 'Este equipo',
+      afectado: extra.afectado || null,
+      seccion: extra.seccion || (typeof UI !== 'undefined' && UI ? UI.currentModule : null),
+      detalle: extra.detalle || null,
+      clave: extra.clave || null,
+      leido: false
     };
+    // Mismo evento repetido en los últimos minutos → se refresca en
+    // lugar de llenar la lista (p. ej. aplicar el mismo filtro).
+    if (aviso.clave) {
+      const indice = avisos.findIndex(a => a.clave === aviso.clave && ahora - a.ts < 5 * 60000);
+      if (indice >= 0) {
+        const viejo = avisos[indice];
+        aviso.id = viejo.id;
+        aviso.leido = false;
+        avisos.splice(indice, 1);
+        accionesAviso.delete(viejo.id);
+      }
+    }
     avisos.unshift(aviso);
+    aviso.conAccion = Boolean(accion && typeof accion.ejecutar === 'function');
     if (aviso.conAccion) accionesAviso.set(aviso.id, accion);
-    if (avisos.length > 40) {
+    while (avisos.length > TOPE_AVISOS) {
       const fuera = avisos.pop();
       if (fuera) accionesAviso.delete(fuera.id);
     }
-    noLeidos += 1;
-    pintarBadge();
+    contarNoLeidos();
+    guardarAvisos();
     if (!document.getElementById('centro-avisos')?.hidden) pintarCentroAvisos();
+  }
+
+  /* Entrada pública para registrar eventos con más contexto
+     (persona afectada, detalle del cambio, clave de agrupación). */
+  function registrarEvento(datos) {
+    const d = datos || {};
+    return registrarAviso(d.texto, d.tipo || 'info', d.accion || null, d);
   }
 
   function pintarBadge() {
@@ -567,34 +678,185 @@ const Mejoras = (() => {
     }
   }
 
+  function inicioDelDia(ts) {
+    const d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  function cortePeriodo() {
+    const hoy = inicioDelDia(Date.now());
+    if (filtrosAvisos.periodo === 'hoy') return hoy;
+    if (filtrosAvisos.periodo === '7') return hoy - 6 * 86400000;
+    if (filtrosAvisos.periodo === '30') return hoy - 29 * 86400000;
+    return 0;
+  }
+
+  /* Aplica los cinco filtros del panel: texto, tipo, periodo,
+     persona y estado de lectura. */
+  function avisosFiltrados() {
+    const f = filtrosAvisos;
+    const q = normalizar(f.texto);
+    const corte = cortePeriodo();
+    const yo = usuarioActual();
+    return avisos.filter(a => {
+      if (f.tipo !== 'todos' && a.tipo !== f.tipo) return false;
+      if (corte && a.ts < corte) return false;
+      if (f.persona !== 'todas') {
+        const nombres = [a.persona, a.afectado].filter(Boolean);
+        const buscado = f.persona === 'yo' ? yo : f.persona;
+        if (!buscado || nombres.indexOf(buscado) < 0) return false;
+      }
+      if (f.leido === 'no' && a.leido) return false;
+      if (f.leido === 'si' && !a.leido) return false;
+      if (q) {
+        const bloque = normalizar([a.titulo, a.texto, a.detalle, a.persona, a.afectado, a.seccion]
+          .filter(Boolean).join(' '));
+        if (bloque.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+  }
+
+  function personasDeAvisos() {
+    const lista = [];
+    avisos.forEach(a => [a.persona, a.afectado].forEach(n => {
+      if (n && lista.indexOf(n) < 0) lista.push(n);
+    }));
+    return lista.sort((x, y) => x.localeCompare(y));
+  }
+
+  function rotuloDia(ts) {
+    const hoy = inicioDelDia(Date.now());
+    const dia = inicioDelDia(ts);
+    if (dia === hoy) return 'Hoy';
+    if (dia === hoy - 86400000) return 'Ayer';
+    return new Date(ts).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function rotuloSeccion(id) {
+    try {
+      if (typeof Secciones !== 'undefined' && Secciones && typeof Secciones.obtener === 'function') {
+        const sec = Secciones.obtener(id);
+        if (sec && sec.etiqueta) return sec.etiqueta;
+      }
+    } catch (e) { /* sección retirada */ }
+    return id || '';
+  }
+
+  function itemAvisoHTML(aviso) {
+    const accion = accionesAviso.get(aviso.id);
+    const icono = aviso.icono || ({
+      confirmacion: 'ri-checkbox-circle-line', cambio: 'ri-history-line',
+      error: 'ri-error-warning-line', advertencia: 'ri-alert-line',
+      sistema: 'ri-refresh-line'
+    }[aviso.tipo] || 'ri-information-line');
+    return `<li class="aviso-item aviso-${esc(aviso.clase || 'info')}${aviso.leido ? '' : ' no-leido'}"` +
+      ` data-aviso="${esc(aviso.id)}" data-tipo="${esc(aviso.tipo || 'info')}"` +
+      ` data-persona="${esc(aviso.persona || '')}" data-afectado="${esc(aviso.afectado || '')}"` +
+      ` tabindex="0" role="button"` +
+      ` aria-label="${aviso.leido ? 'Aviso leído' : 'Aviso sin leer. Marcar como leído'}">` +
+      `<span class="aviso-icono"><i class="${esc(icono)}" aria-hidden="true"></i></span>` +
+      `<span class="aviso-cuerpo">` +
+        `<span class="aviso-cab"><strong>${esc(aviso.titulo)}</strong><time>${esc(aviso.hora)}</time></span>` +
+        `<span class="aviso-texto">${esc(aviso.texto)}</span>` +
+        `${aviso.detalle ? `<small class="aviso-detalle">${esc(aviso.detalle)}</small>` : ''}` +
+        `<span class="aviso-etiquetas">` +
+          `<span class="aviso-chip"><i class="ri-user-line" aria-hidden="true"></i>${esc(aviso.persona || '—')}</span>` +
+          `${aviso.afectado ? `<span class="aviso-chip aviso-chip-afectado"><i class="ri-user-heart-line" aria-hidden="true"></i>${esc(aviso.afectado)}</span>` : ''}` +
+          `${aviso.seccion ? `<span class="aviso-chip aviso-chip-seccion"><i class="ri-compass-2-line" aria-hidden="true"></i>${esc(rotuloSeccion(aviso.seccion))}</span>` : ''}` +
+        `</span>` +
+        `${accion ? `<button type="button" class="btn-ghost aviso-accion" data-aviso-accion="${esc(aviso.id)}">${esc(accion.texto || 'Deshacer')}</button>` : ''}` +
+      `</span>` +
+      `</li>`;
+  }
+
+  function filtrosAvisosHTML(vista) {
+    const f = filtrosAvisos;
+    const yo = usuarioActual();
+    const chips = ['todos'].concat(Object.keys(TIPOS_AVISO)).map(t => {
+      const activo = f.tipo === t;
+      return `<button type="button" class="af-chip${activo ? ' activo' : ''}" data-avisos-tipo="${t}"` +
+        ` aria-pressed="${activo}">${t === 'todos' ? 'Todo' : esc(TIPOS_AVISO[t])}</button>`;
+    }).join('');
+    const nombres = personasDeAvisos();
+    const opciones = ['<option value="todas">Todas las personas</option>'];
+    if (yo) opciones.push(`<option value="yo"${f.persona === 'yo' ? ' selected' : ''}>Solo yo (${esc(yo)})</option>`);
+    nombres.forEach(n => {
+      if (n === yo) return;
+      opciones.push(`<option value="${esc(n)}"${f.persona === n ? ' selected' : ''}>${esc(n)}</option>`);
+    });
+    const hayFiltro = Boolean(f.texto) || f.tipo !== 'todos' || f.periodo !== 'todo' ||
+      f.persona !== 'todas' || f.leido !== 'todos';
+    return `<div class="avisos-filtros">
+        <div class="af-busqueda">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="search" id="aviso-busqueda" placeholder="Buscar por texto, persona o sección…"
+            value="${esc(f.texto)}" aria-label="Buscar en los avisos">
+        </div>
+        <div class="af-chips" role="group" aria-label="Filtrar por tipo">${chips}</div>
+        <div class="af-filas">
+          <label class="af-campo"><span>Periodo</span>
+            <select data-av-periodo aria-label="Filtrar por fecha">
+              <option value="todo"${f.periodo === 'todo' ? ' selected' : ''}>Todo</option>
+              <option value="hoy"${f.periodo === 'hoy' ? ' selected' : ''}>Hoy</option>
+              <option value="7"${f.periodo === '7' ? ' selected' : ''}>Últimos 7 días</option>
+              <option value="30"${f.periodo === '30' ? ' selected' : ''}>Últimos 30 días</option>
+            </select></label>
+          <label class="af-campo"><span>Persona</span>
+            <select data-av-persona aria-label="Filtrar por persona">${opciones.join('')}</select></label>
+          <label class="af-campo"><span>Lectura</span>
+            <select data-av-leido aria-label="Filtrar por lectura">
+              <option value="todos"${f.leido === 'todos' ? ' selected' : ''}>Todos</option>
+              <option value="no"${f.leido === 'no' ? ' selected' : ''}>Sin leer</option>
+              <option value="si"${f.leido === 'si' ? ' selected' : ''}>Leídos</option>
+            </select></label>
+        </div>
+        <div class="af-pie">
+          <span class="af-conteo">${vista.length} de ${avisos.length} aviso(s)</span>
+          <span class="af-acciones">
+            <button type="button" class="btn-ghost" data-avisos-todo-leido><i class="ri-check-double-line" aria-hidden="true"></i> Marcar todo leído</button>
+            <button type="button" class="btn-ghost" data-avisos-borrar ${hayFiltro ? '' : 'disabled'}><i class="ri-delete-bin-line" aria-hidden="true"></i> Borrar filtrados</button>
+          </span>
+        </div>
+      </div>`;
+  }
+
   function pintarCentroAvisos() {
     const centro = document.getElementById('centro-avisos');
     if (!centro) return;
-    const cuerpo = avisos.length
-      ? avisos.map(aviso => {
-          const accion = accionesAviso.get(aviso.id);
-          return `<li class="aviso-item aviso-${esc(aviso.clase)}">
-            <span class="aviso-icono"><i class="${esc(aviso.icono)}" aria-hidden="true"></i></span>
-            <span class="aviso-cuerpo">
-              <strong>${esc(aviso.titulo)}</strong>
-              <span>${esc(aviso.texto)}</span>
-              ${accion ? `<button type="button" class="btn-ghost aviso-accion" data-aviso-accion="${esc(aviso.id)}">${esc(accion.texto || 'Deshacer')}</button>` : ''}
-            </span>
-            <time>${esc(aviso.hora)}</time>
-          </li>`;
+    const vista = avisosFiltrados();
+    let diaActual = null;
+    const cuerpo = vista.length
+      ? vista.map(aviso => {
+          const dia = rotuloDia(aviso.ts);
+          const cabecera = dia !== diaActual
+            ? `<li class="aviso-dia" role="presentation">${esc(dia)}</li>` : '';
+          diaActual = dia;
+          return cabecera + itemAvisoHTML(aviso);
         }).join('')
-      : `<li class="aviso-vacio"><i class="ri-notification-off-line" aria-hidden="true"></i>
-           <p>Todavía no hay avisos.</p><small>Aquí quedarán los guardados, filtros y confirmaciones.</small></li>`;
+      : `<li class="aviso-vacio"><i class="ri-inbox-line" aria-hidden="true"></i>
+           <p>${avisos.length ? 'Ningún aviso coincide con los filtros.' : 'Todavía no hay avisos.'}</p>
+           <small>${avisos.length ? 'Prueba a quitar algún filtro.' : 'Aquí quedarán las confirmaciones, los cambios y los errores.'}</small>
+           ${avisos.length ? '<button type="button" class="btn-ghost" data-avisos-quitar-filtros>Quitar filtros</button>' : ''}</li>`;
+    const sinLeer = avisos.filter(a => !a.leido).length;
     centro.innerHTML =
       `<header class="drawer-cabecera">
-         <div><h2 id="avisos-titulo"><i class="ri-notification-3-line" aria-hidden="true"></i> Avisos</h2>
-         <p>${avisos.length ? `${avisos.length} aviso(s) de esta sesión` : 'Confirmaciones y avisos del panel'}</p></div>
+         <div><h2 id="avisos-titulo"><i class="ri-notification-3-line" aria-hidden="true"></i> Centro de avisos</h2>
+         <p>${sinLeer ? `${sinLeer} sin leer · ` : ''}${avisos.length} guardado(s)</p></div>
          <span class="drawer-cabecera-acciones">
            ${avisos.length ? '<button class="btn-ghost" type="button" data-avisos-limpiar><i class="ri-delete-bin-line"></i> Limpiar</button>' : ''}
            <button class="btn-icon" type="button" data-cerrar-avisos aria-label="Cerrar avisos"><i class="ri-close-line"></i></button>
          </span>
        </header>
-       <ul class="aviso-lista">${cuerpo}</ul>`;
+       ${filtrosAvisosHTML(vista)}
+       <ul class="aviso-lista" aria-live="polite">${cuerpo}</ul>
+       <footer class="avisos-pie">
+         <button type="button" class="btn-ghost" data-actualizaciones>
+           <i class="ri-git-branch-line" aria-hidden="true"></i> Actualizaciones <span class="pie-version">v${esc(VERSION)}</span>
+           <span class="pie-nuevo" ${actualizacionPendiente() ? '' : 'hidden'}>nueva</span>
+         </button>
+       </footer>`;
   }
 
   function alternarCentroAvisos() {
@@ -604,8 +866,11 @@ const Mejoras = (() => {
     if (abierto) { cerrarCentroAvisos(); return; }
     pintarCentroAvisos();
     centro.hidden = false;
-    noLeidos = 0;
-    pintarBadge();
+    // Al abrir se marcan como leídos los que se están viendo.
+    avisosFiltrados().forEach(a => { a.leido = true; });
+    contarNoLeidos();
+    guardarAvisos();
+    pintarCentroAvisos();
     document.getElementById('btn-avisos')?.setAttribute('aria-expanded', 'true');
   }
 
@@ -614,6 +879,180 @@ const Mejoras = (() => {
     if (!centro || centro.hidden) return;
     centro.hidden = true;
     document.getElementById('btn-avisos')?.setAttribute('aria-expanded', 'false');
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     11 · SISTEMA DE ACTUALIZACIONES
+     ───────────────────────────────────────────────────────────
+     Versión instalada + historial de cambios + comprobación
+     contra el repositorio público del proyecto.
+     ═══════════════════════════════════════════════════════════ */
+  const VERSION = '1.6.0';
+  const CLAVE_VERSION_VISTA = 'tic-version-vista';
+  const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
+
+  const CAMBIOS = [
+    { version: '1.6.0', fecha: '2026-10-07', titulo: 'Centro de avisos filtrable y comprobación de versiones', notas: [
+      'Avisos con tipo, fecha, autor, persona afectada y sección.',
+      'Filtros por texto, tipo, periodo, persona y estado de lectura.',
+      'Agrupación por día, marcar leídos y borrar solo los filtrados.',
+      'Historial de versiones y comprobación de cambios en el repositorio.'
+    ] },
+    { version: '1.5.0', fecha: '2026-10-07', titulo: 'Paneles rediseñados y paleta de comandos mejorada', notas: [
+      'Cajón «Filtros y ajustes» con tarjetas y cabecera con icono.',
+      'Configuración de exportación, convalidaciones y responsables con el mismo lenguaje visual.',
+      'Paleta con modos (Todo, Ir a, Estudiantes, Grupos, Acciones), resaltado y sugerencias.'
+    ] },
+    { version: '1.4.0', fecha: '2026-10-06', titulo: 'Diez mejoras de interfaz', notas: [
+      'Esqueletos de carga, tarjetas KPI clicable y panel de apariencia.',
+      'Tablas ordenables y en tarjetas en móvil, barra de filtros global.',
+      'Cajón de detalle del estudiante, atajos de teclado y foco visible.'
+    ] },
+    { version: '1.3.0', fecha: '2026-10-06', titulo: 'Modo oscuro, perfil y administración', notas: [
+      'Tema oscuro global y menú lateral estable.',
+      'Ficha de perfil con foto, biografía y completitud.',
+      'Panel de administración con KPIs, buscador y cuentas.'
+    ] }
+  ];
+
+  function actualizacionPendiente() {
+    return leerLocal(CLAVE_VERSION_VISTA, '') !== VERSION;
+  }
+
+  function fechaLarga(iso) {
+    try {
+      return new Date(`${iso}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) { return iso; }
+  }
+
+  function comprobacionGuardada() {
+    try { return JSON.parse(leerLocal(CLAVE_COMPROBACION, 'null')) || null; } catch (e) { return null; }
+  }
+
+  function pintarActualizaciones() {
+    const modal = document.getElementById('modal-actualizaciones');
+    if (!modal) return;
+    const guardada = comprobacionGuardada();
+    const version = CAMBIOS[0] || { version: VERSION, fecha: '2026-10-07', titulo: '', notas: [] };
+    const historial = CAMBIOS.map(c => `
+      <li class="cambio-version${c.version === VERSION ? ' actual' : ''}">
+        <span class="cambio-cab">
+          <span class="cambio-num">v${esc(c.version)}</span>
+          ${c.version === VERSION ? '<span class="cambio-actual-chip">Instalada</span>' : ''}
+          <time>${esc(fechaLarga(c.fecha))}</time>
+        </span>
+        <strong>${esc(c.titulo)}</strong>
+        <ul>${c.notaHTML || c.notas.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
+      </li>`).join('');
+    modal.innerHTML = `
+      <div class="modal-content panel panel-actualizaciones">
+        <header class="panel-cabecera">
+          <span class="panel-icono"><i class="ri-git-branch-line" aria-hidden="true"></i></span>
+          <div class="panel-titular">
+            <p class="panel-eyebrow">Sistema</p>
+            <h3>Actualizaciones del panel</h3>
+            <p class="panel-lema">Versión instalada, historial de cambios y comprobación de novedades en el repositorio.</p>
+          </div>
+          <button type="button" class="btn-icon panel-cerrar" data-cerrar-actualizaciones aria-label="Cerrar actualizaciones"><i class="ri-close-line" aria-hidden="true"></i></button>
+        </header>
+        <div class="panel-cuerpo">
+          <section class="ver-instalada">
+            <div class="vi-num">v${esc(version.version)}</div>
+            <div class="vi-meta">
+              <strong>${esc(version.titulo)}</strong>
+              <span>Publicada el ${esc(fechaLarga(version.fecha))} · ${CAMBIOS.length} versión(es) en el historial</span>
+            </div>
+            <button type="button" class="btn-primary" data-comprobar-actualizaciones><i class="ri-refresh-line" aria-hidden="true"></i> Comprobar ahora</button>
+          </section>
+          <p class="panel-nota" id="actualizaciones-estado" role="status">${guardada
+            ? `Última comprobación: ${esc(guardada.fechaLocal || '—')}${guardada.titulo ? ` · ${esc(guardada.titulo)}` : ''}`
+            : 'Todavía no se ha comprobado si hay cambios en el repositorio.'}</p>
+          <section class="cambio-historial">
+            <h4 class="panel-titulo"><i class="ri-history-line" aria-hidden="true"></i> Historial de versiones</h4>
+            <ol class="cambio-lista">${historial}</ol>
+          </section>
+        </div>
+        <div class="modal-actions panel-acciones split">
+          <button type="button" class="btn-secondary" data-marcar-version><i class="ri-check-line" aria-hidden="true"></i> Marcar versión como vista</button>
+          <button type="button" class="btn-primary" data-cerrar-actualizaciones>Cerrar</button>
+        </div>
+      </div>`;
+  }
+
+  function abrirActualizaciones() {
+    const modal = document.getElementById('modal-actualizaciones');
+    if (!modal) return;
+    pintarActualizaciones();
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    window.setTimeout(() => {
+      const boton = modal.querySelector('[data-comprobar-actualizaciones]');
+      if (boton) boton.focus();
+    }, 60);
+  }
+
+  function cerrarActualizaciones() {
+    const modal = document.getElementById('modal-actualizaciones');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+
+  function marcarVersionVista() {
+    escribirLocal(CLAVE_VERSION_VISTA, VERSION);
+    pintarCentroAvisos();
+    UI.showToast(`✅ Versión ${VERSION} marcada como vista.`, 'success');
+  }
+
+  /* Consulta el último commit del repositorio público y lo compara
+     con el día de publicación de la versión instalada. Cualquier
+     fallo (sin conexión, límite de la API) se informa sin romper
+     el panel. */
+  async function comprobarActualizaciones() {
+    const estado = document.getElementById('actualizaciones-estado');
+    const boton = document.querySelector('[data-comprobar-actualizaciones]');
+    if (estado) estado.textContent = 'Comprobando el repositorio…';
+    if (boton) { boton.disabled = true; boton.classList.add('cargando'); }
+    try {
+      const respuesta = await fetch('https://api.github.com/repos/turtlegamesstudy/TIC-Dashboard/commits?per_page=1',
+        { headers: { Accept: 'application/vnd.github+json' } });
+      if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+      const datos = await respuesta.json();
+      const commit = Array.isArray(datos) && datos[0];
+      if (!commit || !commit.sha) throw new Error('respuesta inesperada');
+      const sha = String(commit.sha).slice(0, 7);
+      const mensaje = String((commit.commit && commit.commit.message) || '').split('\n')[0];
+      const autor = (commit.commit && commit.commit.author && commit.commit.author.name) || 'desconocido';
+      const fechaRemota = new Date((commit.commit && commit.commit.author && commit.commit.date) || Date.now());
+      const fechaLocal = new Date(`${CAMBIOS[0].fecha}T23:59:59`);
+      const novedad = fechaRemota.getTime() > fechaLocal.getTime();
+      const fechaComprobacion = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+      escribirLocal(CLAVE_COMPROBACION, JSON.stringify({
+        sha, fechaLocal: fechaComprobacion, titulo: mensaje, novedad
+      }));
+      if (estado) {
+        estado.textContent = novedad
+          ? `Hay cambios en el repositorio posteriores a tu versión (commit ${sha} · ${fechaRemota.toLocaleDateString()}).`
+          : `Estás al día: último commit ${sha} (${fechaRemota.toLocaleDateString()}, ${autor}).`;
+        estado.classList.toggle('con-novedad', novedad);
+      }
+      if (novedad) {
+        registrarAviso(`El repositorio tiene cambios posteriores a la v${VERSION}.`, 'sistema',
+          { texto: 'Cerrar', ejecutar: () => {} },
+          { titulo: 'Actualización disponible', detalle: `Commit ${sha} · ${mensaje}`,
+            clave: 'actualizacion-remota', icono: 'ri-download-cloud-2-line' });
+      } else {
+        UI.showToast(`✅ Al día con el repositorio (commit ${sha}).`, 'success');
+      }
+    } catch (e) {
+      if (estado) {
+        estado.textContent = `No se pudo comprobar: ${e && e.message ? e.message : 'sin conexión'}. ` +
+          'Las notas de versión de abajo siguen disponibles.';
+        estado.classList.remove('con-novedad');
+      }
+    } finally {
+      if (boton) { boton.disabled = false; boton.classList.remove('cargando'); }
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -807,9 +1246,19 @@ const Mejoras = (() => {
     if (vistas.indexOf(UI.currentModule) >= 0) UI.renderCurrentModule({ background: true });
     else actualizarBarraFiltros();
     const traductor = ETIQUETAS_CLAVE[clave] || (v => v);
-    UI.showToast(!valor || valor === 'todos' || valor === ''
+    const quitado = !valor || valor === 'todos' || valor === '';
+    UI.showToast(quitado
       ? `🧹 Filtro global «${clave}» quitado en ${vistas.length} vista(s).`
       : `🔎 Filtro global aplicado → ${traductor(valor)}`, 'info');
+    registrarEvento({
+      tipo: 'cambio', titulo: quitado ? 'Filtro retirado' : 'Filtro aplicado',
+      texto: quitado
+        ? `Se quitó el filtro «${ETIQUETAS_CLAVE[clave] || clave}» en ${vistas.length} vista(s).`
+        : `${ETIQUETAS_CLAVE[clave] || clave}: ${traductor(valor)}`,
+      detalle: `Vistas: ${vistas.join(', ')}`,
+      seccion: typeof UI !== 'undefined' ? UI.currentModule : null,
+      clave: `filtro-${clave}`
+    });
   }
 
   function limpiarFiltrosGlobales() {
@@ -819,6 +1268,13 @@ const Mejoras = (() => {
     if (vistas.indexOf(UI.currentModule) >= 0) UI.renderCurrentModule({ background: true });
     else actualizarBarraFiltros();
     UI.showToast('🧹 Filtros limpiados en todas las vistas.', 'success');
+    registrarEvento({
+      tipo: 'cambio', titulo: 'Filtros limpiados',
+      texto: `Se eliminaron los filtros de ${vistas.length} vista(s).`,
+      detalle: `Vistas: ${vistas.join(', ')}`,
+      seccion: typeof UI !== 'undefined' ? UI.currentModule : null,
+      clave: 'filtro-limpiar'
+    });
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -1149,24 +1605,59 @@ const Mejoras = (() => {
 
       // Centro de avisos
       if (destino.closest('[data-cerrar-avisos]')) { cerrarCentroAvisos(); return; }
+      if (destino.closest('[data-actualizaciones]')) { abrirActualizaciones(); return; }
+      if (destino.closest('[data-cerrar-actualizaciones]')) { cerrarActualizaciones(); return; }
+      if (destino.closest('[data-comprobar-actualizaciones]')) { comprobarActualizaciones(); return; }
+      if (destino.closest('[data-marcar-version]')) { marcarVersionVista(); return; }
+      if (destino.id === 'modal-actualizaciones') { cerrarActualizaciones(); return; }
+      const chipTipo = destino.closest('[data-avisos-tipo]');
+      if (chipTipo) { filtrosAvisos.tipo = chipTipo.dataset.avisosTipo || 'todos'; pintarCentroAvisos(); return; }
+      if (destino.closest('[data-avisos-todo-leido]')) {
+        avisos.forEach(a => { a.leido = true; });
+        contarNoLeidos(); guardarAvisos(); pintarCentroAvisos();
+        return;
+      }
+      if (destino.closest('[data-avisos-borrar]')) {
+        const borrados = avisosFiltrados().map(a => a.id);
+        for (let i = avisos.length - 1; i >= 0; i--) {
+          if (borrados.indexOf(avisos[i].id) >= 0) {
+            accionesAviso.delete(avisos[i].id);
+            avisos.splice(i, 1);
+          }
+        }
+        contarNoLeidos(); guardarAvisos(); pintarCentroAvisos();
+        UI.showToast(`🗑️ ${borrados.length} aviso(s) borrados.`, 'info');
+        return;
+      }
+      if (destino.closest('[data-avisos-quitar-filtros]')) {
+        filtrosAvisos.texto = ''; filtrosAvisos.tipo = 'todos';
+        filtrosAvisos.periodo = 'todo'; filtrosAvisos.persona = 'todas'; filtrosAvisos.leido = 'todos';
+        pintarCentroAvisos();
+        return;
+      }
       if (destino.closest('[data-avisos-limpiar]')) {
         avisos.length = 0;
         accionesAviso.clear();
-        noLeidos = 0;
-        pintarBadge();
+        contarNoLeidos();
+        guardarAvisos();
         pintarCentroAvisos();
         return;
       }
       const avisoAccion = destino.closest('[data-aviso-accion]');
       if (avisoAccion) {
-        const accion = accionesAviso.get(avisoAccion.dataset.avisoAccion);
-        const indice = avisos.findIndex(a => a.id === avisoAccion.dataset.avisoAccion);
+        const id = avisoAccion.dataset.avisoAccion;
+        const accion = accionesAviso.get(id);
+        const indice = avisos.findIndex(a => a.id === id);
         if (indice >= 0) avisos.splice(indice, 1);
-        accionesAviso.delete(avisoAccion.dataset.avisoAccion);
+        accionesAviso.delete(id);
+        contarNoLeidos();
+        guardarAvisos();
         pintarCentroAvisos();
         if (accion) { try { accion.ejecutar(); } catch (e) { console.warn('Deshacer:', e); } }
         return;
       }
+      const itemAviso = destino.closest('[data-aviso]');
+      if (itemAviso) { marcarLeido(itemAviso.dataset.aviso); return; }
       if (destino.closest('#mejoras-fondo')) { cerrarApariencia(); cerrarDetalle(); return; }
       if (destino.closest('#paleta-fondo') && !destino.closest('.paleta')) { cerrarPaleta(); return; }
 
@@ -1193,9 +1684,11 @@ const Mejoras = (() => {
 
     document.addEventListener('change', event => {
       const select = event.target;
-      if (select && select.matches && select.matches('[data-fg]')) {
-        aplicarFiltroGlobal(select.dataset.fg, select.value);
-      }
+      if (!select || !select.matches) return;
+      if (select.matches('[data-fg]')) { aplicarFiltroGlobal(select.dataset.fg, select.value); return; }
+      if (select.matches('[data-av-periodo]')) { filtrosAvisos.periodo = select.value; pintarCentroAvisos(); return; }
+      if (select.matches('[data-av-persona]')) { filtrosAvisos.persona = select.value; pintarCentroAvisos(); return; }
+      if (select.matches('[data-av-leido]')) { filtrosAvisos.leido = select.value; pintarCentroAvisos(); }
     });
 
     const listaPaleta = document.getElementById('paleta-lista');
@@ -1213,11 +1706,22 @@ const Mejoras = (() => {
     }
 
     document.addEventListener('input', event => {
-      if (event.target && event.target.id === 'paleta-input') {
+      if (!event.target) return;
+      if (event.target.id === 'paleta-input') {
         paleta.sel = 0;
         paleta.consulta = event.target.value;
         paleta.items = construirItems(event.target.value);
         pintarPaleta();
+        return;
+      }
+      if (event.target.id === 'aviso-busqueda') {
+        filtrosAvisos.texto = event.target.value;
+        const centro = document.getElementById('centro-avisos');
+        if (!centro || centro.hidden) return;
+        const foco = event.target.selectionStart;
+        pintarCentroAvisos();
+        const nuevo = document.getElementById('aviso-busqueda');
+        if (nuevo) { nuevo.focus(); try { nuevo.setSelectionRange(foco, foco); } catch (e) { /* search */ } }
       }
     });
 
@@ -1257,6 +1761,8 @@ const Mejoras = (() => {
         return;
       }
       if (event.key === 'Escape') {
+        const act = document.getElementById('modal-actualizaciones');
+        if (act && !act.classList.contains('hidden')) { cerrarActualizaciones(); return; }
         if (paleta.abierta) { cerrarPaleta(); return; }
         if (document.getElementById('centro-avisos') && !document.getElementById('centro-avisos').hidden) { cerrarCentroAvisos(); return; }
         if (document.getElementById('detalle-drawer') && !document.getElementById('detalle-drawer').hidden) { cerrarDetalle(); return; }
@@ -1347,6 +1853,13 @@ const Mejoras = (() => {
     abrirApariencia,
     abrirDetalleEstudiante,
     limpiarFiltrosGlobales,
-    _avisos: avisos
+    registrarAviso,
+    registrarEvento,
+    abrirActualizaciones,
+    cerrarActualizaciones,
+    comprobarActualizaciones,
+    VERSION,
+    _avisos: avisos,
+    _filtrosAvisos: filtrosAvisos
   };
 })();

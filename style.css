@@ -11489,3 +11489,206 @@ html[data-theme="dark"] .paleta-modo[aria-pressed="true"] { background: rgba(1, 
 .paleta-sugerencias button:hover { border-style: solid; border-color: rgba(1, 165, 228, 0.5); color: var(--p-700, #095577); }
 .paleta-vacio i { display: block; font-size: 1.7rem; opacity: 0.45; margin-bottom: 7px; }
 .paleta-vacio p { margin: 0 0 12px; line-height: 1.5; }
+
+/* ════════════════════════════════════════════════════════════════
+   21 · CENTRO DE AVISOS FILTRABLE + ACTUALIZACIONES
+   ────────────────────────────────────────────────────────────────
+   Los avisos se agrupan por día y se filtran por texto, tipo,
+   periodo, persona y lectura; el pie enlaza con el historial de
+   versiones y la comprobación del repositorio.
+   ════════════════════════════════════════════════════════════════ */
+.aviso-lista { flex: 1 1 auto; min-height: 0; }
+.aviso-dia {
+  position: sticky; top: 0; z-index: 1;
+  margin: 6px 2px 2px;
+  padding: 6px 9px 4px;
+  font-size: 0.63rem; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--campus-muted, #71808b);
+  background: var(--campus-card, #fff);
+  border-bottom: 1px solid var(--campus-border, #e3e9ed);
+}
+.aviso-item { cursor: pointer; }
+.aviso-item.no-leido { background: rgba(1, 165, 228, 0.06); }
+.aviso-item.no-leido .aviso-cab strong::after {
+  content: ''; display: inline-block;
+  width: 7px; height: 7px; margin-left: 7px;
+  border-radius: 50%; background: #01a5e4;
+  vertical-align: 1px;
+}
+.aviso-item:focus-visible { outline: 2px solid rgba(1, 165, 228, 0.6); outline-offset: -2px; }
+.aviso-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.aviso-cab strong {
+  font-size: 0.68rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--campus-muted, #71808b);
+}
+.aviso-cab time { font-size: 0.65rem; color: var(--campus-muted, #71808b); white-space: nowrap; }
+.aviso-texto { line-height: 1.45; }
+.aviso-detalle {
+  display: block;
+  font-size: 0.7rem; font-style: italic;
+  color: var(--campus-muted, #71808b);
+  overflow-wrap: anywhere;
+}
+.aviso-etiquetas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.aviso-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 999px;
+  background: var(--bg-elevated, #f7fafc);
+  font-size: 0.63rem; font-weight: 700;
+  color: var(--text-secondary, #4a5b6b);
+}
+.aviso-chip i { font-size: 0.78rem; opacity: 0.75; }
+.aviso-chip-afectado { border-color: rgba(1, 165, 228, 0.4); background: rgba(1, 165, 228, 0.1); }
+.aviso-chip-seccion { border-color: rgba(227, 11, 123, 0.28); background: rgba(227, 11, 123, 0.08); }
+
+/* Filtros del centro de avisos */
+.avisos-filtros {
+  display: grid; gap: 9px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--campus-border, #e3e9ed);
+  background: linear-gradient(180deg, rgba(1, 165, 228, 0.06), transparent);
+}
+.af-busqueda {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 11px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 12px;
+  background: var(--bg-card, #fff);
+}
+.af-busqueda i { color: var(--campus-muted, #71808b); }
+.af-busqueda input {
+  flex: 1; min-width: 0;
+  border: 0; background: transparent; outline: none;
+  font-size: 0.8rem; color: var(--text-primary, #304354);
+}
+.af-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.af-chip {
+  padding: 5px 10px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 999px;
+  background: var(--bg-card, #fff);
+  font-size: 0.67rem; font-weight: 700;
+  color: var(--text-secondary, #4a5b6b);
+  cursor: pointer;
+  transition: background var(--t-base, 180ms) ease, border-color var(--t-base, 180ms) ease;
+}
+.af-chip:hover { border-color: rgba(1, 165, 228, 0.5); }
+.af-chip.activo {
+  background: rgba(1, 165, 228, 0.16);
+  border-color: rgba(1, 165, 228, 0.55);
+  color: var(--p-700, #095577);
+}
+html[data-theme="dark"] .af-chip.activo { color: #bfeaff; }
+.af-filas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.af-campo { display: grid; gap: 3px; }
+.af-campo span {
+  font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--campus-muted, #71808b);
+}
+.af-campo select {
+  width: 100%;
+  padding: 6px 7px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 10px;
+  background: var(--bg-card, #fff);
+  font-size: 0.72rem;
+  color: var(--text-primary, #304354);
+}
+.af-pie {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+  padding-top: 3px;
+  border-top: 1px dashed var(--campus-border, #e3e9ed);
+}
+.af-conteo { font-size: 0.66rem; color: var(--campus-muted, #71808b); }
+.af-acciones { display: flex; gap: 4px; flex-wrap: wrap; }
+.af-acciones .btn-ghost { padding: 5px 8px; font-size: 0.67rem; }
+.af-acciones .btn-ghost[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* Pie con el acceso a las actualizaciones */
+.avisos-pie {
+  padding: 9px 12px;
+  border-top: 1px solid var(--campus-border, #e3e9ed);
+  background: var(--bg-elevated, #f7fafc);
+  display: flex; justify-content: center;
+}
+.avisos-pie .btn-ghost { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; }
+.pie-version {
+  padding: 2px 7px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 999px;
+  font-size: 0.63rem; font-weight: 800;
+  color: var(--text-secondary, #4a5b6b);
+}
+.pie-nuevo {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1a9ad6, #e30b7b);
+  color: #fff;
+  font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+
+/* Modal de actualizaciones */
+.ver-instalada {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(1, 165, 228, 0.12), rgba(227, 11, 123, 0.07));
+  border: 1px solid rgba(1, 165, 228, 0.26);
+  border-radius: 16px;
+}
+.vi-num {
+  font-size: 1.7rem; font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #0b6a9f, #e30b7b);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vi-meta { display: grid; gap: 3px; flex: 1 1 220px; min-width: 0; }
+.vi-meta strong { font-size: 0.88rem; color: var(--text-primary, #304354); }
+.vi-meta span { font-size: 0.72rem; color: var(--campus-muted, #71808b); }
+#actualizaciones-estado.con-novedad {
+  border-color: rgba(227, 11, 123, 0.4);
+  background: rgba(227, 11, 123, 0.09);
+  color: var(--text-primary, #304354);
+  font-weight: 700;
+}
+.btn-primary.cargando { opacity: 0.7; pointer-events: none; }
+.cambio-historial { display: grid; gap: 12px; }
+.cambio-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cambio-version {
+  display: grid; gap: 6px;
+  padding: 13px 15px;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-left: 4px solid var(--campus-border, #e3e9ed);
+  border-radius: 14px;
+}
+.cambio-version.actual { border-left-color: #01a5e4; box-shadow: 0 8px 22px rgba(1, 165, 228, 0.14); }
+.cambio-cab { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.cambio-num { font-size: 0.82rem; font-weight: 900; color: var(--p-700, #095577); }
+html[data-theme="dark"] .cambio-num { color: #6fd0f0; }
+.cambio-actual-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(1, 165, 228, 0.16);
+  color: var(--p-700, #095577);
+  font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.cambio-cab time { margin-left: auto; font-size: 0.67rem; color: var(--campus-muted, #71808b); }
+.cambio-version > strong { font-size: 0.84rem; color: var(--text-primary, #304354); }
+.cambio-version ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.cambio-version li { font-size: 0.75rem; line-height: 1.5; color: var(--text-secondary, #4a5b6b); }
+
+@media (max-width: 760px) {
+  .af-filas { grid-template-columns: 1fr; }
+  .centro-avisos { width: min(370px, 96vw); right: 6px; }
+  .ver-instalada { flex-direction: column; align-items: flex-start; }
+  .cambio-cab time { margin-left: 0; width: 100%; }
+}

@@ -1046,6 +1046,17 @@ actualizarNavActivo(modulo) {
           try {
             await DataEngine.save();
             this.showToast("Estudiante eliminado correctamente.");
+            if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
+              const borrado = previousStudents.find(s => s.id === studentId) || {};
+              const nombreBorrado = `${borrado.nombres || ''} ${borrado.apellidos || ''}`.trim();
+              Mejoras.registrarEvento({
+                tipo: 'cambio', titulo: 'Estudiante eliminado',
+                texto: nombreBorrado ? `${nombreBorrado} se quitó del grupo.` : 'Registro de estudiante eliminado.',
+                afectado: nombreBorrado || null,
+                detalle: `Grupo: ${group.nombre || groupId}`,
+                seccion: 'estudiantes', clave: `est-elim-${studentId}`
+              });
+            }
             this.renderCurrentModule();
           } catch (error) {
             const currentGroup = DataEngine.getGrupoById(groupId);
@@ -1718,6 +1729,16 @@ renderCuadernoDocente() {
               await DataEngine.save();
               this.closeModal();
               this.showToast("Datos del estudiante actualizados correctamente.");
+              if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
+                const nombreEditado = `${student.nombres || ''} ${student.apellidos || ''}`.trim();
+                Mejoras.registrarEvento({
+                  tipo: 'cambio', titulo: 'Ficha de estudiante actualizada',
+                  texto: `${nombreEditado || 'Estudiante'}: datos modificados.`,
+                  afectado: nombreEditado || null,
+                  detalle: `Grupo: ${student.grupoNombre || groupId}`,
+                  seccion: 'estudiantes', clave: `est-edit-${studentId}`
+                });
+              }
               this.renderCurrentModule();
             } catch (error) {
               const currentGroup = DataEngine.getGrupoById(groupId);
