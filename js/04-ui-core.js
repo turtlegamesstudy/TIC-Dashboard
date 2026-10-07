@@ -2057,10 +2057,98 @@ renderCuadernoDocente() {
         return Math.max(lineas.length - 1, 0);
       },
 
+      /* ── Impresión / PDF ──────────────────────────────────────
+         El papel, la orientación y los márgenes salen de la
+         configuración de exportación (ConfigExport), de modo que
+         el PDF del navegador coincide con lo que define el equipo
+         en «Exportar e imprimir». Devuelve lo aplicado por si algo
+         falla y hay que contarlo en el aviso. */
+      prepararImpresion() {
+        const cfg = (typeof ConfigExport !== 'undefined' && ConfigExport && typeof ConfigExport.load === 'function')
+          ? ConfigExport.load()
+          : {};
+        const papeles = { 1: 'letter', 3: 'tabloid', 5: 'legal', 8: 'a3', 9: 'a4', 11: 'a5' };
+        const papel = papeles[Number(cfg.printPaperSize) || 9] || 'a4';
+        const orientacion = cfg.printOrientation === 'portrait' ? 'portrait' : 'landscape';
+        const pre = (typeof ConfigExport !== 'undefined' && ConfigExport && ConfigExport.MARGIN_PRESETS)
+          ? (ConfigExport.MARGIN_PRESETS[cfg.printMargin] || ConfigExport.MARGIN_PRESETS.normal)
+          : { left: 0.7, right: 0.7, top: 0.75, bottom: 0.75 };
+        const mm = pulgadas => Math.round(Number(pulgadas) * 25.4);
+
+        let hoja = document.getElementById('estilo-impresion');
+        if (!hoja) {
+          hoja = document.createElement('style');
+          hoja.id = 'estilo-impresion';
+          document.head.appendChild(hoja);
+        }
+        hoja.textContent = `@page { size: ${papel} ${orientacion}; ` +
+          `margin: ${mm(pre.top)}mm ${mm(pre.right)}mm ${mm(pre.bottom)}mm ${mm(pre.left)}mm; }`;
+
+        document.documentElement.setAttribute('data-papel', papel);
+        document.documentElement.setAttribute('data-orientacion', orientacion);
+        this.pintarCabeceraImpresion();
+
+        // En el papel también se leen lo que en pantalla está
+        // plegado: se despliega todo y se recoge al volver.
+        this._impresionDetalles = [...document.querySelectorAll('#workspace details:not([open])')];
+        this._impresionDetalles.forEach(detalles => { detalles.open = true; });
+
+        if (!this._impresionEscuchada && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+          this._impresionEscuchada = true;
+          window.addEventListener('afterprint', () => this.limpiarImpresion());
+        }
+        return { papel, orientacion, margenMm: mm(pre.left), cabecera: true };
+      },
+
+      /* Cabecera que solo existe en papel: título de la vista, filtros
+         activos y fecha, para que un PDF suelto se entienda solo. */
+      pintarCabeceraImpresion() {
+        let cabecera = document.getElementById('print-cabecera');
+        if (!cabecera) {
+          cabecera = document.createElement('div');
+          cabecera.id = 'print-cabecera';
+          cabecera.className = 'print-cabecera';
+          const destino = document.getElementById('workspace');
+          if (destino) destino.insertBefore(cabecera, destino.firstChild);
+        }
+        let titulo = 'Vista actual';
+        try {
+          const seccion = (typeof Secciones !== 'undefined' && Secciones && typeof Secciones.obtener === 'function')
+            ? Secciones.obtener(this.currentModule)
+            : null;
+          if (seccion && seccion.etiqueta) titulo = seccion.etiqueta;
+        } catch (error) { /* sin secciones: se queda el rótulo genérico */ }
+
+        const chips = [...document.querySelectorAll('.chips-activos')]
+          .map(caja => caja.textContent.replace(/\s+/g, ' ').trim())
+          .filter(Boolean)
+          .join(' · ');
+        const fecha = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+        const version = (typeof Mejoras !== 'undefined' && Mejoras && Mejoras.VERSION) ? Mejoras.VERSION : '';
+        cabecera.innerHTML =
+          `<div class="print-cab-fila"><span class="print-cab-marca">TIC Dashboard</span>` +
+          `<span class="print-cab-titulo">${this.escaparTexto(titulo)}</span>` +
+          `<span class="print-cab-fecha">${this.escaparTexto(fecha)}</span></div>` +
+          `<div class="print-cab-meta">` +
+          (chips ? `<span>Filtros: ${this.escaparTexto(chips)}</span>` : '<span>Sin filtros activos</span>') +
+          (version ? `<span>Versión ${this.escaparTexto(version)}</span>` : '') +
+          `</div>`;
+        return cabecera;
+      },
+
+      /* Vuelve a la pantalla: los pliegues plegados y sin atributos. */
+      limpiarImpresion() {
+        (this._impresionDetalles || []).forEach(detalles => { detalles.open = false; });
+        this._impresionDetalles = null;
+        document.documentElement.removeAttribute('data-papel');
+        document.documentElement.removeAttribute('data-orientacion');
+      },
+
       // Imprime la vista actual: el diálogo del navegador permite
       // guardarla como PDF con el papel y la orientación elegidos.
       imprimirVista() {
         try {
+          this.prepararImpresion();
           if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
         } catch (error) {
           this.showToast(`No se pudo abrir el diálogo de impresión: ${error.message}`, 'error');

@@ -12031,3 +12031,89 @@ html[data-theme="dark"] .bar-h[data-grafico-filtro]:hover .bar-h-label { color: 
 @media (max-width: 640px) {
   .grafico-tooltip { max-width: calc(100vw - 24px); }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   26 · HOJA DE IMPRESIÓN — papel real, sin controles
+   El papel, la orientación y los márgenes concretos los inyecta
+   UI.prepararImpresion() tomando la configuración de exportación,
+   de modo que el PDF sale exactamente como lo definió el equipo.
+   ═══════════════════════════════════════════════════════════════ */
+.print-cabecera { display: none; }
+
+@media print {
+  /* 1 · Solo el contenido de la vista activa. */
+  .sidebar, .topbar, .topbar-mejoras, .paleta-atajo, .skip-link,
+  .toast-container, .modal-backdrop, .modal-overlay, #paleta-overlay,
+  #centro-avisos, #grafico-tooltip, #detalle-drawer, #banner-mantenimiento,
+  #pantalla-mantenimiento, #section-settings-sidebar, #section-settings-backdrop,
+  .no-imprimir, .barra-filtros, .glosario-panel,
+  .ayuda-btn, .ayuda-pop, .chips-rotulo, .btn-limpiar-filtros,
+  .seg-acciones, .seg-chips, [data-seg-expandir], [data-seg-restablecer],
+  .btn-icon, .btn-ghost, .btn-primary, .btn-secondary, .empty-state {
+    display: none !important;
+  }
+
+  /* 2 · Página blanca: se anula el tema oscuro y el layout. */
+  html, body, html[data-theme="dark"], html[data-theme="dark"] body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .main-wrapper { margin-left: 0 !important; }
+  .workspace { padding: 0 !important; max-width: none !important; overflow: visible !important; }
+  /* Las cabeceras de vista compensan con margen negativo el padding
+     del lienzo: al quitarlo aquí, ese margen sobresalía de la hoja. */
+  .view-header { margin-left: 0 !important; margin-right: 0 !important; }
+  .module-fade-enter { animation: none !important; }
+
+  /* 3 · Cabecera impresa: qué vista, con qué filtros y cuándo. */
+  .print-cabecera {
+    display: block !important;
+    border-bottom: 2px solid #111;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+    font-size: 10pt;
+    color: #111;
+  }
+  .print-cab-fila {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .print-cab-marca { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 9pt; }
+  .print-cab-titulo { font-weight: 700; font-size: 13pt; }
+  .print-cab-fecha { font-size: 9pt; color: #444; }
+  .print-cab-meta { display: flex; gap: 16px; font-size: 8.5pt; color: #444; margin-top: 3px; }
+
+  /* 4 · Fondos blancos y texto negro venga el tema que venga. */
+  .panel, .kpi-card, .chart-box, .card-widget, .table-container,
+  .group-accordion, .seg-panel, .estado-panel, .chips-activos, .chip,
+  .custom-table, .bar-h-track, .search-results {
+    background: #fff !important;
+    color: #111 !important;
+    border-color: #bbb !important;
+    box-shadow: none !important;
+  }
+  .custom-table thead th { background: #eceff1 !important; color: #111 !important; }
+
+  /* 5 · Bloques enteros y cabeceras de tabla en cada página. */
+  .panel, .kpi-card, .chart-box, .card-widget, .table-container,
+  .group-accordion, .seg-panel, .estado-panel, .rejilla-graficas > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr, li { break-inside: avoid; page-break-inside: avoid; }
+  h1, h2, h3 { break-after: avoid; page-break-after: avoid; }
+  table { width: 100% !important; border-collapse: collapse; font-size: 9pt; }
+  .rejilla-graficas { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* 6 · Las gráficas conservan su color y la cifra a la vista. */
+  .grafico-barra, .grafico-dona, .bar-h-fill, .kpi-icono {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .grafico-valor, .kpi-valor, .kpi-pie, .kpi-etiqueta { color: #111 !important; }
+  a[href]::after { content: "" !important; }
+}

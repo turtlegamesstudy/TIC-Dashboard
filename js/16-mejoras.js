@@ -905,7 +905,9 @@ const Mejoras = (() => {
       'Editar estudiante, equipos, docente guía e integrantes usan la cabecera y el cuerpo de los paneles.',
       'Las gráficas muestran unidades reales (alumnos, promedio /100) en vez de un porcentaje relativo.',
       'Globo de ayuda con el texto completo al pasar el ratón, incluidas las etiquetas truncadas.',
-      'Clic en barra o dona para aplicar ese filtro en Estadísticas desde cualquier vista.'
+      'Clic en barra o dona para aplicar ese filtro en Estadísticas desde cualquier vista.',
+      'Imprimir / PDF usa el papel, la orientación y los márgenes de la configuración de exportación.',
+      'Cabecera impresa con la vista, los filtros activos y la fecha; los pliegues salen desplegados.'
     ] },
     { version: '1.8.0', fecha: '2026-10-07', titulo: 'Seguimiento y proyección de notas', notas: [
       'Tarjeta «Pulso de hoy» en el panel principal con alertas automáticas de seguimiento.',
