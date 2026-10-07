@@ -11692,3 +11692,142 @@ html[data-theme="dark"] .cambio-num { color: #6fd0f0; }
   .ver-instalada { flex-direction: column; align-items: flex-start; }
   .cambio-cab time { margin-left: 0; width: 100%; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   22 · MODO MANTENIMIENTO
+   ────────────────────────────────────────────────────────────────
+   Banner del administrador (con interruptor y motivo) y pantalla
+   de bloqueo para el resto de usuarios.
+   ════════════════════════════════════════════════════════════════ */
+.banner-mantenimiento {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 11px 24px;
+  background: linear-gradient(135deg, rgba(1, 165, 228, 0.1), rgba(227, 11, 123, 0.06));
+  border-bottom: 1px solid rgba(1, 165, 228, 0.28);
+  animation: paleta-entra 200ms ease both;
+}
+.banner-mantenimiento[hidden] { display: none !important; }
+.banner-mantenimiento.activo {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.18), rgba(245, 166, 35, 0.14));
+  border-bottom-color: rgba(255, 107, 107, 0.45);
+}
+.bm-icono {
+  width: 34px; height: 34px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  background: rgba(1, 165, 228, 0.16);
+  color: var(--p-600, #0b6a9f);
+  font-size: 1.05rem;
+}
+.banner-mantenimiento.activo .bm-icono { background: rgba(255, 107, 107, 0.2); color: #d63d3d; }
+html[data-theme="dark"] .banner-mantenimiento.activo .bm-icono { color: #ff9b9b; }
+.bm-texto { display: grid; gap: 2px; flex: 1 1 260px; min-width: 0; }
+.bm-texto strong {
+  font-size: 0.82rem; color: var(--text-primary, #304354);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.bm-estado {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(46, 204, 113, 0.16);
+  color: #1e9e68;
+  font-size: 0.62rem; font-weight: 800;
+  letter-spacing: 0.07em; text-transform: uppercase;
+}
+.banner-mantenimiento.activo .bm-estado { background: rgba(255, 107, 107, 0.2); color: #d63d3d; }
+html[data-theme="dark"] .banner-mantenimiento.activo .bm-estado { color: #ff9b9b; }
+.bm-texto > span { font-size: 0.73rem; line-height: 1.5; color: var(--text-secondary, #4a5b6b); }
+.bm-motivo input {
+  width: min(240px, 40vw);
+  padding: 8px 11px;
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 11px;
+  background: var(--bg-card, #fff);
+  font-size: 0.75rem;
+  color: var(--text-primary, #304354);
+}
+.bm-motivo input:focus-visible { outline: 2px solid rgba(1, 165, 228, 0.55); outline-offset: 1px; }
+.bm-motivo input[readonly] { opacity: 0.75; cursor: not-allowed; }
+.bm-acciones { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.bm-acciones .btn-ghost { font-size: 0.73rem; padding: 7px 10px; }
+.bm-acciones .btn-primary { font-size: 0.76rem; padding: 8px 14px; }
+.bm-fallo {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 9px;
+  border: 1px dashed rgba(245, 166, 35, 0.6);
+  border-radius: 999px;
+  background: rgba(245, 166, 35, 0.14);
+  font-size: 0.67rem; font-weight: 700;
+  color: #b8760a;
+}
+html[data-theme="dark"] .bm-fallo { color: #f7c05a; }
+
+/* Pantalla de bloqueo para quienes no son administradores */
+#pantalla-mantenimiento {
+  position: fixed; inset: 0; z-index: 400;
+  display: grid; place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(1100px 520px at 50% -10%, rgba(1, 165, 228, 0.28), transparent 70%),
+    var(--campus-page, #f4f7fa);
+  animation: paleta-entra 240ms ease both;
+}
+#pantalla-mantenimiento[hidden] { display: none !important; }
+.mantenimiento-tarjeta {
+  width: min(540px, 100%);
+  padding: 34px 32px 26px;
+  text-align: center;
+  background: var(--campus-card, #fff);
+  border: 1px solid var(--campus-border, #e3e9ed);
+  border-radius: 24px;
+  box-shadow: 0 34px 80px rgba(4, 22, 40, 0.32);
+  display: grid; gap: 12px; justify-items: center;
+}
+.mantenimiento-icono {
+  width: 62px; height: 62px;
+  display: grid; place-items: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(1, 165, 228, 0.2), rgba(227, 11, 123, 0.14));
+  color: var(--p-600, #0b6a9f);
+  font-size: 1.9rem;
+}
+.mantenimiento-eyebrow {
+  margin: 0;
+  font-size: 0.66rem; font-weight: 800;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--campus-muted, #71808b);
+}
+.mantenimiento-tarjeta h1 {
+  margin: 0;
+  font-size: clamp(1.3rem, 3.4vw, 1.7rem);
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #304354);
+}
+.mantenimiento-texto {
+  margin: 0;
+  font-size: 0.88rem; line-height: 1.6;
+  color: var(--text-secondary, #4a5b6b);
+}
+.mantenimiento-detalle {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--campus-muted, #71808b);
+}
+.mantenimiento-acciones { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.mantenimiento-comprobado {
+  margin: 4px 0 0;
+  font-size: 0.68rem;
+  color: var(--campus-muted, #71808b);
+}
+
+@media (max-width: 760px) {
+  .banner-mantenimiento { padding: 11px 14px; gap: 10px; }
+  .bm-texto { flex: 1 1 100%; }
+  .bm-motivo { flex: 1 1 100%; }
+  .bm-motivo input { width: 100%; max-width: 100%; }
+  .bm-acciones { width: 100%; }
+  .bm-acciones .btn-primary, .bm-acciones .btn-ghost { flex: 1 1 auto; justify-content: center; }
+  .mantenimiento-tarjeta { padding: 26px 18px 20px; }
+  .mantenimiento-acciones { flex-direction: column; width: 100%; }
+  .mantenimiento-acciones button { width: 100%; justify-content: center; }
+}

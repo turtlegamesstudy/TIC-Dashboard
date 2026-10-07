@@ -91,6 +91,7 @@ const Mejoras = (() => {
             clave: 'version-nueva', icono: 'ri-award-line' });
       }
     } catch (e) { console.warn('Mejoras · avisos:', e); }
+    try { iniciarMantenimiento(); } catch (e) { console.warn('Mejoras · mantenimiento:', e); }
   }
 
   /* Nodos propios: enlace de salto, botones de barra, cajones y
@@ -278,6 +279,11 @@ const Mejoras = (() => {
     mejorarTablas();
     marcarKPIs();
     actualizarBarraFiltros();
+    try {
+      pintarMantenimiento();
+      // La bandera se relee como mucho una vez por minuto.
+      if (Date.now() - ultimoRefresco > 60000) refrescarMantenimiento();
+    } catch (e) { console.warn('Mejoras · mantenimiento:', e); }
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -887,11 +893,17 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '1.6.0';
+  const VERSION = '1.7.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '1.7.0', fecha: '2026-10-07', titulo: 'Modo mantenimiento', notas: [
+      'Bandera en Firebase con copia local para el arranque sin conexión.',
+      'Los usuarios que no son administradores ven una pantalla de bloqueo con motivo y reintentos.',
+      'El administrador conserva el acceso y lo controla desde un banner con interruptor.',
+      'Se comprueba al iniciar y en cada pintado (como máximo una lectura por minuto).'
+    ] },
     { version: '1.6.0', fecha: '2026-10-07', titulo: 'Centro de avisos filtrable y comprobación de versiones', notas: [
       'Avisos con tipo, fecha, autor, persona afectada y sección.',
       'Filtros por texto, tipo, periodo, persona y estado de lectura.',
@@ -1053,6 +1065,225 @@ const Mejoras = (() => {
     } finally {
       if (boton) { boton.disabled = false; boton.classList.remove('cargando'); }
     }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     12 · MODO MANTENIMIENTO
+     ───────────────────────────────────────────────────────────
+     Bandera en Firebase (y copia local para el arranque sin
+     conexión): los no administradores ven una pantalla de
+     bloqueo y el administrador conserva el acceso con un banner
+     desde el que se activa o se desactiva.
+     ═══════════════════════════════════════════════════════════ */
+  const CLAVE_MANTENIMIENTO = 'tic-mantenimiento';
+  const RUTA_MANTENIMIENTO = 'maintenance';
+  const mantenimiento = {
+    activo: false, motivo: '', inicio: null, por: null, cargado: false, fallo: false, comprobado: null
+  };
+  let firmaBanner = null;
+  let ultimoRefresco = 0;
+
+  function esAdmin() {
+    try {
+      return typeof AuthManager !== 'undefined' && AuthManager && AuthManager.profile &&
+        AuthManager.profile.role === 'admin';
+    } catch (e) { return false; }
+  }
+
+  function leerCacheMantenimiento() {
+    try {
+      const bruto = localStorage.getItem(CLAVE_MANTENIMIENTO);
+      if (!bruto) return;
+      const datos = JSON.parse(bruto);
+      if (datos && typeof datos === 'object') {
+        mantenimiento.activo = Boolean(datos.activo);
+        mantenimiento.motivo = datos.motivo || '';
+        mantenimiento.inicio = datos.inicio || null;
+        mantenimiento.por = datos.por || null;
+        mantenimiento.cargado = true;
+      }
+    } catch (e) { /* sin copia local */ }
+  }
+
+  function guardarCacheMantenimiento() {
+    try {
+      localStorage.setItem(CLAVE_MANTENIMIENTO, JSON.stringify({
+        activo: mantenimiento.activo,
+        motivo: mantenimiento.motivo,
+        inicio: mantenimiento.inicio,
+        por: mantenimiento.por
+      }));
+    } catch (e) { /* almacenamiento bloqueado */ }
+  }
+
+  function fechaMantenimiento(iso) {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    } catch (e) { return String(iso); }
+  }
+
+  /* Lee la bandera del servidor. Si no hay conexión se conserva la
+     copia local y se marca el fallo para poder reintentarlo. */
+  async function refrescarMantenimiento() {
+    ultimoRefresco = Date.now();
+    try {
+      const servicios = window.FirebaseServices;
+      if (!servicios || !servicios.database || !servicios.database.ref) return;
+      const snap = await servicios.database.ref(RUTA_MANTENIMIENTO).once('value');
+      const datos = snap && typeof snap.val === 'function' ? snap.val() : null;
+      mantenimiento.fallo = false;
+      if (datos && typeof datos === 'object') {
+        mantenimiento.activo = Boolean(datos.activo);
+        mantenimiento.motivo = datos.motivo || '';
+        mantenimiento.inicio = datos.inicio || null;
+        mantenimiento.por = datos.por || null;
+        mantenimiento.cargado = true;
+        guardarCacheMantenimiento();
+      }
+    } catch (e) {
+      mantenimiento.fallo = true;
+    }
+    mantenimiento.comprobado = new Date().toISOString();
+    pintarMantenimiento();
+  }
+
+  /* Escribe la bandera en Firebase y refresca la interfaz. */
+  async function alternarMantenimiento() {
+    const activo = !mantenimiento.activo;
+    const campo = document.getElementById('mantenimiento-motivo');
+    const motivo = activo ? String(campo && campo.value ? campo.value : '').trim() : '';
+    const datos = {
+      activo,
+      motivo,
+      inicio: activo ? new Date().toISOString() : null,
+      por: activo ? (usuarioActual() || 'administrador') : null
+    };
+    try {
+      const servicios = window.FirebaseServices;
+      if (servicios && servicios.database && servicios.database.ref) {
+        await servicios.database.ref(RUTA_MANTENIMIENTO).set(datos);
+      }
+      Object.assign(mantenimiento, datos, { cargado: true, fallo: false });
+      guardarCacheMantenimiento();
+      pintarMantenimiento();
+      registrarEvento({
+        tipo: 'sistema',
+        titulo: activo ? 'Modo mantenimiento activado' : 'Modo mantenimiento desactivado',
+        texto: activo
+          ? 'El panel queda bloqueado para los usuarios que no son administradores.'
+          : 'El panel vuelve a estar disponible para todo el mundo.',
+        detalle: motivo || (activo ? 'Sin motivo indicado' : null),
+        seccion: 'administracion',
+        clave: 'mantenimiento',
+        icono: activo ? 'ri-lock-2-line' : 'ri-lock-unlock-line'
+      });
+    } catch (e) {
+      UI.showToast(`No se pudo actualizar el modo mantenimiento: ${e.message}`, 'error');
+    }
+  }
+
+  function pintarMantenimiento() {
+    if (typeof document === 'undefined') return;
+    const admin = esAdmin();
+
+    /* ── Pantalla de bloqueo para quienes no son administradores ── */
+    const bloquear = mantenimiento.activo && !admin;
+    let bloqueo = document.getElementById('pantalla-mantenimiento');
+    if (bloquear && !bloqueo) {
+      bloqueo = document.createElement('div');
+      bloqueo.id = 'pantalla-mantenimiento';
+      bloqueo.setAttribute('role', 'alertdialog');
+      bloqueo.setAttribute('aria-modal', 'true');
+      bloqueo.setAttribute('aria-labelledby', 'mantenimiento-titulo');
+      document.body.appendChild(bloqueo);
+    }
+    if (bloqueo) {
+      const contenedor = document.getElementById('app-container');
+      if (bloquear) {
+        bloqueo.hidden = false;
+        bloqueo.innerHTML =
+            `<div class="mantenimiento-tarjeta">
+               <span class="mantenimiento-icono"><i class="ri-lock-2-line" aria-hidden="true"></i></span>
+               <p class="mantenimiento-eyebrow">Mantenimiento programado</p>
+               <h1 id="mantenimiento-titulo">El panel está en mantenimiento</h1>
+               <p class="mantenimiento-texto">${esc(mantenimiento.motivo) ||
+                 'Estamos aplicando cambios en el panel. Tus datos están guardados y volverán a estar disponibles en unos minutos.'}</p>
+               <p class="mantenimiento-detalle">${mantenimiento.inicio ? `Desde el ${esc(fechaMantenimiento(mantenimiento.inicio))}` : ''}${mantenimiento.por ? ` · ${esc(mantenimiento.por)}` : ''}</p>
+               <div class="mantenimiento-acciones">
+                 <button type="button" class="btn-primary" data-mantenimiento-reintentar>
+                   <i class="ri-refresh-line" aria-hidden="true"></i> Volver a intentar</button>
+                 <button type="button" class="btn-secondary" data-mantenimiento-salir>
+                   <i class="ri-logout-box-r-line" aria-hidden="true"></i> Cerrar sesión</button>
+               </div>
+               <p class="mantenimiento-comprobado">${mantenimiento.comprobado
+                 ? `Última comprobación: ${esc(new Date(mantenimiento.comprobado).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}`
+                 : 'Pulsa «Volver a intentar» para comprobar si ya está disponible.'}</p>
+             </div>`;
+        if (contenedor) {
+          contenedor.setAttribute('inert', '');
+          contenedor.setAttribute('aria-hidden', 'true');
+        }
+        try { cerrarCentroAvisos(); } catch (e) { /* el cajón puede no existir */ }
+        try { if (paleta.abierta) cerrarPaleta(); } catch (e) { /* paleta cerrada */ }
+        try { cerrarApariencia(); cerrarDetalle(); } catch (e) { /* cajones cerrados */ }
+      } else {
+        bloqueo.hidden = true;
+        if (contenedor) {
+          contenedor.removeAttribute('inert');
+          contenedor.removeAttribute('aria-hidden');
+        }
+      }
+    }
+
+    /* ── Banner con el interruptor, solo para administradores ── */
+    const principal = document.querySelector('main.workspace') || document.getElementById('workspace');
+    const envoltura = document.querySelector('.main-wrapper') || (principal && principal.parentNode);
+    if (!envoltura || !principal) return;
+    let banner = document.getElementById('banner-mantenimiento');
+    if (!banner) {
+      if (!admin) return;
+      banner = document.createElement('section');
+      banner.id = 'banner-mantenimiento';
+      envoltura.insertBefore(banner, principal);
+    }
+    banner.hidden = !admin;
+    if (!admin) return;
+
+    const motivoPrevio = document.getElementById('mantenimiento-motivo');
+    const firma = [admin, mantenimiento.activo, mantenimiento.motivo, mantenimiento.inicio,
+      mantenimiento.por, mantenimiento.fallo].join('|');
+    if (firma === firmaBanner) return;
+    firmaBanner = firma;
+    banner.className = `banner-mantenimiento${mantenimiento.activo ? ' activo' : ''}`;
+    banner.setAttribute('role', 'status');
+    banner.innerHTML =
+      `<span class="bm-icono"><i class="${mantenimiento.activo ? 'ri-lock-2-line' : 'ri-shield-check-line'}" aria-hidden="true"></i></span>
+       <div class="bm-texto">
+         <strong>Modo mantenimiento <span class="bm-estado">${mantenimiento.activo ? 'activo' : 'inactivo'}</span></strong>
+         <span>${mantenimiento.activo
+           ? `Solo los administradores pueden entrar desde ${esc(fechaMantenimiento(mantenimiento.inicio) || 'ahora')}${mantenimiento.por ? ` · activado por ${esc(mantenimiento.por)}` : ''}.`
+           : 'Al activarlo, los usuarios que no son administradores verán una pantalla de bloqueo; tú mantendrás el acceso completo.'}</span>
+       </div>
+       <label class="bm-motivo" title="Motivo que verán los usuarios bloqueados">
+         <input type="text" id="mantenimiento-motivo" maxlength="120"
+           placeholder="Motivo (opcional)" value="${esc(motivoPrevio && !mantenimiento.activo ? motivoPrevio.value : mantenimiento.motivo)}"
+           ${mantenimiento.activo ? 'readonly' : ''} aria-label="Motivo del mantenimiento">
+       </label>
+       <span class="bm-acciones">
+         ${mantenimiento.fallo ? '<span class="bm-fallo"><i class="ri-wifi-off-line" aria-hidden="true"></i> Sin conexión</span>' : ''}
+         <button type="button" class="btn-ghost" data-mantenimiento-reintentar>
+           <i class="ri-refresh-line" aria-hidden="true"></i> Reintentar lectura</button>
+         <button type="button" class="btn-primary" data-mantenimiento-toggle>
+           <i class="${mantenimiento.activo ? 'ri-lock-unlock-line' : 'ri-lock-2-line'}" aria-hidden="true"></i>
+           ${mantenimiento.activo ? 'Desactivar' : 'Activar'}</button>
+       </span>`;
+  }
+
+  function iniciarMantenimiento() {
+    try { leerCacheMantenimiento(); } catch (e) { /* sin copia */ }
+    pintarMantenimiento();
+    refrescarMantenimiento();
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -1609,6 +1840,15 @@ const Mejoras = (() => {
       if (destino.closest('[data-cerrar-actualizaciones]')) { cerrarActualizaciones(); return; }
       if (destino.closest('[data-comprobar-actualizaciones]')) { comprobarActualizaciones(); return; }
       if (destino.closest('[data-marcar-version]')) { marcarVersionVista(); return; }
+      // Modo mantenimiento (banner del administrador y pantalla de bloqueo)
+      if (destino.closest('[data-mantenimiento-toggle]')) { alternarMantenimiento(); return; }
+      if (destino.closest('[data-mantenimiento-reintentar]')) { refrescarMantenimiento(); return; }
+      if (destino.closest('[data-mantenimiento-salir]')) {
+        try {
+          if (typeof AuthManager !== 'undefined' && AuthManager && typeof AuthManager.signOut === 'function') AuthManager.signOut();
+        } catch (e) { console.warn('No se pudo cerrar la sesión:', e); }
+        return;
+      }
       if (destino.id === 'modal-actualizaciones') { cerrarActualizaciones(); return; }
       const chipTipo = destino.closest('[data-avisos-tipo]');
       if (chipTipo) { filtrosAvisos.tipo = chipTipo.dataset.avisosTipo || 'todos'; pintarCentroAvisos(); return; }
@@ -1858,8 +2098,12 @@ const Mejoras = (() => {
     abrirActualizaciones,
     cerrarActualizaciones,
     comprobarActualizaciones,
+    alternarMantenimiento,
+    refrescarMantenimiento,
+    pintarMantenimiento,
     VERSION,
     _avisos: avisos,
-    _filtrosAvisos: filtrosAvisos
+    _filtrosAvisos: filtrosAvisos,
+    _mantenimiento: mantenimiento
   };
 })();
