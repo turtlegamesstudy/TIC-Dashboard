@@ -105,6 +105,8 @@ const Mejoras = (() => {
       document.body.insertBefore(salto, document.body.firstChild);
     }
 
+    inyectarTooltipGrafico();
+
     const topbar = $('.topbar-right');
     if (topbar && !$('#btn-apariencia')) {
       const grupo = document.createElement('div');
@@ -894,11 +896,17 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '1.8.0';
+  const VERSION = '1.9.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '1.9.0', fecha: '2026-10-07', titulo: 'Modales unificados y gráficas con ayuda', notas: [
+      'Editar estudiante, equipos, docente guía e integrantes usan la cabecera y el cuerpo de los paneles.',
+      'Las gráficas muestran unidades reales (alumnos, promedio /100) en vez de un porcentaje relativo.',
+      'Globo de ayuda con el texto completo al pasar el ratón, incluidas las etiquetas truncadas.',
+      'Clic en barra o dona para aplicar ese filtro en Estadísticas desde cualquier vista.'
+    ] },
     { version: '1.8.0', fecha: '2026-10-07', titulo: 'Seguimiento y proyección de notas', notas: [
       'Tarjeta «Pulso de hoy» en el panel principal con alertas automáticas de seguimiento.',
       'Reglas: rendimiento bajo, alcance imposible, estudiante sin notas, módulo sin notas y grupo sin matrícula.',
@@ -2205,8 +2213,89 @@ const Mejoras = (() => {
     </section>`;
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     14 · GRÁFICAS — TOOLTIP FLOTANTE Y CLIC QUE FILTRA
+     ───────────────────────────────────────────────────────────
+     Cada barra y dona lleva `data-grafico-tip` con el texto
+     completo (incluido lo que el diseño trunca) y, cuando aplica,
+     `data-grafico-filtro` con la clave/valor del filtro. El ratón
+     enseña la ayuda en un globo flotante y el clic aplica ese
+     filtro en Estadísticas desde cualquier vista.
+     ═══════════════════════════════════════════════════════════ */
+  function inyectarTooltipGrafico() {
+    if (document.getElementById('grafico-tooltip')) return;
+    const gav = document.createElement('div');
+    gav.id = 'grafico-tooltip';
+    gav.className = 'grafico-tooltip';
+    gav.setAttribute('role', 'tooltip');
+    gav.hidden = true;
+    document.body.appendChild(gav);
+  }
+
+  function colocarTooltip(x, y) {
+    const gav = document.getElementById('grafico-tooltip');
+    if (!gav || gav.hidden) return;
+    const hueco = 14;
+    const caja = gav.getBoundingClientRect();
+    let izquierda = x + hueco;
+    let arriba = y + hueco;
+    if (izquierda + caja.width > window.innerWidth - 8) izquierda = x - caja.width - hueco;
+    if (arriba + caja.height > window.innerHeight - 8) arriba = y - caja.height - hueco;
+    gav.style.left = `${Math.max(6, Math.round(izquierda))}px`;
+    gav.style.top = `${Math.max(6, Math.round(arriba))}px`;
+  }
+
+  function pintarTooltip(nodo, x, y) {
+    inyectarTooltipGrafico();
+    const gav = document.getElementById('grafico-tooltip');
+    if (!gav) return;
+    const texto = nodo.getAttribute('data-grafico-tip') || '';
+    if (gav._origen !== nodo || gav.textContent !== texto) {
+      gav.textContent = texto;
+      gav._origen = nodo;
+    }
+    if (gav.hidden) gav.hidden = false;
+    colocarTooltip(x, y);
+  }
+
+  function ocultarTooltip() {
+    const gav = document.getElementById('grafico-tooltip');
+    if (!gav) return;
+    gav.hidden = true;
+    gav._origen = null;
+  }
+
+  function clicGraficoFiltro(crudo) {
+    let cfg = null;
+    try { cfg = JSON.parse(String(crudo || '')); } catch (e) { cfg = null; }
+    const valor = cfg ? cfg.valor : null;
+    if (!cfg || !cfg.clave || valor === undefined || valor === null || valor === '') return;
+    if (typeof UI === 'undefined' || !UI) return;
+    const traductor = ETIQUETAS_CLAVE[cfg.clave];
+    let detalle;
+    try {
+      detalle = typeof traductor === 'function' ? String(traductor(valor)) : `${cfg.clave}: ${valor}`;
+    } catch (e) { detalle = `${cfg.clave}: ${valor}`; }
+    const registro = {
+      tipo: 'cambio', titulo: 'Filtro aplicado desde una gráfica',
+      texto: detalle, seccion: UI.currentModule, clave: `grafico-${cfg.clave}`
+    };
+    if (UI.currentModule === 'estadisticas' && typeof StatsEngine !== 'undefined' &&
+        StatsEngine && typeof StatsEngine.cambiarFiltro === 'function') {
+      StatsEngine.cambiarFiltro(cfg.clave, valor);
+      UI.showToast(`🔎 ${detalle}`, 'info');
+      try { registrarEvento(registro); } catch (e) { /* el aviso es optativo */ }
+      return;
+    }
+    const params = {};
+    params[cfg.clave] = valor;
+    UI.fijarFiltros('estadisticas', params);
+    UI.irA('estadisticas');
+    UI.showToast(`📊 Estadísticas con ${detalle}.`, 'info');
+    try { registrarEvento(registro); } catch (e) { /* el aviso es optativo */ }
+  }
+
   function instalarEventos() {
-    // ── Barra superior ──────────────────────────────────────────
     document.addEventListener('click', event => {
       const destino = event.target;
       if (!destino || !destino.closest) return;
@@ -2257,6 +2346,9 @@ const Mejoras = (() => {
       if (destino.closest('[data-seg-expandir]')) { segExpandido = !segExpandido; pintarSeguimiento(true); return; }
       const segAccion = destino.closest('[data-seg-accion]');
       if (segAccion) { ejecutarAccionSeguimiento(segAccion.dataset.segAccion); return; }
+      // Gráficas: el clic en una barra/dona aplica su filtro
+      const grafFiltro = destino.closest('[data-grafico-filtro]');
+      if (grafFiltro) { clicGraficoFiltro(grafFiltro.getAttribute('data-grafico-filtro')); return; }
       const chipTipo = destino.closest('[data-avisos-tipo]');
       if (chipTipo) { filtrosAvisos.tipo = chipTipo.dataset.avisosTipo || 'todos'; pintarCentroAvisos(); return; }
       if (destino.closest('[data-avisos-todo-leido]')) {
@@ -2448,6 +2540,19 @@ const Mejoras = (() => {
     // La zona de resultados del buscador superior anuncia sus cambios.
     const zonaBusqueda = document.querySelector('.search-results, #search-results, .search-dropdown');
     if (zonaBusqueda) zonaBusqueda.setAttribute('aria-live', 'polite');
+
+    // Globo de ayuda de las gráficas: sigue al ratón y se retira
+    // al salir del gráfico o al desplazar la página.
+    document.addEventListener('mousemove', evento => {
+      const gav = document.getElementById('grafico-tooltip');
+      if (!gav) return;
+      const origen = evento.target;
+      const nodo = origen && origen.closest ? origen.closest('[data-grafico-tip]') : null;
+      if (!nodo) { if (!gav.hidden) ocultarTooltip(); return; }
+      pintarTooltip(nodo, evento.clientX, evento.clientY);
+    });
+    window.addEventListener('scroll', ocultarTooltip, { passive: true, capture: true });
+    window.addEventListener('blur', ocultarTooltip);
   }
 
   function alternarApariencia() {
@@ -2512,6 +2617,9 @@ const Mejoras = (() => {
     pintarSeguimiento,
     proyeccionEstudiante,
     umbralAprobacion,
+    pintarTooltip,
+    ocultarTooltip,
+    clicGraficoFiltro,
     VERSION,
     _avisos: avisos,
     _filtrosAvisos: filtrosAvisos,

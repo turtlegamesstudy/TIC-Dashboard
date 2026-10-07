@@ -1214,7 +1214,12 @@ actualizarNavActivo(modulo) {
           ? grupos.map(g => {
               const n = UI.listaEstudiantes(g.estudiantes).length;
               const max = Math.max(...grupos.map(o => UI.listaEstudiantes(o.estudiantes).length), 1);
-              return StatsEngine.barraCSS(Math.round((n / max) * 100), n === 0 ? '--text-muted' : '--primary-blue', `${g.nombre} — ${n} alumno(s)`);
+              const pctMatricula = totalEstudiantes > 0 ? Math.round((n / totalEstudiantes) * 100) : 0;
+              return StatsEngine.barraCSS(Math.round((n / max) * 100), n === 0 ? '--text-muted' : '--primary-blue', `${g.nombre} — ${n} alumno(s)`, {
+                valor: `${n} al. · ${pctMatricula}%`,
+                tip: `${g.nombre} — ${n} alumno(s), ${pctMatricula}% de la matrícula · clic para filtrar Estadísticas`,
+                filtro: { clave: 'grupo', valor: g.id }
+              });
             }).join('')
           : '';
         // Tarjetas KPI con el mismo lenguaje visual que Estadísticas:
@@ -1256,8 +1261,8 @@ actualizarNavActivo(modulo) {
                 <h3><i class="ri-donut-chart-line" aria-hidden="true"></i> Distribución de la matrícula ${this.ayudaHTML('activos')}</h3>
                 <p class="chart-nota">Cómo se reparte el total registrado entre activos y retirados.</p>
                 <div class="dash-donuts">
-                  ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#10b981', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`)}
-                  ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, '#ef4444', 'Retirados', `${totalRetirados} bajas registradas`)}
+                  ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#10b981', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`, { filtro: { clave: 'estado', valor: 'Activo' } })}
+                  ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, '#ef4444', 'Retirados', `${totalRetirados} bajas registradas`, { filtro: { clave: 'estado', valor: 'Retirado' } })}
                 </div>
               </div>
               <div class="chart-box">

@@ -101,7 +101,7 @@ const StatsEngine = {
         });
       });
 
-      porGrupo.push({ nombre: g.nombre, total: ests.length, activos: ests.filter(e=>e.estado==='Activo').length });
+      porGrupo.push({ id: g.id, nombre: g.nombre, total: ests.length, activos: ests.filter(e=>e.estado==='Activo').length });
     });
 
     porModulo.forEach(m => {
@@ -126,14 +126,23 @@ const StatsEngine = {
   },
 
 
-  barraCSS(porcentaje, colorVar, label) {
+  /* `extra` es opcional: { valor } cambia la cifra que se muestra
+     (unidades reales en vez de un % relativo), { tip } añade el
+     texto completo para el tooltip flotante y { filtro } convierte
+     la barra en un acceso que aplica ese filtro en Estadísticas. */
+  barraCSS(porcentaje, colorVar, label, extra) {
+    const ex = extra || {};
     const pct = Math.min(100, Math.max(0, porcentaje));
     const ancho = `${Math.round(pct * 100) / 100}%`;
+    const atributo = (clave, valor) => (valor === undefined || valor === null || valor === '') ? '' : ` ${clave}="${String(valor).replace(/"/g, '&quot;')}"`;
+    const filtro = ex.filtro ? atributo('data-grafico-filtro', JSON.stringify(ex.filtro)) : '';
+    const texto = ex.valor || `${Math.round(pct)}%`;
     return `
-      <div style="margin-bottom: 14px;">
+      <div class="grafico-barra" data-grafico${atributo('data-grafico-tip', ex.tip || `${label} — ${texto}`)}${filtro}
+           role="img" aria-label="${String(label).replace(/"/g, '&quot;')}: ${String(texto).replace(/"/g, '&quot;')}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 500;">${label}</span>
-          <span style="font-size: 0.82rem; color: var(${colorVar}); font-weight: 700;">${Math.round(pct)}%</span>
+          <span class="grafico-valor" style="font-size: 0.82rem; color: var(${colorVar}); font-weight: 700;">${texto}</span>
         </div>
         <div style="height: 10px; background: var(--bg-input); border-radius: var(--r-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);">
           <div style="width: ${ancho}; transform-origin: left center; height: 100%; background: linear-gradient(90deg, var(${colorVar}), var(--neon-purple)); border-radius: var(--r-full); animation: growBar 1s cubic-bezier(0.16,1,0.3,1) 0.2s both; box-shadow: 0 0 12px rgba(20,87,139,0.25);"></div>
@@ -142,27 +151,34 @@ const StatsEngine = {
     `;
   },
 
-  doughnutSVG(valor, total, color, label, sublabel) {
+  doughnutSVG(valor, total, color, label, sublabel, extra) {
+    const ex = extra || {};
     const pct = total > 0 ? (valor / total) * 100 : 0;
     const circ = 2 * Math.PI * 40;
     const offset = circ - (pct / 100) * circ;
+    const atributo = (clave, v) => (v === undefined || v === null || v === '') ? '' : ` ${clave}="${String(v).replace(/"/g, '&quot;')}"`;
+    const filtro = ex.filtro ? atributo('data-grafico-filtro', JSON.stringify(ex.filtro)) : '';
+    const tip = ex.tip || `${label}: ${valor} de ${total} (${Math.round(pct)}%) — ${sublabel}`;
     return `
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <div style="position: relative; width: 90px; height: 90px; flex-shrink: 0;">
-          <svg width="90" height="90" viewBox="0 0 100 100" style="transform: rotate(-90deg);">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg-input)" stroke-width="10"/>
-            <circle cx="50" cy="50" r="40" fill="none" stroke="${color}" stroke-width="10"
-              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
-              style="filter: drop-shadow(0 0 6px ${color}); animation: drawCircle 1.2s cubic-bezier(0.16,1,0.3,1) both;"/>
-          </svg>
-          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">
-            ${Math.round(pct)}%
+      <div class="grafico-dona" data-grafico${atributo('data-grafico-tip', tip)}${filtro}
+           role="img" aria-label="${String(tip).replace(/"/g, '&quot;')}">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="position: relative; width: 90px; height: 90px; flex-shrink: 0;">
+            <svg width="90" height="90" viewBox="0 0 100 100" style="transform: rotate(-90deg);" focusable="false" aria-hidden="true">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg-input)" stroke-width="10"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="${color}" stroke-width="10"
+                stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+                style="filter: drop-shadow(0 0 6px ${color}); animation: drawCircle 1.2s cubic-bezier(0.16,1,0.3,1) both;"/>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">
+              ${Math.round(pct)}%
+            </div>
           </div>
-        </div>
-        <div>
-          <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">${label}</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">${sublabel}</div>
-          <div style="font-size: 1.3rem; font-weight: 700; color: ${color}; margin-top: 4px;">${valor}</div>
+          <div>
+            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">${label}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${sublabel}</div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: ${color}; margin-top: 4px;">${valor}</div>
+          </div>
         </div>
       </div>
     `;
@@ -427,7 +443,12 @@ const StatsEngine = {
             ${d.porModulo.map(m => {
               const pct = maxProm > 0 ? (m.promedioGeneral / 100) * 100 : 0;
               const color = m.promedioGeneral >= 60 ? '--neon-green' : m.promedioGeneral >= 40 ? '--neon-amber' : '--neon-red';
-              return this.barraCSS(pct, color, m.nombre.length > 35 ? m.nombre.substring(0,35)+'...' : m.nombre);
+              const recorte = m.nombre.length > 35 ? m.nombre.substring(0,35)+'...' : m.nombre;
+              return this.barraCSS(pct, color, recorte, {
+                valor: `${Math.round(m.promedioGeneral)}/100`,
+                tip: `${m.nombre} — promedio ${Math.round(m.promedioGeneral)}/100 · ${m.conNotas} con notas, ${m.sinNotas} sin notas${m.convalidados ? `, ${m.convalidados} conval.` : ''} · clic para filtrar`,
+                filtro: { clave: 'modulo', valor: m.nombre }
+              });
             }).join('')}
             ${d.porModulo.every(m=>m.cuentaPromedios===0) ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">No hay calificaciones importadas aún.</div>' : ''}
           </div>
@@ -435,8 +456,8 @@ const StatsEngine = {
           <div class="chart-box">
             <h3><i class="ri-pie-chart-line" style="color: var(--neon-purple);"></i> Distribución General ${UI.ayudaHTML('estudiantes')}</h3>
             <div style="display: flex; flex-direction: column; gap: var(--s-6); margin-top: var(--s-2);">
-              ${this.doughnutSVG(d.activos, d.totalEst, '#10b981', 'Estudiantes Activos', `${d.activos} de ${d.totalEst} matriculados`)}
-              ${this.doughnutSVG(d.retirados, d.totalEst, '#ef4444', 'Estudiantes Retirados', `${d.retirados} bajas registradas`)}
+              ${this.doughnutSVG(d.activos, d.totalEst, '#10b981', 'Estudiantes Activos', `${d.activos} de ${d.totalEst} matriculados`, { filtro: { clave: 'estado', valor: 'Activo' } })}
+              ${this.doughnutSVG(d.retirados, d.totalEst, '#ef4444', 'Estudiantes Retirados', `${d.retirados} bajas registradas`, { filtro: { clave: 'estado', valor: 'Retirado' } })}
               ${this.doughnutSVG(d.convalidaciones, Math.max(d.totalEst * 5, 1), '#e10b7b', 'Convalidaciones', `${d.convalidaciones} módulos convalidados`)}
             </div>
           </div>
@@ -444,7 +465,10 @@ const StatsEngine = {
           <div class="chart-box">
             <h3><i class="ri-team-line" style="color: var(--neon-cyan);"></i> Estudiantes por Grupo ${UI.ayudaHTML('grupos')}</h3>
             ${d.porGrupo.map(g => `
-              <div class="bar-h">
+              <div class="bar-h" data-grafico
+                   data-grafico-tip="${(g.nombre + ' — ' + g.total + ' estudiante(s), ' + g.activos + ' activo(s) · clic para filtrar').replace(/"/g, '&quot;')}"
+                   data-grafico-filtro="${JSON.stringify({ clave: 'grupo', valor: g.id }).replace(/"/g, '&quot;')}"
+                   role="img" aria-label="${(g.nombre + ': ' + g.total + ' estudiantes').replace(/"/g, '&quot;')}">
                 <div class="bar-h-label">${g.nombre}</div>
                 <div class="bar-h-track">
                   <div class="bar-h-fill" style="width: ${(g.total/maxGrupo)*100}%; background: linear-gradient(90deg, var(--p-500), var(--neon-purple));">

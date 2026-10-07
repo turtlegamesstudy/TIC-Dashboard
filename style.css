@@ -11967,3 +11967,67 @@ html[data-theme="dark"] .seg-dato.mal b { color: #ff8a80; }
   .seg-acciones { grid-column: 1 / -1; justify-content: flex-end; }
   .seg-datos-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   24 · MODALES CON EL MISMO LENGUAJE .panel
+        (editar estudiante, equipos, docente guía, integrantes)
+   ═══════════════════════════════════════════════════════════════ */
+.modal-md { max-width: 640px; }
+.modal-ms { max-width: 560px; }
+
+/* El formulario ocupa el resto del modal: la cabecera y el pie se
+   quedan fijos y solo el cuerpo hace scroll. */
+.panel > form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.panel > form > .panel-cuerpo { flex: 1 1 auto; overflow: auto; }
+
+/* Motivo de retiro: lo muestra/oculta toggleMotivoRetiro() con
+   display en línea, así que aquí solo debe arrancar oculto. */
+.panel .form-group.motivo-retiro { display: none; }
+.etiqueta-apoyo { font-weight: 400; color: var(--text-muted); font-size: 0.72rem; }
+
+/* Los modales con cabecera .panel no necesitan el borde fino que
+   tenía su cabecera antigua (sticky) dentro del scroll. */
+.modal-content .panel-cabecera,
+.modal-card .panel-cabecera { position: relative; flex: 0 0 auto; }
+.panel > form > .panel-cuerpo textarea.form-control { min-height: 74px; resize: vertical; }
+
+@media (max-width: 640px) {
+  .modal-content, .modal-card { max-width: 100%; border-radius: 16px; }
+  .panel > form > .panel-cuerpo { padding: 16px 14px; }
+  .rejilla-2 { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   25 · GRÁFICAS — GLOBO DE AYUDA, VALORES Y CLIC PARA FILTRAR
+   ═══════════════════════════════════════════════════════════════ */
+.grafico-tooltip {
+  position: fixed;
+  z-index: 400;
+  max-width: 300px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 12px 28px rgba(9, 60, 95, 0.22);
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  pointer-events: none;
+  animation: paleta-entra 0.16s ease-out;
+}
+.grafico-tooltip[hidden] { display: none; }
+
+.grafico-barra,
+.grafico-dona,
+[data-grafico-filtro] { cursor: pointer; }
+.grafico-barra .grafico-valor { font-variant-numeric: tabular-nums; }
+@media (hover: hover) {
+  .grafico-barra:hover .grafico-valor { text-decoration: underline; text-underline-offset: 3px; }
+  .grafico-dona:hover { filter: brightness(1.04); }
+  .bar-h[data-grafico-filtro]:hover .bar-h-label { color: var(--p-600, #0b6a9f); }
+}
+html[data-theme="dark"] .bar-h[data-grafico-filtro]:hover .bar-h-label { color: #6fd0f0; }
+
+@media (max-width: 640px) {
+  .grafico-tooltip { max-width: calc(100vw - 24px); }
+}

@@ -246,26 +246,40 @@
   </div>
 
   <div class="modal-backdrop" id="modal-edit-student">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3><i class="ri-edit-line"></i> Editar Estudiante</h3>
-        <button class="btn-icon" onclick="UI.closeModal()"><i class="ri-close-line"></i></button>
-      </div>
-      <form id="form-edit-student" onsubmit="UI.saveStudentEdit(event)">
-        <input type="hidden" id="edit-student-id">
-        <input type="hidden" id="edit-group-id">
-        <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombres" required></div>
-        <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellidos" required></div>
-        <div class="form-group"><label>Correo Electrónico</label><input type="email" id="edit-correo" required></div>
-        <div class="form-group"><label>Teléfono</label><input type="text" id="edit-telefono" required></div>
-        <div class="form-group"><label>Estado</label><select id="edit-estado" onchange="UI.toggleMotivoRetiro()"><option value="Activo">Activo</option><option value="Retirado">Retirado</option></select></div>
-        <div class="form-group" id="grupo-motivo-retiro" style="display:none;">
-          <label>Motivo de Retiro <span style="font-weight:400; color: var(--text-muted); font-size: 0.75rem;">(soporte / referencia interna)</span></label>
-          <textarea id="edit-motivo-retiro" rows="3" placeholder="Ej: Dejó de asistir desde el 12/06, no respondió mensajes ni llamadas..." style="width:100%; resize:vertical; font-family:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--border-default); background:var(--bg-input); color:var(--text-primary);"></textarea>
+    <div class="modal-card panel">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-edit-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Directorio de estudiantes</p>
+          <h3>Editar estudiante</h3>
+          <p class="panel-lema">Corrige los datos de la ficha: el cambio se guarda en la base del centro.</p>
         </div>
-        <div class="modal-actions">
+        <button type="button" class="btn-icon panel-cerrar" onclick="UI.closeModal()" aria-label="Cerrar edición"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
+      <form id="form-edit-student" onsubmit="UI.saveStudentEdit(event)">
+        <div class="panel-cuerpo panel-formulario">
+          <input type="hidden" id="edit-student-id">
+          <input type="hidden" id="edit-group-id">
+          <div class="rejilla-2">
+            <div class="form-group"><label for="edit-nombres">Nombres</label><input type="text" id="edit-nombres" class="form-control" required></div>
+            <div class="form-group"><label for="edit-apellidos">Apellidos</label><input type="text" id="edit-apellidos" class="form-control" required></div>
+            <div class="form-group"><label for="edit-correo">Correo electrónico</label><input type="email" id="edit-correo" class="form-control" required></div>
+            <div class="form-group"><label for="edit-telefono">Teléfono</label><input type="text" id="edit-telefono" class="form-control" required></div>
+          </div>
+          <div class="rejilla-2">
+            <div class="form-group">
+              <label for="edit-estado">Estado</label>
+              <select id="edit-estado" class="form-control" onchange="UI.toggleMotivoRetiro()"><option value="Activo">Activo</option><option value="Retirado">Retirado</option></select>
+            </div>
+            <div class="form-group motivo-retiro" id="grupo-motivo-retiro">
+              <label for="edit-motivo-retiro">Motivo de retiro <span class="etiqueta-apoyo">(soporte / referencia interna)</span></label>
+              <textarea id="edit-motivo-retiro" class="form-control" rows="3" placeholder="Ej: Dejó de asistir desde el 12/06, no respondió mensajes ni llamadas..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions panel-acciones">
           <button type="button" class="btn-secondary" onclick="UI.closeModal()">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar Cambios</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line" aria-hidden="true"></i> Guardar cambios</button>
         </div>
       </form>
     </div>
@@ -492,20 +506,22 @@
         </div>
         <button type="button" class="btn-icon panel-cerrar" onclick="CuadernoEngine.cerrarConfiguracionAcademica()" aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
       </header>
-      <form class="panel-formulario" onsubmit="CuadernoEngine.guardarConfiguracionAcademica(event)">
-        <div class="form-group">
-          <label for="cfg-coordinador-academico">Coordinador(a) académico(a)</label>
-          <input type="text" id="cfg-coordinador-academico" class="form-control" maxlength="120" placeholder="Nombre completo">
-        </div>
-        <div class="panel-subcabecera">
-          <div>
-            <h4 class="panel-titulo">Jefes de departamento</h4>
-            <p class="panel-nota">Indica el nombre de cada jefe y marca los turnos que cubre.</p>
+      <form onsubmit="CuadernoEngine.guardarConfiguracionAcademica(event)">
+        <div class="panel-cuerpo panel-formulario">
+          <div class="form-group">
+            <label for="cfg-coordinador-academico">Coordinador(a) académico(a)</label>
+            <input type="text" id="cfg-coordinador-academico" class="form-control" maxlength="120" placeholder="Nombre completo">
           </div>
-          <button type="button" class="btn-secondary" onclick="CuadernoEngine.agregarJefeDepartamentoConfig()"><i class="ri-add-line"></i> Agregar jefe</button>
+          <div class="panel-subcabecera">
+            <div>
+              <h4 class="panel-titulo">Jefes de departamento</h4>
+              <p class="panel-nota">Indica el nombre de cada jefe y marca los turnos que cubre.</p>
+            </div>
+            <button type="button" class="btn-secondary" onclick="CuadernoEngine.agregarJefeDepartamentoConfig()"><i class="ri-add-line"></i> Agregar jefe</button>
+          </div>
+          <div id="cfg-jefes-departamento-lista" class="panel-lista-scroll"></div>
+          <p id="cfg-academica-error" role="alert" style="color:#b91c1c; font-size:0.85rem;" hidden></p>
         </div>
-        <div id="cfg-jefes-departamento-lista" class="panel-lista-scroll"></div>
-        <p id="cfg-academica-error" role="alert" style="color:#b91c1c; font-size:0.85rem;" hidden></p>
         <div class="modal-actions panel-acciones">
           <button type="button" class="btn-secondary" onclick="CuadernoEngine.cerrarConfiguracionAcademica()">Cancelar</button>
           <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar responsables</button>
@@ -516,52 +532,59 @@
 
   <!-- ═══ MODAL: Crear / Editar Equipo (Innovatec / Hackathon) ═══ -->
   <div id="modal-equipo" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 640px; padding: 25px;">
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0;" id="titulo-modal-equipo"><i class="ri-flag-2-line"></i> Nuevo Equipo</h3>
-        <button class="btn-icon" onclick="EquiposEngine.cerrarModalEquipo()"><i class="ri-close-line"></i></button>
-      </div>
+    <div class="modal-content panel modal-md">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-flag-2-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Equipos y proyectos</p>
+          <h3 id="titulo-modal-equipo">Nuevo equipo</h3>
+          <p class="panel-lema">Datos del equipo, su proyecto y el grupo de clases del que surge.</p>
+        </div>
+        <button type="button" class="btn-icon panel-cerrar" onclick="EquiposEngine.cerrarModalEquipo()" aria-label="Cerrar equipo"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
       <form id="form-equipo" onsubmit="EquiposEngine.guardarEquipo(event)">
-        <input type="hidden" id="equipo-id">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="form-group">
-            <label>Nombre del Equipo</label>
-            <input type="text" id="equipo-nombre" class="form-control" placeholder="Ej: Los Innovadores" required>
+        <div class="panel-cuerpo panel-formulario">
+          <input type="hidden" id="equipo-id">
+          <div class="rejilla-2">
+            <div class="form-group">
+              <label for="equipo-nombre">Nombre del equipo</label>
+              <input type="text" id="equipo-nombre" class="form-control" placeholder="Ej: Los Innovadores" required>
+            </div>
+            <div class="form-group">
+              <label for="equipo-categoria">Categoría</label>
+              <select id="equipo-categoria" class="form-control" required>
+                <option value="Innovatec">Innovatec</option>
+                <option value="Hackathon">Hackathon</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label>Categoría</label>
-            <select id="equipo-categoria" class="form-control" required>
-              <option value="Innovatec">Innovatec</option>
-              <option value="Hackathon">Hackathon</option>
+            <label for="equipo-proyecto">Nombre del proyecto</label>
+            <input type="text" id="equipo-proyecto" class="form-control" placeholder="Ej: Sistema inteligente de riego" required>
+          </div>
+          <div class="form-group">
+            <label for="equipo-grupo-clase">Grupo de clases de origen</label>
+            <select id="equipo-grupo-clase" class="form-control" onchange="EquiposEngine.actualizarProfesorGuiaPreview()">
+              <option value="">-- Seleccionar Grupo --</option>
             </select>
+            <p id="equipo-profesor-guia-preview" class="panel-nota"><i class="ri-user-star-line" aria-hidden="true"></i> Profesor guía: <strong>—</strong></p>
+          </div>
+          <div class="form-group">
+            <label for="equipo-descripcion">Descripción del proyecto</label>
+            <textarea id="equipo-descripcion" class="form-control" rows="3" placeholder="¿Qué hace el proyecto y qué problema resuelve?"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="equipo-propuesta-valor">Propuesta de valor</label>
+            <textarea id="equipo-propuesta-valor" class="form-control" rows="2" placeholder="¿Qué hace único o valioso al proyecto?"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="equipo-entregables">Entregables</label>
+            <textarea id="equipo-entregables" class="form-control" rows="2" placeholder="Ej: Prototipo funcional, informe técnico, video pitch..."></textarea>
           </div>
         </div>
-        <div class="form-group">
-          <label>Nombre del Proyecto</label>
-          <input type="text" id="equipo-proyecto" class="form-control" placeholder="Ej: Sistema inteligente de riego" required>
-        </div>
-        <div class="form-group">
-          <label>Grupo de Clases de Origen</label>
-          <select id="equipo-grupo-clase" class="form-control" onchange="EquiposEngine.actualizarProfesorGuiaPreview()">
-            <option value="">-- Seleccionar Grupo --</option>
-          </select>
-          <p id="equipo-profesor-guia-preview" style="font-size:0.78rem; color:var(--text-muted); margin:4px 0 0 0;"><i class="ri-user-star-line"></i> Profesor Guía: <strong>—</strong></p>
-        </div>
-        <div class="form-group">
-          <label>Descripción del Proyecto</label>
-          <textarea id="equipo-descripcion" class="form-control" rows="3" placeholder="¿Qué hace el proyecto y qué problema resuelve?"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Propuesta de Valor</label>
-          <textarea id="equipo-propuesta-valor" class="form-control" rows="2" placeholder="¿Qué hace único o valioso al proyecto?"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Entregables</label>
-          <textarea id="equipo-entregables" class="form-control" rows="2" placeholder="Ej: Prototipo funcional, informe técnico, video pitch..."></textarea>
-        </div>
-        <div class="modal-actions">
+        <div class="modal-actions panel-acciones">
           <button type="button" class="btn-secondary" onclick="EquiposEngine.cerrarModalEquipo()">Cancelar</button>
-          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar Equipo</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line" aria-hidden="true"></i> Guardar equipo</button>
         </div>
       </form>
     </div>
@@ -569,21 +592,28 @@
 
   <!-- ═══ MODAL: Asignar Docente Guía a un Grupo ═══ -->
   <div id="modal-docente-guia" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 420px; padding: 25px;">
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0;"><i class="ri-user-star-line"></i> Asignar Docente Guía</h3>
-        <button class="btn-icon" onclick="UI.cerrarModalDocenteGuia()"><i class="ri-close-line"></i></button>
-      </div>
-      <form id="form-docente-guia" onsubmit="UI.guardarDocenteGuia(event)">
-        <input type="hidden" id="docente-guia-grupo-id">
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">Grupo: <strong id="docente-guia-grupo-nombre"></strong></p>
-        <div class="form-group">
-          <label>Nombre del Docente Guía</label>
-          <input type="text" id="docente-guia-nombre" class="form-control" placeholder="Ej. Hanzell René Mayorga Calero">
+    <div class="modal-content panel modal-sm">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-user-star-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Grupos de clase</p>
+          <h3>Asignar docente guía</h3>
+          <p class="panel-lema">Nombre del docente responsable del grupo en el cuaderno y los informes.</p>
         </div>
-        <div class="modal-actions">
+        <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalDocenteGuia()" aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
+      <form id="form-docente-guia" onsubmit="UI.guardarDocenteGuia(event)">
+        <div class="panel-cuerpo panel-formulario">
+          <input type="hidden" id="docente-guia-grupo-id">
+          <p class="panel-nota">Grupo: <strong id="docente-guia-grupo-nombre"></strong></p>
+          <div class="form-group">
+            <label for="docente-guia-nombre">Nombre del docente guía</label>
+            <input type="text" id="docente-guia-nombre" class="form-control" placeholder="Ej. Hanzell René Mayorga Calero">
+          </div>
+        </div>
+        <div class="modal-actions panel-acciones">
           <button type="button" class="btn-secondary" onclick="UI.cerrarModalDocenteGuia()">Cancelar</button>
-          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line" aria-hidden="true"></i> Guardar</button>
         </div>
       </form>
     </div>
@@ -591,58 +621,61 @@
 
   <!-- ═══ MODAL: Crear / Editar Integrante de Equipo ═══ -->
   <div id="modal-integrante" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 560px; padding: 25px;">
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="margin:0;" id="titulo-modal-integrante"><i class="ri-user-add-line"></i> Nuevo Integrante</h3>
-        <button class="btn-icon" onclick="EquiposEngine.cerrarModalIntegrante()"><i class="ri-close-line"></i></button>
-      </div>
+    <div class="modal-content panel modal-ms">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-user-add-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Equipos y proyectos</p>
+          <h3 id="titulo-modal-integrante">Nuevo integrante</h3>
+          <p class="panel-lema">Persona que integra el equipo: puedes cargarla desde la base o escribirla a mano.</p>
+        </div>
+        <button type="button" class="btn-icon panel-cerrar" onclick="EquiposEngine.cerrarModalIntegrante()" aria-label="Cerrar integrante"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
       <form id="form-integrante" onsubmit="EquiposEngine.guardarIntegrante(event)">
-        <input type="hidden" id="integrante-id">
-        <input type="hidden" id="integrante-equipo-id">
-        <input type="hidden" id="integrante-estudiante-id">
-        <input type="hidden" id="integrante-estudiante-grupo-id">
-        <div class="form-group">
-          <label>Tomar de la base de estudiantes (opcional)</label>
-          <select id="integrante-estudiante-select" class="form-control" onchange="EquiposEngine.autocompletarDesdeEstudiante(this.value)">
-            <option value="">-- Ingresar manualmente --</option>
-          </select>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="panel-cuerpo panel-formulario">
+          <input type="hidden" id="integrante-id">
+          <input type="hidden" id="integrante-equipo-id">
+          <input type="hidden" id="integrante-estudiante-id">
+          <input type="hidden" id="integrante-estudiante-grupo-id">
           <div class="form-group">
-            <label>Nombres</label>
-            <input type="text" id="integrante-nombres" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>Apellidos</label>
-            <input type="text" id="integrante-apellidos" class="form-control" required>
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="form-group">
-            <label>Correo Electrónico</label>
-            <input type="email" id="integrante-correo" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>Teléfono</label>
-            <input type="text" id="integrante-telefono" class="form-control" required>
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="form-group">
-            <label>Cédula</label>
-            <input type="text" id="integrante-cedula" class="form-control" placeholder="000-000000-0000X">
-          </div>
-          <div class="form-group">
-            <label>Rol en el Equipo</label>
-            <select id="integrante-rol" class="form-control">
-              <option value="Integrante">Integrante</option>
-              <option value="Coordinador">Coordinador de Equipo</option>
+            <label for="integrante-estudiante-select">Tomar de la base de estudiantes (opcional)</label>
+            <select id="integrante-estudiante-select" class="form-control" onchange="EquiposEngine.autocompletarDesdeEstudiante(this.value)">
+              <option value="">-- Ingresar manualmente --</option>
             </select>
           </div>
+          <div class="rejilla-2">
+            <div class="form-group">
+              <label for="integrante-nombres">Nombres</label>
+              <input type="text" id="integrante-nombres" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="integrante-apellidos">Apellidos</label>
+              <input type="text" id="integrante-apellidos" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="integrante-correo">Correo electrónico</label>
+              <input type="email" id="integrante-correo" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="integrante-telefono">Teléfono</label>
+              <input type="text" id="integrante-telefono" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="integrante-cedula">Cédula</label>
+              <input type="text" id="integrante-cedula" class="form-control" placeholder="000-000000-0000X">
+            </div>
+            <div class="form-group">
+              <label for="integrante-rol">Rol en el equipo</label>
+              <select id="integrante-rol" class="form-control">
+                <option value="Integrante">Integrante</option>
+                <option value="Coordinador">Coordinador de Equipo</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div class="modal-actions">
+        <div class="modal-actions panel-acciones">
           <button type="button" class="btn-secondary" onclick="EquiposEngine.cerrarModalIntegrante()">Cancelar</button>
-          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Guardar Integrante</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line" aria-hidden="true"></i> Guardar integrante</button>
         </div>
       </form>
     </div>
