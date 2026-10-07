@@ -12117,3 +12117,57 @@ html[data-theme="dark"] .bar-h[data-grafico-filtro]:hover .bar-h-label { color: 
   .grafico-valor, .kpi-valor, .kpi-pie, .kpi-etiqueta { color: #111 !important; }
   a[href]::after { content: "" !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   27 · SINCRONIZACIÓN EN VIVO — indicador de la barra superior
+   ═══════════════════════════════════════════════════════════════ */
+.sync-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default, #d7e3ec);
+  background: var(--bg-card, #fff);
+  color: var(--text-secondary, #4a6076);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sync-estado:hover { border-color: var(--p-400, #2d93c4); color: var(--text-primary); }
+.sync-estado:focus-visible { outline: 2px solid var(--p-600, #0b6a9f); outline-offset: 2px; }
+
+.sync-estado .sync-punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .18);
+}
+.sync-estado[data-estado="guardando"] .sync-punto {
+  background: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .18);
+  animation: syncLate 1s ease-in-out infinite alternate;
+}
+.sync-estado[data-estado="guardado"] .sync-punto {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .3);
+}
+.sync-estado[data-estado="sin-conexion"] .sync-punto {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, .2);
+}
+.sync-estado[data-estado="sin-conexion"] { color: #b45309; }
+html[data-theme="dark"] .sync-estado[data-estado="sin-conexion"] { color: #fbbf24; }
+
+@keyframes syncLate { from { opacity: .3; } to { opacity: 1; } }
+
+@media (max-width: 768px) {
+  /* A partir de 768px la barra de la derecha ocupa una fila entera y
+     no envuelve: el indicador se reduce al punto de estado (el texto
+     sigue disponible en aria-label) para que la página no desborde. */
+  .sync-estado { padding: 5px 7px; gap: 0; min-width: 0; overflow: hidden; }
+  .sync-estado .sync-texto { display: none; }
+}

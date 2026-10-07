@@ -124,6 +124,9 @@ const Mejoras = (() => {
       topbar.insertBefore(grupo, topbar.firstElementChild);
     }
 
+    inyectarIndicadorSync();
+    pintarIndicadorSync();
+
     // Atajo visible junto al buscador existente: lo abre la paleta.
     const barraIzquierda = $('.topbar-left');
     if (barraIzquierda && !$('#paleta-atajo')) {
@@ -896,11 +899,17 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '1.9.0';
+  const VERSION = '2.0.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '2.0.0', fecha: '2026-10-07', titulo: 'Sincronización en vivo', notas: [
+      'Indicador «En vivo» en la barra superior con la antigüedad del último cambio compartido.',
+      'Aviso cuando la red se corta y cuando vuelve, antes de que falle un guardado.',
+      'Registro en el centro de avisos de cada cambio que llega de otro equipo (grupo, equipo o configuración).',
+      'Estados «Guardando…» y «Guardado» al enviar cambios a la base compartida.'
+    ] },
     { version: '1.9.0', fecha: '2026-10-07', titulo: 'Modales unificados y gráficas con ayuda', notas: [
       'Editar estudiante, equipos, docente guía e integrantes usan la cabecera y el cuerpo de los paneles.',
       'Las gráficas muestran unidades reales (alumnos, promedio /100) en vez de un porcentaje relativo.',
@@ -2297,6 +2306,161 @@ const Mejoras = (() => {
     try { registrarEvento(registro); } catch (e) { /* el aviso es optativo */ }
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     15 · SINCRONIZACIÓN EN VIVO — INDICADOR Y AVISOS
+     ───────────────────────────────────────────────────────────
+     DataEngine publica cada acontecimiento en el documento con
+     el evento `tic:sync`: cambios que llegan de otro equipo,
+     guardados locales y estado de la conexión. Aquí se traducen
+     a un indicador de la barra superior y, con un margen de
+     cortesía para no avisar del arranque, al centro de avisos.
+     ═══════════════════════════════════════════════════════════ */
+  const ARRANQUE_SYNC = Date.now();
+  const SYNC_ESTADO = {
+    conectado: true,
+    guardando: false,
+    guardadoHasta: 0,
+    ultimoCambio: 0,
+    ultimoDetalle: null
+  };
+  let relojSync = null;
+
+  function inyectarIndicadorSync() {
+    const topbar = $('.topbar-right');
+    if (!topbar || $('#sync-estado')) return;
+    const indicador = document.createElement('button');
+    indicador.type = 'button';
+    indicador.id = 'sync-estado';
+    indicador.className = 'sync-estado';
+    indicador.dataset.estado = 'en-vivo';
+    indicador.setAttribute('role', 'status');
+    indicador.setAttribute('aria-live', 'polite');
+    indicador.title = 'Sincronización con la base compartida (abre el centro de avisos)';
+    indicador.innerHTML =
+      '<span class="sync-punto" aria-hidden="true"></span>' +
+      '<span class="sync-texto">En vivo</span>';
+    topbar.insertBefore(indicador, topbar.firstChild);
+  }
+
+  function haceCuanto(ts) {
+    const segundos = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (segundos < 60) return `hace ${segundos} s`;
+    const minutos = Math.round(segundos / 60);
+    if (minutos < 60) return `hace ${minutos} min`;
+    return `hace ${Math.round(minutos / 60)} h`;
+  }
+
+  function pintarIndicadorSync() {
+    const indicador = $('#sync-estado');
+    if (!indicador) return;
+    const texto = indicador.querySelector('.sync-texto');
+    if (!texto) return;
+    let contenido;
+    let descripcion;
+    if (!SYNC_ESTADO.conectado) {
+      indicador.dataset.estado = 'sin-conexion';
+      contenido = 'Sin conexión';
+      descripcion = 'Sin conexión con la base compartida: los cambios se guardarán cuando vuelva la red.';
+    } else if (SYNC_ESTADO.guardando) {
+      indicador.dataset.estado = 'guardando';
+      contenido = 'Guardando…';
+      descripcion = 'Guardando los cambios en la base compartida.';
+    } else if (SYNC_ESTADO.guardadoHasta > Date.now()) {
+      indicador.dataset.estado = 'guardado';
+      contenido = 'Guardado';
+      descripcion = 'Cambios guardados en la base compartida.';
+    } else if (SYNC_ESTADO.ultimoCambio) {
+      indicador.dataset.estado = 'en-vivo';
+      contenido = `En vivo · ${haceCuanto(SYNC_ESTADO.ultimoCambio)}`;
+      descripcion = `Último cambio ${haceCuanto(SYNC_ESTADO.ultimoCambio)} en la base compartida.`;
+    } else {
+      indicador.dataset.estado = 'en-vivo';
+      contenido = 'En vivo';
+      descripcion = 'Conectado con la base compartida.';
+    }
+    texto.textContent = contenido;
+    indicador.title = descripcion;
+    // En pantallas estrechas el texto se oculta y solo queda el punto:
+    // así el estado sigue leyéndose para lectores de pantalla.
+    indicador.setAttribute('aria-label', descripcion);
+  }
+
+  function arrancarRelojSync() {
+    if (relojSync) return;
+    relojSync = setInterval(pintarIndicadorSync, 15000);
+  }
+
+  function manejarSync(evento) {
+    const envoltura = (evento && evento.detail) || {};
+    const origen = envoltura.origen || 'remoto';
+    const datos = envoltura.detalle || {};
+
+    if (origen === 'conexion') {
+      const estabaConectado = SYNC_ESTADO.conectado;
+      SYNC_ESTADO.conectado = datos.conectado !== false;
+      if (estabaConectado && !SYNC_ESTADO.conectado) {
+        try {
+          registrarAviso('Se cortó la conexión con la base compartida: lo que guardes se enviará al volver.', 'advertencia',
+            null, { titulo: 'Sin conexión', clave: 'sync-conexion' });
+        } catch (e) { /* el aviso es opcional */ }
+      } else if (!estabaConectado && SYNC_ESTADO.conectado) {
+        try {
+          registrarAviso('Conexión restablecida con la base compartida.', 'confirmacion',
+            null, { titulo: 'De nuevo en vivo', clave: 'sync-conexion' });
+        } catch (e) { /* el aviso es opcional */ }
+      }
+      pintarIndicadorSync();
+      return;
+    }
+
+    if (origen === 'local') {
+      SYNC_ESTADO.guardando = false;
+      SYNC_ESTADO.guardadoHasta = Date.now() + 8000;
+      SYNC_ESTADO.ultimoCambio = Date.now();
+      pintarIndicadorSync();
+      return;
+    }
+
+    // Cambio remoto: actualiza el indicador siempre y, fuera del
+    // arranque (Firebase suelta un torrente de child_added al
+    // conectar), deja constancia en el centro de avisos.
+    SYNC_ESTADO.guardando = false;
+    SYNC_ESTADO.guardadoHasta = 0;
+    SYNC_ESTADO.ultimoCambio = Date.now();
+    SYNC_ESTADO.ultimoDetalle = datos;
+    pintarIndicadorSync();
+    if (Date.now() - ARRANQUE_SYNC < 6000 || !datos.nombre) return;
+    const texto = datos.eliminado
+      ? `${datos.nombre}: registro eliminado desde otro equipo.`
+      : datos.nuevo
+        ? `${datos.nombre}: nuevo registro desde otro equipo.`
+        : `${datos.nombre}: actualizado desde otro equipo.`;
+    try {
+      registrarEvento({
+        tipo: datos.eliminado ? 'advertencia' : 'cambio',
+        titulo: 'Actualizado en vivo',
+        texto,
+        seccion: (typeof UI !== 'undefined' && UI) ? UI.currentModule : null,
+        clave: `sync-${datos.coleccion || 'dato'}-${datos.id || datos.nombre}`
+      });
+    } catch (e) { /* el aviso es opcional */ }
+  }
+
+  function estadoSincronizacion() {
+    return {
+      conectado: SYNC_ESTADO.conectado,
+      guardando: SYNC_ESTADO.guardando,
+      guardadoReciente: SYNC_ESTADO.guardadoHasta > Date.now(),
+      ultimoCambio: SYNC_ESTADO.ultimoCambio,
+      ultimoDetalle: SYNC_ESTADO.ultimoDetalle,
+      texto: (() => {
+        const indicador = $('#sync-estado');
+        const texto = indicador ? indicador.querySelector('.sync-texto') : null;
+        return texto ? texto.textContent : null;
+      })()
+    };
+  }
+
   function instalarEventos() {
     document.addEventListener('click', event => {
       const destino = event.target;
@@ -2304,6 +2468,7 @@ const Mejoras = (() => {
 
       if (destino.closest('#btn-apariencia')) { alternarApariencia(); return; }
       if (destino.closest('#btn-avisos')) { alternarCentroAvisos(); return; }
+      if (destino.closest('#sync-estado')) { alternarCentroAvisos(); return; }
       if (destino.closest('#paleta-atajo')) { abrirPaleta(); return; }
 
       // Panel de apariencia
@@ -2543,6 +2708,12 @@ const Mejoras = (() => {
     const zonaBusqueda = document.querySelector('.search-results, #search-results, .search-dropdown');
     if (zonaBusqueda) zonaBusqueda.setAttribute('aria-live', 'polite');
 
+    // Sincronización en vivo: DataEngine publica cada acontecimiento
+    // con el evento `tic:sync` y el indicador lo refleja.
+    document.addEventListener('tic:sync', manejarSync);
+    arrancarRelojSync();
+    pintarIndicadorSync();
+
     // Globo de ayuda de las gráficas: sigue al ratón y se retira
     // al salir del gráfico o al desplazar la página.
     document.addEventListener('mousemove', evento => {
@@ -2622,6 +2793,8 @@ const Mejoras = (() => {
     pintarTooltip,
     ocultarTooltip,
     clicGraficoFiltro,
+    pintarIndicadorSync,
+    estadoSincronizacion,
     VERSION,
     _avisos: avisos,
     _filtrosAvisos: filtrosAvisos,

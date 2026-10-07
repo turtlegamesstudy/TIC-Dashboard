@@ -353,11 +353,28 @@
       // [OPT] Las actualizaciones remotas llegan en ráfaga (un evento por
       // registro). En lugar de reconstruir la vista en cada una, se agrupan
       // en un único render diferido y sin pantalla de carga.
-      _notificarCambio() {
+      // Aviso de sincronización para la interfaz: se publica SIEMPRE en el
+      // documento (el indicador de la barra superior lo escucha), y después
+      // se repinta la vista —solo cuando el cambio viene de fuera—.
+      _notificarCambio(origen = 'remoto', detalle = null) {
+        this._emitirSync(origen, detalle);
+        if (origen !== 'remoto') return;
         if (typeof UI === 'undefined') return;
         if (!document.getElementById('workspace')?.children.length) return;
         if (typeof UI.programarRender === 'function') UI.programarRender();
         else if (typeof UI.renderCurrentModule === 'function') UI.renderCurrentModule();
+      },
+
+      _emitirSync(origen, detalle) {
+        if (typeof document === 'undefined' || typeof document.dispatchEvent !== 'function') return;
+        if (typeof CustomEvent !== 'function') return;
+        try {
+          document.dispatchEvent(new CustomEvent('tic:sync', {
+            detail: { origen, detalle: detalle || null, ts: Date.now() }
+          }));
+        } catch (error) {
+          /* Entornos sin CustomEvent: el resto del flujo sigue igual. */
+        }
       },
 
       _subscribeToChanges(database) {
@@ -390,6 +407,22 @@
           reference.on('value', settingsChanged);
           this._listeners.push({ reference, event: 'value', callback: settingsChanged });
         });
+        // Estado de la conexión: el indicador de la barra superior lo
+        // refleja y, si se corta, se avisa antes de que falle un guardado.
+        try {
+          const raiz = this._centerDataReference(database).root;
+          const referencia = raiz && typeof raiz.child === 'function' ? raiz.child('.info/connected') : null;
+          if (referencia && typeof referencia.on === 'function') {
+            const cambioConexion = snapshot => {
+              this._conexionActiva = snapshot.val() === true;
+              this._emitirSync('conexion', { conectado: this._conexionActiva });
+            };
+            referencia.on('value', cambioConexion);
+            this._listeners.push({ reference: referencia, event: 'value', callback: cambioConexion });
+          }
+        } catch (error) {
+          /* Sin estado de conexión el resto de la sincronización sigue igual. */
+        }
       },
 
       _applyRemoteSettings(key, value) {
@@ -406,7 +439,12 @@
           ModulosAcademicos.sincronizar(this.db);
         }
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
-        this._notificarCambio();
+        const rotulos = {
+          informe: 'Informe',
+          cuadernoConfig: 'Configuración del cuaderno',
+          modulosAcademicos: 'Catálogo de módulos'
+        };
+        this._notificarCambio('remoto', { coleccion: key, nombre: rotulos[key] || key });
       },
 
       _applyRemoteOrder(collection, order) {
@@ -420,7 +458,10 @@
         if (!this._localLimpio()) return;
         this.db[collection] = ordered;
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
-        this._notificarCambio();
+        this._notificarCambio('remoto', {
+          coleccion: `${collection}Orden`,
+          nombre: collection === 'grupos' ? 'Orden de los grupos' : 'Orden de los equipos'
+        });
       },
 
       _applyRemoteRecord(collection, snapshot, removed) {
@@ -455,7 +496,13 @@
         }
 
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
-        this._notificarCambio();
+        this._notificarCambio('remoto', {
+          coleccion: collectionName,
+          id: recordId,
+          nombre: record?.nombre || recordId,
+          eliminado: Boolean(removed),
+          nuevo: index < 0
+        });
       },
 
       // [NUEVO] Garantiza que las bases de datos antiguas (guardadas antes del
@@ -646,6 +693,7 @@
           };
           await reference.update(metadata);
           this._syncSnapshot = this._clone(next);
+          this._emitirSync('local', { coleccion: 'guardado', nombre: 'Cambios guardados' });
           return true;
         } catch (error) {
           if (error.code === 'app/write-conflict') {
