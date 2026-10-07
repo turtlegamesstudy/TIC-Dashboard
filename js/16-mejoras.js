@@ -857,6 +857,7 @@ const Mejoras = (() => {
          <div><h2 id="avisos-titulo"><i class="ri-notification-3-line" aria-hidden="true"></i> Centro de avisos</h2>
          <p>${sinLeer ? `${sinLeer} sin leer · ` : ''}${avisos.length} guardado(s)</p></div>
          <span class="drawer-cabecera-acciones">
+           ${avisos.length ? '<button class="btn-ghost" type="button" data-avisos-exportar title="Descargar el registro completo en CSV"><i class="ri-file-download-line" aria-hidden="true"></i> CSV</button>' : ''}
            ${avisos.length ? '<button class="btn-ghost" type="button" data-avisos-limpiar><i class="ri-delete-bin-line"></i> Limpiar</button>' : ''}
            <button class="btn-icon" type="button" data-cerrar-avisos aria-label="Cerrar avisos"><i class="ri-close-line"></i></button>
          </span>
@@ -899,11 +900,17 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '2.0.0';
+  const VERSION = '2.1.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '2.1.0', fecha: '2026-10-07', titulo: 'Auditoría en CSV y validación al importar', notas: [
+      'Botón «CSV» en el centro de avisos: descarga el registro completo (fecha, tipo, detalle, sección y persona).',
+      'Al cargar un DB.json se revisa antes de sustituir la base: errores, avisos y resumen dentro de la propia pregunta.',
+      'Si se cancela, la base compartida no cambia y queda el aviso de importación cancelada.',
+      'La importación queda registrada en el centro de avisos con el detalle de lo detectado.'
+    ] },
     { version: '2.0.0', fecha: '2026-10-07', titulo: 'Sincronización en vivo', notas: [
       'Indicador «En vivo» en la barra superior con la antigüedad del último cambio compartido.',
       'Aviso cuando la red se corta y cuando vuelve, antes de que falle un guardado.',
@@ -2461,6 +2468,47 @@ const Mejoras = (() => {
     };
   }
 
+  /* ═══════════════════════════════════════════════════════════
+     16 · AUDITORÍA — CSV DEL CENTRO DE AVISOS
+     ───────────────────────────────────────────────────────────
+     El centro de avisos es el registro de quién hizo qué y
+     cuándo: se exporta entero en CSV (punto y coma y BOM, igual
+     que el resto de exportaciones) para archivarlo o revisarlo.
+     ═══════════════════════════════════════════════════════════ */
+  function exportarAuditoriaCSV() {
+    if (typeof UI === 'undefined' || !UI || typeof UI.descargarCSV !== 'function') return 0;
+    if (!avisos.length) {
+      UI.showToast('ℹ️ No hay registros en el centro de avisos para exportar.', 'info');
+      return 0;
+    }
+    const columnas = ['Fecha', 'Hora', 'Tipo', 'Título', 'Detalle', 'Sección', 'Persona', 'Afectado', 'Leído'];
+    const filas = avisos.slice().sort((a, b) => b.ts - a.ts).map(aviso => {
+      const momento = new Date(aviso.ts);
+      return [
+        momento.toLocaleDateString(),
+        momento.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        TIPOS_AVISO[aviso.tipo] || aviso.tipo || 'Información',
+        aviso.titulo || '',
+        aviso.texto || '',
+        aviso.seccion || '',
+        aviso.persona || '',
+        aviso.afectado || '',
+        aviso.leido ? 'sí' : 'no'
+      ];
+    });
+    const fecha = new Date().toISOString().slice(0, 10);
+    const cuenta = UI.descargarCSV(`auditoria-${fecha}`, columnas, filas);
+    try {
+      registrarEvento({
+        tipo: 'cambio', titulo: 'Auditoría exportada',
+        texto: `${cuenta} registro(s) del centro de avisos descargados en CSV.`,
+        seccion: UI.currentModule, clave: 'auditoria-csv'
+      });
+    } catch (e) { /* el registro es optativo */ }
+    UI.showToast(`📄 Auditoría exportada: ${cuenta} registro(s).`, 'success');
+    return cuenta;
+  }
+
   function instalarEventos() {
     document.addEventListener('click', event => {
       const destino = event.target;
@@ -2539,6 +2587,10 @@ const Mejoras = (() => {
         filtrosAvisos.texto = ''; filtrosAvisos.tipo = 'todos';
         filtrosAvisos.periodo = 'todo'; filtrosAvisos.persona = 'todas'; filtrosAvisos.leido = 'todos';
         pintarCentroAvisos();
+        return;
+      }
+      if (destino.closest('[data-avisos-exportar]')) {
+        exportarAuditoriaCSV();
         return;
       }
       if (destino.closest('[data-avisos-limpiar]')) {
@@ -2795,6 +2847,7 @@ const Mejoras = (() => {
     clicGraficoFiltro,
     pintarIndicadorSync,
     estadoSincronizacion,
+    exportarAuditoriaCSV,
     VERSION,
     _avisos: avisos,
     _filtrosAvisos: filtrosAvisos,

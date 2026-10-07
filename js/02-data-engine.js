@@ -709,6 +709,147 @@
         }
       },
 
+      // Revisa una base antes de sustituir la compartida: cuenta lo que
+      // trae y señala lo que no cuadra (ids repetidos, alumnos sin
+      // nombre, notas fuera de 0 a 100 o estados que no existen).
+      validarBaseImportada(base) {
+        const problemas = [];
+        const agregar = (nivel, mensaje) => { problemas.push({ nivel, mensaje }); };
+        const registros = coleccion => Array.isArray(coleccion)
+          ? coleccion.map(registro => [null, registro])
+          : (coleccion && typeof coleccion === 'object')
+            ? Object.entries(coleccion)
+            : [];
+
+        const grupos = registros(base?.grupos);
+        const equipos = registros(base?.equipos);
+        const idsGrupos = new Map();
+        const idsEstudiantes = new Map();
+        let estudiantes = 0;
+        let activos = 0;
+        let retirados = 0;
+        let convalidaciones = 0;
+        let notas = 0;
+
+        grupos.forEach(([clave, grupo], indice) => {
+          const rotulo = grupo?.nombre || grupo?.id || `#${indice + 1}`;
+          if (!grupo?.id) agregar('error', `Grupo ${indice + 1}: falta el identificador.`);
+          else if (idsGrupos.has(String(grupo.id))) {
+            agregar('error', `Grupo repetido: "${grupo.id}" (${idsGrupos.get(String(grupo.id))} y ${rotulo}).`);
+          } else idsGrupos.set(String(grupo.id), rotulo);
+          if (!grupo?.nombre) agregar('aviso', `Grupo ${grupo?.id || indice + 1}: sin nombre visible.`);
+
+          const lista = Array.isArray(grupo?.estudiantes) ? grupo.estudiantes
+            : (grupo?.estudiantes && typeof grupo.estudiantes === 'object')
+              ? Object.values(grupo.estudiantes)
+              : [];
+          if (!lista.length) agregar('aviso', `Grupo ${rotulo}: sin estudiantes.`);
+
+          lista.forEach((estudiante, posicion) => {
+            estudiantes++;
+            const nombre = [estudiante?.nombres, estudiante?.apellidos].filter(Boolean).join(' ').trim();
+            const donde = `Grupo ${rotulo}, alumno ${posicion + 1}`;
+            if (!nombre) agregar('aviso', `${donde}: sin nombre.`);
+            if (!estudiante?.id) agregar('error', `${donde}: sin identificador.`);
+            else if (idsEstudiantes.has(String(estudiante.id))) {
+              agregar('error', `Estudiante repetido: "${estudiante.id}" (${idsEstudiantes.get(String(estudiante.id))} y ${rotulo}).`);
+            } else idsEstudiantes.set(String(estudiante.id), rotulo);
+
+            const estado = estudiante?.estado || 'Activo';
+            if (estado === 'Activo') activos++;
+            else if (estado === 'Retirado') retirados++;
+            else agregar('aviso', `${donde}${nombre ? ` (${nombre})` : ''}: estado "${estado}" no reconocido.`);
+
+            if (estudiante?.convalidaciones && typeof estudiante.convalidaciones === 'object') {
+              convalidaciones += Object.values(estudiante.convalidaciones).filter(Boolean).length;
+            }
+            const evaluaciones = estudiante?.evaluacionesPorModulo || {};
+            Object.entries(evaluaciones).forEach(([modulo, informe]) => {
+              Object.entries(informe?.notas || {}).forEach(([columna, valor]) => {
+                notas++;
+                const numero = typeof valor === 'number' ? valor : Number(String(valor).replace(',', '.'));
+                if (!Number.isFinite(numero) || numero < 0 || numero > 100) {
+                  agregar('aviso', `${donde}${nombre ? ` (${nombre})` : ''}: nota "${valor}" en ${modulo} · ${columna} fuera de 0 a 100.`);
+                }
+              });
+            });
+          });
+        });
+
+        equipos.forEach(([clave, equipo], indice) => {
+          const rotulo = equipo?.nombre || equipo?.id || `#${indice + 1}`;
+          if (!equipo?.id) agregar('error', `Equipo ${indice + 1}: falta el identificador.`);
+          if (!equipo?.nombre) agregar('aviso', `Equipo ${equipo?.id || indice + 1}: sin nombre.`);
+          const integrantes = Array.isArray(equipo?.integrantes) ? equipo.integrantes : [];
+          if (!integrantes.length && rotulo) agregar('aviso', `Equipo ${rotulo}: sin integrantes.`);
+        });
+
+        return {
+          resumen: {
+            grupos: grupos.length,
+            estudiantes,
+            activos,
+            retirados,
+            equipos: equipos.length,
+            convalidaciones,
+            notas
+          },
+          problemas,
+          errores: problemas.filter(problema => problema.nivel === 'error').length,
+          avisos: problemas.filter(problema => problema.nivel === 'aviso').length
+        };
+      },
+
+      // Texto del aviso previo a importar: qué contiene la base y qué
+      // no cuadra, con un tope de ejemplos para no inundar la ventana.
+      mensajeValidacionImportacion(informe) {
+        const r = informe.resumen;
+        const lineas = [
+          'Esta acción reemplazará TODA la base compartida.',
+          '',
+          `Contenido: ${r.grupos} grupo(s), ${r.estudiantes} estudiante(s)` +
+            ` (${r.activos} activo(s), ${r.retirados} retirado(s)), ${r.equipos} equipo(s),` +
+            ` ${r.convalidaciones} convalidación(es) y ${r.notas} nota(s).`,
+          ''
+        ];
+        if (informe.problemas.length) {
+          const detalle = informe.problemas.slice(0, 8).map(p => `· ${p.mensaje}`);
+          const resto = informe.problemas.length - detalle.length;
+          lineas.push(`⚠️ ${informe.errores} error(es) y ${informe.avisos} aviso(s) detectados:`);
+          lineas.push(...detalle);
+          if (resto > 0) lineas.push(`… y ${resto} más (se verán en el centro de avisos).`);
+          lineas.push('');
+          lineas.push('¿Importar de todos modos?');
+        } else {
+          lineas.push('Sin problemas detectados.');
+          lineas.push('');
+          lineas.push('¿Deseas continuar?');
+        }
+        return lineas.join('\n');
+      },
+
+      // Deja constancia de la importación en el centro de avisos
+      // (auditoría): qué entró y qué detectó la revisión previa.
+      _registrarImportacion(informe) {
+        if (typeof Mejoras === 'undefined' || !Mejoras || typeof Mejoras.registrarEvento !== 'function') return;
+        const r = informe.resumen;
+        const detalle = `${r.grupos} grupo(s), ${r.estudiantes} estudiante(s) (${r.activos} activo(s), ` +
+          `${r.retirados} retirado(s)), ${r.equipos} equipo(s), ${r.convalidaciones} convalidación(es); ` +
+          `${informe.errores} error(es) y ${informe.avisos} aviso(s) de validación.`;
+        const ejemplos = informe.problemas.slice(0, 6).map(problema => problema.mensaje);
+        try {
+          Mejoras.registrarEvento({
+            tipo: informe.errores ? 'advertencia' : 'confirmacion',
+            titulo: 'Base importada y validada',
+            texto: ejemplos.length ? `${detalle} Revisar: ${ejemplos.join(' | ')}` : detalle,
+            seccion: 'administracion',
+            clave: 'importacion-db'
+          });
+        } catch (error) {
+          /* El registro es optativo: la importación ya se completó. */
+        }
+      },
+
       async importDBJSON(event) {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -717,13 +858,20 @@
           UI.showToast('❌ Solo un administrador puede reemplazar la base compartida.');
           return;
         }
-        if (!window.confirm('Esta acción reemplazará toda la base compartida de Firebase. ¿Deseas continuar?')) return;
         let databaseCommitted = false;
         const previousDatabase = this.db;
         const previousSnapshot = this._syncSnapshot;
         try {
           const imported = JSON.parse(await file.text());
-          this.db = this._normalizeImportedDatabase(imported);
+          const normalizada = this._normalizeImportedDatabase(imported);
+          // Validación previa: el informe viaja dentro de la pregunta
+          // y, si se cancela, no se toca la base compartida.
+          const informe = this.validarBaseImportada(normalizada);
+          if (!window.confirm(this.mensajeValidacionImportacion(informe))) {
+            UI.showToast('ℹ️ Importación cancelada: la base compartida no cambió.', 'info');
+            return;
+          }
+          this.db = normalizada;
           this._migrarEsquema();
           this._serializeDatabase(this.db);
           const normalized = this._serializeDatabase(this.db);
@@ -732,8 +880,10 @@
           databaseCommitted = true;
           this._syncSnapshot = this._clone(normalized);
           this._subscribeToChanges(window.FirebaseServices.database);
-          UI.showToast(`✅ Base guardada en Realtime Database: ${this.db.grupos.length} grupo(s) y ${this.db.equipos.length} equipo(s).`);
+          const r = informe.resumen;
+          UI.showToast(`✅ Base guardada en Realtime Database: ${r.grupos} grupo(s) y ${r.equipos} equipo(s)${informe.problemas.length ? `, con ${informe.problemas.length} incidencia(s) por revisar` : ''}.`);
           UI.renderCurrentModule();
+          this._registrarImportacion(informe);
           try {
             await this.migrateLegacyAttachments();
           } catch (migrationError) {
