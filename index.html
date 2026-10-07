@@ -27,13 +27,18 @@
   <script defer src="https://unpkg.com/pizzip@3.1.6/dist/pizzip.js"></script>
   <script defer src="https://unpkg.com/docxtemplater@3.44.0/build/docxtemplater.js"></script>
 
+  <link rel="icon" type="image/png" href="assets/emblema.png">
+  <link rel="apple-touch-icon" href="assets/emblema.png">
   <link rel="stylesheet" href="style.css">
   <!-- <base target="_blank"> eliminado: causaba que todo se abriera en pestaña nueva y bloqueaba inputs -->
 </head>
 <body>
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
     <form class="auth-card" id="auth-login-form" novalidate>
-      <div class="auth-brand-mark" aria-hidden="true"><i class="ri-government-line"></i></div>
+      <div class="auth-brand-mark" aria-hidden="true">
+        <img class="logo-imagen logo-imagen-claro" src="assets/logo-inatec.png" alt="" width="132" height="77">
+        <img class="logo-imagen logo-imagen-oscuro" src="assets/logo-inatec-blanco.png" alt="" width="108" height="57">
+      </div>
       <p class="auth-eyebrow">INATEC · RED DE CENTROS TECNOLÓGICOS</p>
       <h1 id="auth-title">Acceso docente</h1>
       <p class="auth-description">Inicia sesión con la cuenta habilitada por la administración.</p>
@@ -156,6 +161,10 @@
       </div>
 
       <header class="cargador-marca">
+        <span class="cargador-logo" aria-hidden="true">
+          <img class="logo-imagen logo-imagen-claro" src="assets/logo-inatec.png" alt="" width="132" height="77">
+          <img class="logo-imagen logo-imagen-oscuro" src="assets/logo-inatec-blanco.png" alt="" width="108" height="57">
+        </span>
         <span class="cargador-marca-texto">
           <strong>INATEC</strong>
           <span class="cargador-regla" aria-hidden="true"></span>
@@ -185,7 +194,10 @@
   <div class="app-container" id="app-container" hidden aria-hidden="true" inert>
     <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
       <div class="sidebar-header">
-        <div class="logo-box"><i class="ri-government-line"></i></div>
+        <div class="logo-box">
+          <img class="logo-imagen" src="assets/emblema.png" alt="INATEC" width="44" height="44">
+          <i class="ri-government-line" aria-hidden="true"></i>
+        </div>
         <div class="brand-info">
           <h2>INATEC</h2>
           <span id="sidebar-center-name">Centro tecnológico</span>

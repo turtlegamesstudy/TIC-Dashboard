@@ -12171,3 +12171,151 @@ html[data-theme="dark"] .sync-estado[data-estado="sin-conexion"] { color: #fbbf2
   .sync-estado { padding: 5px 7px; gap: 0; min-width: 0; overflow: hidden; }
   .sync-estado .sync-texto { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   28 · REFRESCO DE INTERFAZ — Parte 0: fundamentos visuales
+   · Capa de fondo animado (GIF de la paleta INATEC) difuminada
+   · Superficies base transparentes para que el fondo asome
+   · Tokens de vidrio reutilizables por las siguientes partes
+   · Logotipo real en barra lateral, acceso y pantalla de carga
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Vidrio institucional */
+  --vidrio-fondo: rgba(255, 255, 255, .72);
+  --vidrio-borde: rgba(255, 255, 255, .9);
+  --vidrio-sombra: 0 20px 44px -24px rgba(13, 59, 94, .5);
+  --vidrio-blur: 18px;
+  --fondo-difuminado: 26px;
+}
+
+html[data-theme="dark"] {
+  --vidrio-fondo: rgba(10, 27, 44, .72);
+  --vidrio-borde: rgba(120, 190, 230, .16);
+  --vidrio-sombra: 0 20px 44px -24px rgba(0, 0, 0, .65);
+}
+
+/* ── Capa fija de fondo animado (detrás de todo el contenido) ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -60px;
+  z-index: -1;
+  background: url("assets/fondo-claro.gif") center / cover no-repeat;
+  filter: blur(var(--fondo-difuminado)) saturate(118%);
+  opacity: .6;
+  pointer-events: none;
+}
+
+html[data-theme="dark"] body::before {
+  background-image: url("assets/fondo-profundo.gif");
+  opacity: .72;
+}
+
+/* ── El lienzo base sostiene el color cuando el GIF no carga ── */
+html { background-color: var(--campus-page); }
+
+/* ── Contenedores transparentes: el fondo se ve a través de ellos ── */
+body, .app-container, .main-wrapper, .workspace,
+html[data-theme="dark"] body, html[data-theme="dark"] .app-container,
+html[data-theme="dark"] .main-wrapper, html[data-theme="dark"] .workspace {
+  background-color: transparent;
+  background-image: none;
+}
+
+/* ── Con movimiento desactivado (o prefers-reduced-motion) el GIF
+      se sustituye por una mancha de color estática de la paleta ── */
+html[data-motion="off"] body::before {
+  background-image:
+    radial-gradient(65% 75% at 16% 24%, rgba(1, 165, 228, .5), transparent 62%),
+    radial-gradient(60% 70% at 84% 28%, rgba(135, 197, 64, .42), transparent 64%),
+    radial-gradient(70% 80% at 62% 86%, rgba(225, 11, 123, .4), transparent 62%),
+    radial-gradient(75% 85% at 24% 82%, rgba(20, 87, 139, .48), transparent 64%);
+  filter: blur(18px);
+}
+
+html[data-theme="dark"][data-motion="off"] body::before {
+  background-image:
+    radial-gradient(65% 75% at 16% 24%, rgba(1, 165, 228, .42), transparent 62%),
+    radial-gradient(60% 70% at 84% 28%, rgba(135, 197, 64, .3), transparent 64%),
+    radial-gradient(70% 80% at 62% 86%, rgba(225, 11, 123, .3), transparent 62%),
+    radial-gradient(75% 85% at 24% 82%, rgba(20, 87, 139, .5), transparent 64%);
+  filter: blur(18px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="on"]) body::before {
+    background-image:
+      radial-gradient(65% 75% at 16% 24%, rgba(1, 165, 228, .5), transparent 62%),
+      radial-gradient(60% 70% at 84% 28%, rgba(135, 197, 64, .42), transparent 64%),
+      radial-gradient(70% 80% at 62% 86%, rgba(225, 11, 123, .4), transparent 62%),
+      radial-gradient(75% 85% at 24% 82%, rgba(20, 87, 139, .48), transparent 64%);
+    filter: blur(18px);
+  }
+  html:not([data-motion="on"])[data-theme="dark"] body::before {
+    background-image:
+      radial-gradient(65% 75% at 16% 24%, rgba(1, 165, 228, .42), transparent 62%),
+      radial-gradient(60% 70% at 84% 28%, rgba(135, 197, 64, .3), transparent 64%),
+      radial-gradient(70% 80% at 62% 86%, rgba(225, 11, 123, .3), transparent 62%),
+      radial-gradient(75% 85% at 24% 82%, rgba(20, 87, 139, .5), transparent 64%);
+    filter: blur(18px);
+  }
+}
+
+/* ── Logotipo real: emblema INATEC dentro de la barra lateral ── */
+.logo-box {
+  background: #fff;
+  border-color: rgba(255, 255, 255, .65);
+  padding: 4px;
+}
+
+.logo-box::before,
+.logo-box::after { display: none; }
+
+.logo-box i { display: none; }
+
+.logo-box .logo-imagen {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ── Logotipo completo: luz y oscuro ── */
+.logo-imagen-oscuro { display: none; }
+
+html[data-theme="dark"] .logo-imagen-claro { display: none; }
+
+html[data-theme="dark"] .logo-imagen-oscuro { display: block; }
+
+.auth-brand-mark {
+  display: block;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin-bottom: 20px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 0;
+}
+
+.auth-brand-mark .logo-imagen {
+  display: block;
+  width: auto;
+  height: 54px;
+}
+
+.cargador-logo { display: block; line-height: 0; }
+
+.cargador-logo .logo-imagen { height: 48px; width: auto; }
+
+/* La marca ya no necesita el texto fuerte: el logotipo lo incluye */
+.cargador-marca-texto strong { display: none; }
+
+/* ── En impresión no se imprime el fondo animado ── */
+@media print {
+  body::before { display: none !important; }
+}
