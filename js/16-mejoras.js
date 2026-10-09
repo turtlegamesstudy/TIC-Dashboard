@@ -900,11 +900,19 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '2.1.0';
+  const VERSION = '2.2.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '2.2.0', fecha: '2026-10-09', hora: '10:20', autor: 'Hanzell Mayorga',
+      titulo: 'TIC responsable por grupo y formato de avances', notas: [
+      'Grupos de Clase: nueva sección para elegir al TIC responsable del grupo entre los docentes del sistema.',
+      'El cuaderno docente (Excel y PDF) firma con el TIC responsable del grupo en lugar de un nombre fijo.',
+      'Nuevo formato «Avances» en la exportación: hojas de Notas, Estadísticas y Consolidados.',
+      'La última actualización ahora indica hora, fecha, quién la hizo y qué cambió.',
+      'Capa visual en cristal: barra lateral y tokens de radios y sombras más suaves.'
+    ] },
     { version: '2.1.0', fecha: '2026-10-07', titulo: 'Auditoría en CSV y validación al importar', notas: [
       'Botón «CSV» en el centro de avisos: descarga el registro completo (fecha, tipo, detalle, sección y persona).',
       'Al cargar un DB.json se revisa antes de sustituir la base: errores, avisos y resumen dentro de la propia pregunta.',
@@ -984,7 +992,7 @@ const Mejoras = (() => {
         <span class="cambio-cab">
           <span class="cambio-num">v${esc(c.version)}</span>
           ${c.version === VERSION ? '<span class="cambio-actual-chip">Instalada</span>' : ''}
-          <time>${esc(fechaLarga(c.fecha))}</time>
+          <time>${esc(fechaLarga(c.fecha))}${c.hora ? ` · ${esc(c.hora)}` : ''}${c.autor ? ` · ${esc(c.autor)}` : ''}</time>
         </span>
         <strong>${esc(c.titulo)}</strong>
         <ul>${c.notaHTML || c.notas.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
@@ -1005,12 +1013,12 @@ const Mejoras = (() => {
             <div class="vi-num">v${esc(version.version)}</div>
             <div class="vi-meta">
               <strong>${esc(version.titulo)}</strong>
-              <span>Publicada el ${esc(fechaLarga(version.fecha))} · ${CAMBIOS.length} versión(es) en el historial</span>
+              <span>Publicada el ${esc(fechaLarga(version.fecha))}${version.hora ? ` · ${esc(version.hora)}` : ''}${version.autor ? ` · por ${esc(version.autor)}` : ''} · ${CAMBIOS.length} versión(es) en el historial</span>
             </div>
             <button type="button" class="btn-primary" data-comprobar-actualizaciones><i class="ri-refresh-line" aria-hidden="true"></i> Comprobar ahora</button>
           </section>
           <p class="panel-nota" id="actualizaciones-estado" role="status">${guardada
-            ? `Última comprobación: ${esc(guardada.fechaLocal || '—')}${guardada.titulo ? ` · ${esc(guardada.titulo)}` : ''}`
+            ? `Última comprobación: ${esc(guardada.fechaLocal || '—')}${guardada.titulo ? ` · ${esc(guardada.titulo)}` : ''}${guardada.autor ? ` · por ${esc(guardada.autor)}` : ''}`
             : 'Todavía no se ha comprobado si hay cambios en el repositorio.'}</p>
           <section class="cambio-historial">
             <h4 class="panel-titulo"><i class="ri-history-line" aria-hidden="true"></i> Historial de versiones</h4>
@@ -1072,19 +1080,23 @@ const Mejoras = (() => {
       const fechaLocal = new Date(`${CAMBIOS[0].fecha}T23:59:59`);
       const novedad = fechaRemota.getTime() > fechaLocal.getTime();
       const fechaComprobacion = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+      // Fecha + hora del commit, quién lo hizo y qué hizo: los cuatro
+      // datos juntos para que la última actualización se pueda leer de un vistazo.
+      const fechaCommit = fechaRemota.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
       escribirLocal(CLAVE_COMPROBACION, JSON.stringify({
-        sha, fechaLocal: fechaComprobacion, titulo: mensaje, novedad
+        sha, fechaLocal: fechaComprobacion, titulo: mensaje, autor, novedad
       }));
       if (estado) {
         estado.textContent = novedad
-          ? `Hay cambios en el repositorio posteriores a tu versión (commit ${sha} · ${fechaRemota.toLocaleDateString()}).`
-          : `Estás al día: último commit ${sha} (${fechaRemota.toLocaleDateString()}, ${autor}).`;
+          ? `Hay cambios en el repositorio posteriores a tu versión: «${mensaje}» · ${autor} · ${fechaCommit} (commit ${sha}).`
+          : `Estás al día: último commit ${sha} «${mensaje}» · ${autor} · ${fechaCommit}.`;
         estado.classList.toggle('con-novedad', novedad);
       }
       if (novedad) {
         registrarAviso(`El repositorio tiene cambios posteriores a la v${VERSION}.`, 'sistema',
           { texto: 'Cerrar', ejecutar: () => {} },
-          { titulo: 'Actualización disponible', detalle: `Commit ${sha} · ${mensaje}`,
+          { titulo: 'Actualización disponible',
+            detalle: `Commit ${sha} · ${fechaCommit} · ${autor} — ${mensaje}`,
             clave: 'actualizacion-remota', icono: 'ri-download-cloud-2-line' });
       } else {
         UI.showToast(`✅ Al día con el repositorio (commit ${sha}).`, 'success');

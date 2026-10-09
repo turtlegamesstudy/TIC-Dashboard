@@ -3147,7 +3147,9 @@ details[open] > *:not(summary) {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .sidebar {
-    transform: translateX(-100%);
+    /* El cajón flota con inset 16px: al cerrar hay que restar ese
+       hueco o queda un filete del rail asomando en el borde. */
+    transform: translateX(calc(-100% - var(--s-4)));
     box-shadow: none;
   }
   .sidebar.open {
@@ -10463,10 +10465,13 @@ html[data-theme="dark"] .dash-detalle .custom-table thead th { background: rgba(
 .sidebar.expanded .nav-section.nav-grupo:not(:first-child) { border-top: 0; }
 .sidebar.expanded .nav-section.nav-grupo { max-height: 64px; }
 
-/* Subsecciones: el bloque mide exactamente el ancho disponible. */
+/* Subsecciones: el bloque mide exactamente el ancho disponible.
+   min-width: 0 evita que el tamaño intrínseco de los textos (nowrap)
+   agrande el bloque y lo saque 9px del cajón. */
 .nav-hijos {
-  flex: 1 0 calc(100% - 20px);
-  margin: 3px 0 5px 20px;
+  flex: 1 0 calc(100% - 16px);
+  min-width: 0;
+  margin: 3px 0 5px 16px;
   border-left: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 0 10px 10px 0;
 }
@@ -13136,6 +13141,9 @@ html[data-theme="light"] .sidebar .nav-hijos { border-left-color: rgba(56, 189, 
   color: #e0f7ff;
   box-shadow: none;
 }
+/* Las subsecciones desplegadas van más ceñidas que los encabezados
+   para que «Cargar listado (.xlsx / .csv)» quepa entero sin “…”. */
+.sidebar.expanded .nav-item.nav-hijo { padding-inline: 10px; }
 
 /* ── Flechas y chevrons ── */
 .sidebar .nav-chevron {

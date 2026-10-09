@@ -613,6 +613,14 @@
         });
       },
 
+      // [NUEVO] TIC responsable del grupo: firma los cuadernos docentes
+      // en lugar del nombre fijo de siempre.
+      async guardarTicResponsable(grupoId, ticResponsable) {
+        return this._mutateGroupAndSave(grupoId, grupo => {
+          grupo.ticResponsable = (ticResponsable || '').trim();
+        });
+      },
+
       async save() {
         if (!AuthManager.user || !this._syncSnapshot) {
           throw new Error('No se guardaron los cambios: no hay una sesión conectada a la base compartida.');

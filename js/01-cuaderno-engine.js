@@ -185,7 +185,7 @@
         preferencias.umbral = Number.isFinite(umbral) && umbral >= 0 ? umbral : preferencias.umbral;
         preferencias.exportMode = document.getElementById('select-export-mode')?.value || preferencias.exportMode;
         const formato = document.getElementById('select-formato-cuaderno')?.value;
-        if (formato) preferencias.formato = formato === 'pdf' ? 'pdf' : 'xlsx';
+        if (formato) preferencias.formato = ['pdf', 'avances'].includes(formato) ? formato : 'xlsx';
         preferencias.modulos = [...document.querySelectorAll('.chk-modulo-export:checked')].map(check => check.value);
         // Catálogo vigente al guardar: al restaurar permite distinguir
         // "lo desmarqué yo" de "ese módulo es nuevo y aún no lo he visto".
@@ -359,6 +359,15 @@
       obtenerNombreCoordinador() {
         const config = this.obtenerConfiguracionAcademica();
         return config.coordinadorAcademico === undefined ? 'Lennin Estrada' : config.coordinadorAcademico;
+      },
+
+      // TIC responsable del grupo: el nombre que firma el cuaderno docente
+      // en lugar de un valor fijo. Se elige en Grupos de Clase entre los
+      // docentes del sistema; si el grupo aún no tiene uno, se conserva el
+      // nombre histórico para no romper los documentos ya acostumbrados.
+      obtenerNombreTIC(grupo) {
+        const nombre = String(grupo && grupo.ticResponsable ? grupo.ticResponsable : '').trim();
+        return nombre || 'Hanzell Ren\u00e9 Mayorga Calero';
       },
 
       obtenerJefeDepartamento(grupo) {
@@ -1422,7 +1431,7 @@
           const rF2 = ws.addRow([]); rF2.height = 18;
           merge(rF2.number, 1, half);
           const cFV1 = ws.getCell(rF2.number, 1);
-          cFV1.value = 'Hanzell Ren\u00e9 Mayorga Calero';
+          cFV1.value = this.obtenerNombreTIC(grupo);
           cFV1.font  = { name: fontName, size: fontSize, color: { argb: 'FF000000' } };
           cFV1.alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -1566,7 +1575,7 @@
           ws.mergeCells(frA.number, cF3, frA.number, totalCols);
           [cF1, cF2, cF3].forEach(c => styleCell(ws.getCell(frA.number, c), { alignment: { horizontal: 'center', vertical: 'bottom' }, font: { bold: true } }));
           const frB = ws.addRow([]); frB.height = 18;
-          ws.getCell(frB.number, cF1).value = 'Hanzell Ren\u00e9 Mayorga Calero';
+          ws.getCell(frB.number, cF1).value = this.obtenerNombreTIC(grupo);
           ws.getCell(frB.number, cF2).value = jefeDepartamento;
           ws.getCell(frB.number, cF3).value = coordinadorAcademico;
           ws.mergeCells(frB.number, cF1, frB.number, sp);
@@ -1611,10 +1620,344 @@
         return wb;
       },
 
+      // ═══════════════════════════════════════════════════════════════
+      // FORMATO DE AVANCES — Notas, Estadísticas y Consolidados
+      // Libro propio para el seguimiento del ciclo: una hoja con el
+      // avance por estudiante, otra con las estadísticas por módulo y
+      // una tercera con el consolidado por alumno y por grupo.
+      // ═══════════════════════════════════════════════════════════════
+
+      // Nota final de un estudiante en un módulo (número, 'Cov',
+      // 'NSP' o 'S/N'): la misma lectura del Resumen General.
+      _notaFinalModuloAvance(estudiante, mNombre, grupo) {
+        const esRetirado = est => est.retirado || est.estado === 'Retirado';
+        if (estudiante.convalidaciones && estudiante.convalidaciones[mNombre]) return 'Cov';
+        const mData = estudiante.evaluacionesPorModulo ? estudiante.evaluacionesPorModulo[mNombre] : null;
+        const notasObj = mData ? (mData.notas || mData.evaluaciones) : null;
+        if (!notasObj) return esRetirado(estudiante) ? 'NSP' : 'S/N';
+        const cfgMR = grupo.estructuraModulos ? grupo.estructuraModulos[mNombre] : null;
+        const colsMR = (cfgMR && cfgMR.columnasOrdenadas) || [];
+        const colT = colsMR.find(c => c.esTotal);
+        let vf = null;
+        if (colT) {
+          const candidato = this.obtenerNotaEstudiante(estudiante, mNombre, colT.nombreDisplay);
+          if (typeof candidato === 'number') vf = candidato;
+        }
+        if (vf === null) {
+          const totales = new Set(colsMR.filter(c => c.esTotal).map(c => c.nombreDisplay));
+          const valores = Object.entries(notasObj)
+            .filter(([clave, valor]) => typeof valor === 'number' && !totales.has(clave) &&
+              !this.normalizarTexto(clave).includes('total'))
+            .map(([, valor]) => valor);
+          if (valores.length > 0) vf = Math.round(valores.reduce((a, b) => a + b, 0) / valores.length);
+        }
+        if (vf !== null) return vf;
+        return esRetirado(estudiante) ? 'NSP' : 'S/N';
+      },
+
+      // Presenta una nota cruda según el modo elegido (real o estado).
+      _fmtNotaAvance(valor, modo, umbral) {
+        if (valor === 'Retirado' || valor === 'Convalidado') return valor;
+        if (valor === 'S/N' || valor === null || valor === undefined || valor === '-') {
+          return modo === 'estado' ? 'Pendiente' : 'S/N';
+        }
+        const num = Number(valor);
+        if (isNaN(num)) return String(valor);
+        if (modo === 'estado') return num >= umbral ? 'Aprobado' : 'Pendiente';
+        return Math.round(num);
+      },
+
+      buildWorkbookAvances(grupoId, modulosAExportar, configNotas, filtroEstudiantes = 'todos') {
+        const cfg = ConfigExport.load();
+        const grupo = DataEngine.getGrupoById(grupoId);
+        if (!grupo) return null;
+        let estudiantes = DataEngine.getEstudiantesByGrupo(grupoId);
+        if (!estudiantes || estudiantes.length === 0) return null;
+        estudiantes = DataEngine.ordenarEstudiantes(estudiantes);
+        estudiantes = this.filtrarEstudiantes(estudiantes, filtroEstudiantes, modulosAExportar, grupo);
+        if (!estudiantes || estudiantes.length === 0) return null;
+
+        const modulos = (modulosAExportar || []).slice();
+        const umbral = configNotas && Number.isFinite(Number(configNotas.umbral)) ? Number(configNotas.umbral) : 60;
+        const modo = (configNotas && configNotas.modo) || 'real';
+        const jefeDepartamento = this.obtenerJefeDepartamento(grupo);
+        const coordinadorAcademico = this.obtenerNombreCoordinador();
+        const nombreTIC = this.obtenerNombreTIC(grupo);
+        const nombreCentro = typeof AuthManager.getActiveCenterName === 'function'
+          ? AuthManager.getActiveCenterName() : 'Centro Tecnológico';
+        const fechaActual = new Date().toLocaleDateString('es-NI', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'TIC Dashboard';
+        wb.created = new Date();
+
+        const fontName = cfg.fontFamily || 'Calibri';
+        const fontSize = cfg.fontSize || 10;
+        const borderArgb = cfg.borderColor === '#000000' ? 'FF000000' : 'FFD9D9D9';
+        const textColor = this.hexToArgb(cfg.textColor || '#000000');
+        const headerColor = this.hexToArgb(cfg.headerColor || '#1E40AF');
+        const fillHeader = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerColor } };
+        const fillVerde  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        const fillRojo   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+
+        const bordar = cell => {
+          cell.border = {
+            top:    { style: 'thin', color: { argb: borderArgb } },
+            left:   { style: 'thin', color: { argb: borderArgb } },
+            bottom: { style: 'thin', color: { argb: borderArgb } },
+            right:  { style: 'thin', color: { argb: borderArgb } }
+          };
+        };
+        const celda = (ws, fila, columna, valor, opts = {}) => {
+          const cell = ws.getCell(fila, columna);
+          cell.value = valor;
+          cell.font = { name: fontName, size: fontSize, color: { argb: textColor }, ...(opts.font || {}) };
+          cell.alignment = opts.alignment || { horizontal: 'center', vertical: 'middle', wrapText: true };
+          if (opts.fill) cell.fill = opts.fill;
+          if (opts.borde !== false) bordar(cell);
+          return cell;
+        };
+        const pintarEncabezado = (ws, titulo, totalCols) => {
+          this.aplicarConfigImpresion(ws, cfg, false);
+          [['DIRECCIÓN GENERAL DE FORMACIÓN PROFESIONAL', 13],
+           [nombreCentro, 11], [titulo, 12]].forEach(([texto, tam]) => {
+            const fila = ws.addRow([texto]);
+            ws.mergeCells(fila.number, 1, fila.number, totalCols);
+            celda(ws, fila.number, 1, texto, { font: { size: tam, bold: true }, borde: false });
+          });
+          ws.addRow([]);
+          [['Carrera Técnica:', grupo.carrera || 'N/A', 'Código / Grupo:', grupo.codigo || grupo.id],
+           ['Turno / Régimen:', grupo.turno || 'General', 'Docente a cargo:', grupo.docenteGuia || 'Sin asignar'],
+           ['TIC responsable:', nombreTIC, 'Fecha de emisión:', fechaActual],
+           ['Matrícula:', estudiantes.length, 'Módulos:', modulos.length]].forEach(valores => {
+            const fila = ws.addRow([valores[0], valores[1], '', valores[2], valores[3]]);
+            const nf = fila.number;
+            ws.mergeCells(nf, 2, nf, 3);
+            ws.mergeCells(nf, 5, nf, Math.max(totalCols, 5));
+            celda(ws, nf, 1, valores[0], { font: { bold: true }, alignment: { horizontal: 'left', vertical: 'middle' } });
+            celda(ws, nf, 2, valores[1], { alignment: { horizontal: 'left', vertical: 'middle' } });
+            celda(ws, nf, 4, valores[2], { font: { bold: true }, alignment: { horizontal: 'left', vertical: 'middle' } });
+            celda(ws, nf, 5, valores[3], { alignment: { horizontal: 'left', vertical: 'middle' } });
+          });
+          ws.addRow([]);
+        };
+        const pintarEncabezadoTabla = (ws, columnas, filaEnc) => {
+          columnas.forEach((nombre, indice) => {
+            celda(ws, filaEnc.number, indice + 1, nombre,
+              { font: { bold: true }, fill: fillHeader, alignment: { horizontal: 'center', vertical: 'middle', wrapText: true } });
+          });
+        };
+        const pintarFirmas = (ws, totalCols) => {
+          ws.addRow([]);
+          const sp = Math.max(1, Math.floor(totalCols / 3));
+          const cF1 = 1, cF2 = sp + 1, cF3 = sp * 2 + 1;
+          const rotulos = ws.addRow([]); rotulos.height = 36;
+          const rotulo1 = ws.getCell(rotulos.number, cF1); rotulo1.value = 'Docente TIC';
+          const rotulo2 = ws.getCell(rotulos.number, cF2); rotulo2.value = 'Jefe de Departamento';
+          const rotulo3 = ws.getCell(rotulos.number, cF3); rotulo3.value = 'Coordinador Académico';
+          ws.mergeCells(rotulos.number, cF1, rotulos.number, sp);
+          ws.mergeCells(rotulos.number, cF2, rotulos.number, sp * 2);
+          ws.mergeCells(rotulos.number, cF3, rotulos.number, totalCols);
+          celda(ws, rotulos.number, cF1, rotulo1.value, { font: { bold: true }, alignment: { horizontal: 'center', vertical: 'bottom' } });
+          celda(ws, rotulos.number, cF2, rotulo2.value, { font: { bold: true }, alignment: { horizontal: 'center', vertical: 'bottom' } });
+          celda(ws, rotulos.number, cF3, rotulo3.value, { font: { bold: true }, alignment: { horizontal: 'center', vertical: 'bottom' } });
+          const nombres = ws.addRow([]); nombres.height = 18;
+          const nombre1 = ws.getCell(nombres.number, cF1); nombre1.value = nombreTIC;
+          const nombre2 = ws.getCell(nombres.number, cF2); nombre2.value = jefeDepartamento;
+          const nombre3 = ws.getCell(nombres.number, cF3); nombre3.value = coordinadorAcademico;
+          ws.mergeCells(nombres.number, cF1, nombres.number, sp);
+          ws.mergeCells(nombres.number, cF2, nombres.number, sp * 2);
+          ws.mergeCells(nombres.number, cF3, nombres.number, totalCols);
+          celda(ws, nombres.number, cF1, nombre1.value, { font: { bold: true } });
+          celda(ws, nombres.number, cF2, nombre2.value, { font: { bold: true } });
+          celda(ws, nombres.number, cF3, nombre3.value, { font: { bold: true } });
+        };
+        const ajustarAnchos = (ws, anchos) => anchos.forEach((ancho, indice) => {
+          ws.getColumn(indice + 1).width = ancho;
+        });
+
+        // ── HOJA 1 · AVANCES: notas por estudiante ──
+        {
+          const totalCols = 4 + modulos.length + 2;
+          const ws = wb.addWorksheet('Avances');
+          ajustarAnchos(ws, [6, 22, 22, 30, ...modulos.map(() => 11), 11, 12]);
+          pintarEncabezado(ws, 'FORMATO DE AVANCES ACADÉMICOS · NOTAS POR ESTUDIANTE', totalCols);
+          const columnas = ['No.', 'Nombres', 'Apellidos', 'Correo', ...modulos, 'Promedio', 'Estado'];
+          const filaEnc = ws.addRow(columnas);
+          filaEnc.height = cfg.rowHeaderMain || 28;
+          pintarEncabezadoTabla(ws, columnas, filaEnc);
+
+          estudiantes.forEach((e, indice) => {
+            const crudos = modulos.map(m => this._notaFinalModuloAvance(e, m, grupo));
+            const numericos = crudos.filter(valor => typeof valor === 'number');
+            const promedio = numericos.length
+              ? Math.round(numericos.reduce((a, b) => a + b, 0) / numericos.length)
+              : null;
+            const estado = promedio !== null && promedio >= umbral ? 'Aprobado' : 'Pendiente';
+            const valores = [indice + 1, e.nombres, e.apellidos, e.correo || 'S/N'];
+            crudos.forEach(valor => valores.push(this._fmtNotaAvance(valor, modo, umbral)));
+            valores.push(promedio === null ? 'S/N' : promedio);
+            valores.push(estado);
+            const fila = ws.addRow(valores);
+            fila.height = cfg.rowData || 16;
+            celda(ws, fila.number, 1, indice + 1);
+            celda(ws, fila.number, 2, e.nombres, { alignment: { horizontal: 'left', vertical: 'middle' }, font: { bold: true } });
+            celda(ws, fila.number, 3, e.apellidos, { alignment: { horizontal: 'left', vertical: 'middle' }, font: { bold: true } });
+            celda(ws, fila.number, 4, e.correo || 'S/N', { alignment: { horizontal: 'left', vertical: 'middle' } });
+            crudos.forEach((valor, mi) => {
+              const esNumero = typeof valor === 'number';
+              celda(ws, fila.number, 5 + mi, valores[4 + mi], {
+                fill: esNumero ? (valor >= umbral ? fillVerde : fillRojo) : undefined
+              });
+            });
+            celda(ws, fila.number, totalCols - 1, promedio === null ? 'S/N' : promedio,
+              { font: { bold: true }, fill: promedio === null ? undefined : (promedio >= umbral ? fillVerde : fillRojo) });
+            celda(ws, fila.number, totalCols, estado,
+              { font: { bold: true }, fill: promedio !== null && promedio >= umbral ? fillVerde : fillRojo });
+          });
+
+          const todosLosNumeros = estudiantes.flatMap(e => modulos
+            .map(m => this._notaFinalModuloAvance(e, m, grupo))
+            .filter(valor => typeof valor === 'number'));
+          const promedioGeneral = todosLosNumeros.length
+            ? Math.round(todosLosNumeros.reduce((a, b) => a + b, 0) / todosLosNumeros.length)
+            : 'S/N';
+          const estadoGeneral = typeof promedioGeneral === 'number' && promedioGeneral >= umbral
+            ? 'Aprobado' : 'Pendiente';
+          const filaTotal = ws.addRow(Array(totalCols).fill(''));
+          for (let col = 1; col <= totalCols; col++) {
+            let valor = '';
+            if (col === 1) valor = 'PROMEDIO DEL GRUPO';
+            else if (col === totalCols - 1) valor = promedioGeneral;
+            else if (col === totalCols) valor = estadoGeneral;
+            celda(ws, filaTotal.number, col, valor,
+              { font: { bold: true }, fill: fillHeader, alignment: { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' } });
+          }
+          pintarFirmas(ws, totalCols);
+        }
+
+        // ── HOJA 2 · ESTADÍSTICAS POR MÓDULO ──
+        {
+          const columnas = ['Módulo', 'Matrícula', 'Con nota', 'Promedio', 'Aprobados', 'Reprobados', 'Sin nota', 'Rendimiento'];
+          const totalCols = columnas.length;
+          const ws = wb.addWorksheet('Estadísticas');
+          ajustarAnchos(ws, [34, 11, 10, 11, 12, 12, 10, 13]);
+          pintarEncabezado(ws, 'FORMATO DE AVANCES · ESTADÍSTICAS POR MÓDULO', totalCols);
+          const filaEnc = ws.addRow(columnas);
+          filaEnc.height = cfg.rowHeaderMain || 28;
+          pintarEncabezadoTabla(ws, columnas, filaEnc);
+
+          let conNotaGlobal = 0, sumaGlobal = 0, aprobadosGlobal = 0;
+          modulos.forEach(m => {
+            let conNota = 0, suma = 0, aprobados = 0, reprobados = 0;
+            estudiantes.forEach(e => {
+              const valor = this._notaFinalModuloAvance(e, m, grupo);
+              if (typeof valor !== 'number') return;
+              conNota++; suma += valor;
+              if (valor >= umbral) aprobados++; else reprobados++;
+            });
+            conNotaGlobal += conNota; sumaGlobal += suma; aprobadosGlobal += aprobados;
+            const promedio = conNota ? Math.round(suma / conNota) : '—';
+            const rendimiento = conNota ? `${Math.round((aprobados / conNota) * 100)}%` : '—';
+            const valores = [m, estudiantes.length, conNota, promedio, aprobados, reprobados,
+              estudiantes.length - conNota, rendimiento];
+            const fila = ws.addRow(valores);
+            fila.height = cfg.rowData || 16;
+            celda(ws, fila.number, 1, m, { alignment: { horizontal: 'left', vertical: 'middle' }, font: { bold: true } });
+            for (let col = 2; col <= totalCols; col++) {
+              const relleno = (col === 5 && aprobados > 0) ? fillVerde
+                : (col === 6 && reprobados > 0) ? fillRojo : undefined;
+              celda(ws, fila.number, col, valores[col - 1], { fill: relleno });
+            }
+          });
+
+          const celdasTotales = estudiantes.length * modulos.length;
+          const promedioGeneral = conNotaGlobal ? Math.round(sumaGlobal / conNotaGlobal) : '—';
+          const rendimientoGlobal = conNotaGlobal
+            ? `${Math.round((aprobadosGlobal / conNotaGlobal) * 100)}%` : '—';
+          const valoresGen = ['GENERAL', estudiantes.length, conNotaGlobal, promedioGeneral,
+            aprobadosGlobal, conNotaGlobal - aprobadosGlobal, celdasTotales - conNotaGlobal, rendimientoGlobal];
+          const filaGen = ws.addRow(valoresGen);
+          filaGen.height = cfg.rowData || 16;
+          celda(ws, filaGen.number, 1, 'GENERAL',
+            { font: { bold: true }, fill: fillHeader, alignment: { horizontal: 'left', vertical: 'middle' } });
+          for (let col = 2; col <= totalCols; col++) {
+            celda(ws, filaGen.number, col, valoresGen[col - 1], { font: { bold: true }, fill: fillHeader });
+          }
+        }
+
+        // ── HOJA 3 · CONSOLIDADOS POR ESTUDIANTE ──
+        {
+          const columnas = ['No.', 'Nombres', 'Apellidos', 'Promedio General', 'Aprobados',
+            'Reprobados', 'Convalidados', 'Sin nota', '% Avance', 'Estado'];
+          const totalCols = columnas.length;
+          const ws = wb.addWorksheet('Consolidados');
+          ajustarAnchos(ws, [6, 22, 22, 15, 12, 12, 13, 10, 11, 12]);
+          pintarEncabezado(ws, 'FORMATO DE AVANCES · CONSOLIDADO POR ESTUDIANTE', totalCols);
+          const filaEnc = ws.addRow(columnas);
+          filaEnc.height = cfg.rowHeaderMain || 28;
+          pintarEncabezadoTabla(ws, columnas, filaEnc);
+
+          const acumulados = { aprobados: 0, reprobados: 0, convalidados: 0, sinNota: 0, promedios: [] };
+          estudiantes.forEach((e, indice) => {
+            const crudos = modulos.map(m => this._notaFinalModuloAvance(e, m, grupo));
+            const numericos = crudos.filter(valor => typeof valor === 'number');
+            const aprobados = numericos.filter(valor => valor >= umbral).length;
+            const reprobados = numericos.length - aprobados;
+            const convalidados = crudos.filter(valor => valor === 'Cov').length;
+            const sinNota = crudos.length - numericos.length - convalidados;
+            const promedio = numericos.length
+              ? Math.round(numericos.reduce((a, b) => a + b, 0) / numericos.length)
+              : null;
+            const avance = modulos.length
+              ? Math.round(((aprobados + convalidados) / modulos.length) * 100) : 0;
+            const estado = promedio !== null && promedio >= umbral ? 'Aprobado' : 'Pendiente';
+            acumulados.aprobados += aprobados;
+            acumulados.reprobados += reprobados;
+            acumulados.convalidados += convalidados;
+            acumulados.sinNota += sinNota;
+            if (promedio !== null) acumulados.promedios.push(promedio);
+            const valores = [indice + 1, e.nombres, e.apellidos, promedio === null ? 'S/N' : promedio,
+              aprobados, reprobados, convalidados, sinNota, `${avance}%`, estado];
+            const fila = ws.addRow(valores);
+            fila.height = cfg.rowData || 16;
+            celda(ws, fila.number, 1, indice + 1);
+            celda(ws, fila.number, 2, e.nombres, { alignment: { horizontal: 'left', vertical: 'middle' }, font: { bold: true } });
+            celda(ws, fila.number, 3, e.apellidos, { alignment: { horizontal: 'left', vertical: 'middle' }, font: { bold: true } });
+            celda(ws, fila.number, 4, valores[3],
+              { font: { bold: true }, fill: promedio === null ? undefined : (promedio >= umbral ? fillVerde : fillRojo) });
+            for (let col = 5; col <= 8; col++) celda(ws, fila.number, col, valores[col - 1]);
+            celda(ws, fila.number, 9, valores[8], { font: { bold: true } });
+            celda(ws, fila.number, 10, valores[9],
+              { font: { bold: true }, fill: estado === 'Aprobado' ? fillVerde : fillRojo });
+          });
+
+          const promedioGrupo = acumulados.promedios.length
+            ? Math.round(acumulados.promedios.reduce((a, b) => a + b, 0) / acumulados.promedios.length)
+            : 'S/N';
+          const celdasTotales = estudiantes.length * modulos.length;
+          const avanceGrupo = celdasTotales
+            ? Math.round(((acumulados.aprobados + acumulados.convalidados) / celdasTotales) * 100) : 0;
+          const estadoGrupo = typeof promedioGrupo === 'number' && promedioGrupo >= umbral
+            ? 'Aprobado' : 'Pendiente';
+          const valoresCierre = ['PROMEDIO DEL GRUPO', '', '', promedioGrupo, acumulados.aprobados,
+            acumulados.reprobados, acumulados.convalidados, acumulados.sinNota, `${avanceGrupo}%`, estadoGrupo];
+          const filaCierre = ws.addRow(valoresCierre);
+          filaCierre.height = cfg.rowData || 16;
+          for (let col = 1; col <= totalCols; col++) {
+            celda(ws, filaCierre.number, col, valoresCierre[col - 1],
+              { font: { bold: true }, fill: fillHeader, alignment: { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' } });
+          }
+          pintarFirmas(ws, totalCols);
+        }
+
+        return wb;
+      },
 
       obtenerFormatoExportacion() {
         const selector = document.getElementById('select-formato-cuaderno');
-        return selector?.value === 'pdf' ? 'pdf' : 'xlsx';
+        const valor = selector ? selector.value : '';
+        return valor === 'pdf' || valor === 'avances' ? valor : 'xlsx';
       },
 
       descargarBlob(blob, fileName) {
@@ -1651,6 +1994,22 @@
         const conResumen = this.incluirResumenGeneral();
         const configNotas = this.obtenerConfigNotas();
         const filtroEstudiantes = this.obtenerFiltroEstudiantes();
+
+        // Formato de avances: libro de seguimiento con hojas de Notas,
+        // Estadísticas y Consolidados (siempre en XLSX).
+        if (this.obtenerFormatoExportacion() === 'avances') {
+          if (modulosAExportar.length === 0) {
+            UI.showToast('⚠️ El formato de avances necesita al menos un módulo seleccionado.');
+            return;
+          }
+          const wbAvances = this.buildWorkbookAvances(grupoId, modulosAExportar, configNotas, filtroEstudiantes);
+          if (!wbAvances) { UI.showToast('⚠️ El grupo no contiene estudiantes que cumplan el filtro seleccionado.'); return; }
+          const grupoAvances = DataEngine.getGrupoById(grupoId);
+          this.exportarWorkbookEnXlsx(wbAvances,
+            `Avances_${(grupoAvances.nombre || grupoAvances.id).replace(/\s+/g, '_')}.xlsx`,
+            '📈 Formato de avances exportado con Notas, Estadísticas y Consolidados.');
+          return;
+        }
 
         if (modulosAExportar.length === 0 && !conResumen) {
           UI.showToast("⚠️ Debe seleccionar al menos un módulo o incluir el resumen general.");
@@ -2102,6 +2461,11 @@
         const configNotas = this.obtenerConfigNotas();
         const filtroEstudiantes = this.obtenerFiltroEstudiantes();
 
+        if (formatoFinal === 'avances' && modulosAExportar.length === 0) {
+          UI.showToast('⚠️ El formato de avances necesita al menos un módulo seleccionado.');
+          return;
+        }
+
         if (modulosAExportar.length === 0 && !conResumen) {
           UI.showToast("⚠️ Seleccione al menos un módulo o incluya el resumen general.");
           return;
@@ -2122,16 +2486,18 @@
             const estudiantes = DataEngine.getEstudiantesByGrupo(grupo.id);
             if (!estudiantes || estudiantes.length === 0) continue;
 
-            const wb = this.buildWorkbookForGroup(
-              grupo.id, modulosAExportar, conResumen, configNotas, filtroEstudiantes, listoParaImprimir
-            );
+            const wb = formatoFinal === 'avances'
+              ? this.buildWorkbookAvances(grupo.id, modulosAExportar, configNotas, filtroEstudiantes)
+              : this.buildWorkbookForGroup(
+                grupo.id, modulosAExportar, conResumen, configNotas, filtroEstudiantes, listoParaImprimir
+              );
             if (!wb) continue;
 
             const jefeSuffix = jefeSeleccionado
               ? `_Jefe_${jefeSeleccionado.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '')}`
               : '';
             const suffix = `${listoParaImprimir ? '_Legal_Impresion' : ''}${jefeSuffix}`;
-            const nombreBase = `Cuaderno_Docente_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}${suffix}`;
+            const nombreBase = `${formatoFinal === 'avances' ? 'Avances' : 'Cuaderno_Docente'}_${(grupo.nombre || grupo.id).replace(/\s+/g, '_')}${suffix}`;
             const esPdf = formatoFinal === 'pdf';
 
             if (esPdf) {
@@ -2151,7 +2517,9 @@
           UI.hideLoading(300);
         }
 
-        const detalleFormato = formatoFinal === 'pdf' ? 'en PDF' : 'en XLSX';
+        const detalleFormato = formatoFinal === 'pdf' ? 'en PDF'
+          : formatoFinal === 'avances' ? 'en formato de avances (XLSX)'
+          : 'en XLSX';
         UI.showToast(jefeSeleccionado
           ? `🖨️ ${exportados} cuaderno(s) exportado(s) ${detalleFormato} para ${jefeSeleccionado.nombre}, según sus turnos.`
           : listoParaImprimir
@@ -2271,7 +2639,7 @@
         const colRemainder = totalCols - (colThird * 2);
         const grupo = DataEngine.getGrupos().find(item => this.normalizarTexto(item.turno) === this.normalizarTexto(turno));
         const jefeDepartamento = grupo ? this.obtenerJefeDepartamento(grupo) : '';
-        return `<tr><td colspan="${totalCols}" style="border: none; height: 35px;"></td></tr><tr><td colspan="${colThird}" style="border: none; text-align: center; font-family: Calibri, Arial; vertical-align: bottom; padding-top: 40px;">____________________________________<br><b style="font-size: 10pt;">Docente TIC</b><br><span style="font-size: 9.5pt;">Hanzell René Mayorga Calero</span></td><td colspan="${colThird}" style="border: none; text-align: center; font-family: Calibri, Arial; vertical-align: bottom; padding-top: 40px;">____________________________________<br><b style="font-size: 10pt;">Jefe de Departamento</b><br><span style="font-size: 9.5pt;">${this.escaparHTML(jefeDepartamento)}</span></td><td colspan="${colRemainder}" style="border: none; text-align: center; font-family: Calibri, Arial; vertical-align: bottom; padding-top: 40px;">____________________________________<br><b style="font-size: 10pt;">Coordinador Académico</b><br><span style="font-size: 9.5pt;">${this.escaparHTML(this.obtenerNombreCoordinador())}</span></td></tr>`;
+        return `<tr><td colspan="${totalCols}" style="border: none; height: 35px;"></td></tr><tr><td colspan="${colThird}" style="border: none; text-align: center; font-family: Calibri, Arial; vertical-align: bottom; padding-top: 40px;">____________________________________<br><b style="font-size: 10pt;">Docente TIC</b><br><span style="font-size: 9.5pt;">${this.escaparHTML(this.obtenerNombreTIC(grupo))}</span></td><td colspan="${colThird}" style="border: none; text-align: center; font-family: Calibri, Arial; vertical-align: bottom; padding-top: 40px;">____________________________________<br><b style="font-size: 10pt;">Jefe de Departamento</b><br><span style="font-size: 9.5pt;">${this.escaparHTML(jefeDepartamento)}</span></td><td colspan="${colRemainder}" style="border: none; text-align: center; font-family: Calibri, Arial; vertical-align: bottom; padding-top: 40px;">____________________________________<br><b style="font-size: 10pt;">Coordinador Académico</b><br><span style="font-size: 9.5pt;">${this.escaparHTML(this.obtenerNombreCoordinador())}</span></td></tr>`;
       }
     };
 

@@ -631,6 +631,37 @@
     </div>
   </div>
 
+  <!-- ═══ MODAL: Asignar TIC Responsable de un Grupo ═══ -->
+  <div id="modal-tic-responsable" class="modal-overlay hidden">
+    <div class="modal-content panel modal-sm">
+      <header class="panel-cabecera">
+        <span class="panel-icono"><i class="ri-computer-line" aria-hidden="true"></i></span>
+        <div class="panel-titular">
+          <p class="panel-eyebrow">Grupos de clase</p>
+          <h3>TIC responsable del grupo</h3>
+          <p class="panel-lema">Docente del sistema que firma como TIC en la exportación del cuaderno docente.</p>
+        </div>
+        <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalTicResponsable()" aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
+      </header>
+      <form id="form-tic-responsable" onsubmit="UI.guardarTicResponsable(event)">
+        <div class="panel-cuerpo panel-formulario">
+          <input type="hidden" id="tic-responsable-grupo-id">
+          <p class="panel-nota">Grupo: <strong id="tic-responsable-grupo-nombre"></strong></p>
+          <div class="form-group">
+            <label for="tic-responsable-nombre">TIC responsable (docentes del sistema)</label>
+            <input type="text" id="tic-responsable-nombre" class="form-control" list="lista-docentes-sistema" placeholder="Ej. Hanzell René Mayorga Calero" autocomplete="off">
+            <datalist id="lista-docentes-sistema"></datalist>
+            <p class="panel-nota" id="tic-responsable-nota" hidden>No se pudo cargar la lista de docentes: escribe el nombre a mano.</p>
+          </div>
+        </div>
+        <div class="modal-actions panel-acciones">
+          <button type="button" class="btn-secondary" onclick="UI.cerrarModalTicResponsable()">Cancelar</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line" aria-hidden="true"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ═══ MODAL: Crear / Editar Integrante de Equipo ═══ -->
   <div id="modal-integrante" class="modal-overlay hidden">
     <div class="modal-content panel modal-ms">

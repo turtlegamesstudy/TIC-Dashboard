@@ -1117,6 +1117,81 @@ actualizarNavActivo(modulo) {
         this.renderCurrentModule();
       },
 
+      // [NUEVO] TIC responsable del grupo: el nombre con el que se firma
+      // la exportación del cuaderno docente (Excel y PDF).
+      abrirModalTicResponsable(grupoId) {
+        const grupo = DataEngine.getGrupoById(grupoId);
+        if (!grupo) return;
+        const modal = document.getElementById('modal-tic-responsable');
+        document.getElementById('tic-responsable-grupo-id').value = grupoId;
+        document.getElementById('tic-responsable-grupo-nombre').textContent = grupo.nombre;
+        document.getElementById('tic-responsable-nombre').value = grupo.ticResponsable || '';
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        this.poblarDocentesSistema();
+      },
+
+      cerrarModalTicResponsable() {
+        const modal = document.getElementById('modal-tic-responsable');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+      },
+
+      // Docentes del sistema (cuentas activas) para elegir al TIC
+      // responsable. Si Firebase no permite leer las cuentas, el campo
+      // sigue funcionando escribiendo el nombre a mano.
+      async poblarDocentesSistema() {
+        const datalist = document.getElementById('lista-docentes-sistema');
+        const nota = document.getElementById('tic-responsable-nota');
+        if (!datalist) return;
+        if (datalist.dataset.cargado === 'si') { if (nota) nota.hidden = true; return; }
+        try {
+          const database = window.FirebaseServices && window.FirebaseServices.database;
+          if (!database) throw new Error('sin servicios de Firebase');
+          const usersSnap = await database.ref('users').once('value');
+          let staffSnap = null;
+          try { staffSnap = await database.ref('staffProfiles').once('value'); } catch (e) { /* opcional */ }
+          const users = usersSnap.val() || {};
+          const staff = (staffSnap && staffSnap.val()) || {};
+          const escape = texto => String(texto)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+          const nombres = Object.entries(users)
+            .filter(([, perfil]) => perfil && perfil.active !== false)
+            .map(([uid, perfil]) => {
+              const perfilStaff = staff[uid] || {};
+              return ([perfilStaff.firstName, perfilStaff.lastName].filter(Boolean).join(' ')
+                || perfil.displayName || perfil.email || '').trim();
+            })
+            .filter(Boolean)
+            .filter((nombre, indice, lista) => lista.indexOf(nombre) === indice)
+            .sort((a, b) => a.localeCompare(b, 'es'));
+          datalist.innerHTML = nombres.map(nombre => `<option value="${escape(nombre)}"></option>`).join('');
+          datalist.dataset.cargado = 'si';
+          if (nota) nota.hidden = nombres.length > 0;
+        } catch (error) {
+          console.warn('No se pudo cargar la lista de docentes del sistema:', error);
+          if (nota) nota.hidden = false;
+        }
+      },
+
+      async guardarTicResponsable(event) {
+        event.preventDefault();
+        const grupoId = document.getElementById('tic-responsable-grupo-id').value;
+        const nombre = document.getElementById('tic-responsable-nombre').value.trim();
+        try {
+          await DataEngine.guardarTicResponsable(grupoId, nombre);
+        } catch (error) {
+          console.error('No se pudo guardar el TIC responsable:', error);
+          this.showToast(`No se guardó el TIC responsable: ${error.message}`, 'error');
+          return;
+        }
+        this.showToast(nombre
+          ? `✅ TIC responsable del grupo: ${nombre}.`
+          : '✅ TIC responsable retirado del grupo.');
+        this.cerrarModalTicResponsable();
+        this.renderCurrentModule();
+      },
+
       // [OPT] Agrupa las actualizaciones remotas en un solo render
       // diferido: Firebase emite varios eventos seguidos y antes cada uno
       // reconstruía toda la vista (y encendía la pantalla de carga).
@@ -1359,7 +1434,7 @@ actualizarNavActivo(modulo) {
           estudiantes: UI.listaEstudiantes(g.estudiantes)
         }));
         const filaEstudiante = (s, g) => `<tr data-est-id="${s.id}"><td><strong>${s.nombres}</strong></td><td>${s.apellidos}</td><td>${s.correo}</td><td>${s.telefono}</td><td>${UI.renderBadgeEstado(s)}</td><td style="text-align: center; display: flex; justify-content: center; gap: 6px;"><button class="btn-icon" title="Editar Estudiante" onclick="UI.openEditStudentModal('${g.id}', '${s.id}')"><i class="ri-pencil-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Eliminar Estudiante" onclick="UI.deleteStudent('${g.id}', '${s.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></td></tr>`;
-        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><div><h1>Gestión de Grupos de Clase</h1><p>Carga el listado oficial del grupo en Excel o CSV: el formato del archivo se detecta automáticamente para extraer alumnos y actualizar la base compartida.</p></div><div><button class="btn-primary" onclick="document.getElementById('excel-upload-input').click()"><i class="ri-file-excel-line"></i> Cargar Lista de Grupo (.xlsx o .csv)</button><input type="file" id="excel-upload-input" accept=".xlsx, .xls, .csv, .txt" style="display: none;" onchange="UI.handleExcelImport(event)"></div></div>${grupos.length === 0 ? `<div style="background: var(--white); padding: 40px; text-align: center; border-radius: var(--radius-md); border: 1px solid var(--border-color);"><i class="ri-folder-add-line" style="font-size: 3rem; color: var(--text-muted);"></i><h3 style="margin-top: 10px;">No hay grupos cargados</h3><p style="color: var(--text-muted); font-size: 0.85rem;">Haz clic en "Cargar Lista de Grupo" para procesar el listado oficial de INATEC.</p></div>` : grupos.map((g, index) => `<details class="group-accordion" data-grupo-id="${g.id}" ${index === 0 ? 'open' : ''}><summary><div style="display: flex; align-items: center; gap: 12px;"><i class="ri-arrow-right-s-line accordion-icon" style="font-size: 1.2rem; color: var(--primary-blue);"></i><div><h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;"><i class="ri-group-line" style="color: var(--primary-blue);"></i> ${g.nombre}</h3><p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">${g.carrera} | Turno: ${g.turno}</p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i> Docente Guía: <strong>${g.docenteGuia ? g.docenteGuia : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p></div></div><div style="display: flex; align-items: center; gap: 12px;"><span class="badge-status activo"><i class="ri-user-line"></i> ${g.estudiantes.length} Estudiantes</span><button class="btn-icon" title="Asignar Docente Guía" onclick="event.stopPropagation(); UI.abrirModalDocenteGuia('${g.id}')"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon btn-delete" title="Eliminar Grupo" onclick="event.stopPropagation(); UI.deleteGroup('${g.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></div></summary><div class="table-container" style="border-top: 1px solid var(--border-color); border-radius: 0;"><table class="custom-table"><thead><tr><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acciones</th></tr></thead><tbody>${g.estudiantes.map(s => filaEstudiante(s, g)).join('')}</tbody></table></div></details>`).join('')}</div>`;
+        return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><div><h1>Gestión de Grupos de Clase</h1><p>Carga el listado oficial del grupo en Excel o CSV: el formato del archivo se detecta automáticamente para extraer alumnos y actualizar la base compartida.</p></div><div><button class="btn-primary" onclick="document.getElementById('excel-upload-input').click()"><i class="ri-file-excel-line"></i> Cargar Lista de Grupo (.xlsx o .csv)</button><input type="file" id="excel-upload-input" accept=".xlsx, .xls, .csv, .txt" style="display: none;" onchange="UI.handleExcelImport(event)"></div></div>${grupos.length === 0 ? `<div style="background: var(--white); padding: 40px; text-align: center; border-radius: var(--radius-md); border: 1px solid var(--border-color);"><i class="ri-folder-add-line" style="font-size: 3rem; color: var(--text-muted);"></i><h3 style="margin-top: 10px;">No hay grupos cargados</h3><p style="color: var(--text-muted); font-size: 0.85rem;">Haz clic en "Cargar Lista de Grupo" para procesar el listado oficial de INATEC.</p></div>` : grupos.map((g, index) => `<details class="group-accordion" data-grupo-id="${g.id}" ${index === 0 ? 'open' : ''}><summary><div style="display: flex; align-items: center; gap: 12px;"><i class="ri-arrow-right-s-line accordion-icon" style="font-size: 1.2rem; color: var(--primary-blue);"></i><div><h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;"><i class="ri-group-line" style="color: var(--primary-blue);"></i> ${g.nombre}</h3><p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">${g.carrera} | Turno: ${g.turno}</p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i> Docente Guía: <strong>${g.docenteGuia ? g.docenteGuia : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-computer-line" style="color: var(--primary-blue);"></i> TIC Responsable: <strong>${g.ticResponsable ? g.ticResponsable : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p></div></div><div style="display: flex; align-items: center; gap: 12px;"><span class="badge-status activo"><i class="ri-user-line"></i> ${g.estudiantes.length} Estudiantes</span><button class="btn-icon" title="Asignar Docente Guía" onclick="event.stopPropagation(); UI.abrirModalDocenteGuia('${g.id}')"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Asignar TIC Responsable" onclick="event.stopPropagation(); UI.abrirModalTicResponsable('${g.id}')"><i class="ri-computer-line" style="color: var(--primary-blue);"></i></button><button class="btn-icon btn-delete" title="Eliminar Grupo" onclick="event.stopPropagation(); UI.deleteGroup('${g.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></div></summary><div class="table-container" style="border-top: 1px solid var(--border-color); border-radius: 0;"><table class="custom-table"><thead><tr><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acciones</th></tr></thead><tbody>${g.estudiantes.map(s => filaEstudiante(s, g)).join('')}</tbody></table></div></details>`).join('')}</div>`;
       },
 
       // [FIX] Convierte cualquier forma guardada de una lista de estudiantes
@@ -1623,9 +1698,10 @@ renderCuadernoDocente() {
             <option value="full">📋 Exportar Todo</option>
             <option value="resumen">📊 Solo Unidades y Totales</option>
           </select>
-          <select id="select-formato-cuaderno" class="form-control" style="width: 165px;" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará (Excel o PDF)">
+          <select id="select-formato-cuaderno" class="form-control" style="width: 165px;" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará (Excel, PDF o Avances con estadísticas y consolidados)">
             <option value="xlsx">📊 Formato: Excel</option>
             <option value="pdf">📄 Formato: PDF</option>
+            <option value="avances">📈 Formato: Avances</option>
           </select>
           <button type="button" class="btn-secondary" data-permiso="configurarInstitucion" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
             <i class="ri-settings-3-line"></i> Configurar responsables
