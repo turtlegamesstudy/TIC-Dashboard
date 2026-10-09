@@ -98,19 +98,19 @@
   --s-16: 4rem;    --s-20: 5rem;    --s-24: 6rem;
 
   /* Radios — suaves y amigables */
-  --r-sm: 6px;   --r-md: 10px;  --r-lg: 14px;
-  --r-xl: 18px;  --r-2xl: 24px; --r-full: 9999px;
-  --button-radius: 12px;
-  --button-height: 40px;
+  --r-sm: 8px;   --r-md: 12px;  --r-lg: 16px;
+  --r-xl: 24px;  --r-2xl: 32px; --r-full: 9999px;
+  --button-radius: 16px;
+  --button-height: 44px;
 
   /* Sombras — suaves y difuminadas, más amigables */
-  --shadow-xs:  0 1px 3px rgba(20, 87, 139, 0.06);
-  --shadow-sm:  0 2px 6px rgba(20, 87, 139, 0.07), 0 1px 3px rgba(20, 87, 139, 0.04);
-  --shadow-md:  0 6px 16px rgba(20, 87, 139, 0.08), 0 2px 6px rgba(20, 87, 139, 0.05);
-  --shadow-lg:  0 12px 32px rgba(20, 87, 139, 0.10), 0 4px 10px rgba(20, 87, 139, 0.06);
-  --shadow-xl:  0 20px 48px rgba(20, 87, 139, 0.12), 0 6px 14px rgba(20, 87, 139, 0.07);
-  --shadow-2xl: 0 32px 72px rgba(20, 87, 139, 0.16);
-  --shadow-inner: inset 0 1px 3px rgba(20, 87, 139, 0.05);
+  --shadow-xs:  0 2px 6px rgba(20, 87, 139, 0.04);
+  --shadow-sm:  0 4px 12px rgba(20, 87, 139, 0.06), 0 2px 4px rgba(20, 87, 139, 0.03);
+  --shadow-md:  0 10px 24px rgba(20, 87, 139, 0.07), 0 4px 10px rgba(20, 87, 139, 0.04);
+  --shadow-lg:  0 20px 48px rgba(20, 87, 139, 0.09), 0 8px 16px rgba(20, 87, 139, 0.05);
+  --shadow-xl:  0 30px 64px rgba(20, 87, 139, 0.11), 0 12px 24px rgba(20, 87, 139, 0.06);
+  --shadow-2xl: 0 48px 100px rgba(20, 87, 139, 0.14);
+  --shadow-inner: inset 0 2px 6px rgba(20, 87, 139, 0.05);
 
   /* Layout */
   --sidebar-w: 280px;
@@ -212,18 +212,23 @@ body {
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: var(--sidebar-w);
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-2xl);
   display: flex; flex-direction: column;
-  position: fixed; inset: 0 auto 0 0; z-index: 100;
+  position: fixed; inset: var(--s-4) auto var(--s-4) var(--s-4); z-index: 100;
   transition: width var(--t-slow), transform var(--t-slow);
-  box-shadow: 4px 0 18px rgba(20, 30, 45, 0.08);
+  box-shadow: var(--shadow-xl);
 }
 
 .sidebar::before {
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(225, 11, 123, 0.035) 0%, transparent 30%, transparent 75%, rgba(135, 197, 64, 0.045) 100%);
+  border-radius: inherit;
   pointer-events: none;
 }
 
@@ -537,16 +542,17 @@ body {
 .nav-item {
   display: flex; align-items: center; gap: var(--s-3);
   padding: var(--s-3) var(--s-4);
-  border-radius: var(--r-md);
+  margin-bottom: var(--s-1);
+  border-radius: var(--r-xl);
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.74rem; font-weight: 600;
+  font-size: 0.76rem; font-weight: 600;
   letter-spacing: 0.04em; text-transform: uppercase;
   transition: all var(--t-base);
   position: relative; overflow: hidden;
   border: 1px solid transparent;
   white-space: nowrap;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .nav-item::before {
@@ -1011,7 +1017,7 @@ body {
 
 /* ===== MAIN & TOPBAR ===== */
 .main-wrapper {
-  flex: 1; margin-left: var(--sidebar-w);
+  flex: 1; margin-left: calc(var(--sidebar-w) + (var(--s-4) * 2));
   display: flex; flex-direction: column; min-height: 100vh;
   transition: margin-left var(--t-slow);
   min-width: 0;
@@ -1019,22 +1025,21 @@ body {
 
 /* hermano general: entre el sidebar y el main puede haber el backdrop */
 .sidebar.collapsed ~ .main-wrapper {
-  margin-left: var(--sidebar-mini);
+  margin-left: calc(var(--sidebar-mini) + (var(--s-4) * 2));
 }
 
 .topbar {
   height: var(--topbar-h);
-  background: rgba(255, 255, 255, 0.94);
-  /* [OPT] El desenfoque se recalcula en cada cuadro de scroll; con 16px
-     y un fondo al 94% de opacidad apenas se nota, así que baja a 6px. */
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--r-2xl) !important;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 var(--s-6);
-  position: sticky; top: 0; z-index: 90;
-  /* [OPT] "transition: all" llegaba a animar el propio backdrop-filter
-     (costosísimo) cada vez que aparecía la sombra al hacer scroll. */
+  margin: var(--s-4) var(--s-4) 0 0 !important;
+  position: sticky; top: var(--s-4) !important; z-index: 90;
+  box-shadow: var(--shadow-md) !important;
   transition: background-color var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
 }
 
@@ -1077,16 +1082,16 @@ body {
 .search-box {
   display: flex; align-items: center; gap: var(--s-3);
   background: var(--bg-input);
-  padding: var(--s-2) var(--s-4);
+  padding: var(--s-2) var(--s-5);
   border-radius: var(--r-full);
-  flex: 0 1 340px;
-  min-width: 140px;
-  max-width: 340px;
-  height: 46px;
-  border: 1.5px solid var(--border-default);
+  flex: 0 1 360px;
+  min-width: 160px;
+  max-width: 380px;
+  height: 48px;
+  border: 1.5px solid transparent;
   transition: all var(--t-base);
   position: relative;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
 }
 
 .search-box::before {
@@ -3275,9 +3280,17 @@ a:focus-visible,
   align-items: center;
   gap: 10px;
   min-width: 0;
-  margin-left: 4px;
-  padding-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  margin-left: 12px;
+  padding: 4px 14px 4px 6px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.topbar-account:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  box-shadow: var(--shadow-xs);
 }
 
 .topbar-account .avatar {
@@ -3456,9 +3469,17 @@ body {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  margin-left: 4px;
-  padding-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  margin-left: 12px;
+  padding: 4px 14px 4px 6px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.topbar-account:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  box-shadow: var(--shadow-xs);
 }
 
 .topbar-account .avatar {
@@ -8904,6 +8925,7 @@ html[data-motion="off"] .app-loading.is-entering .cargador-escena {
   max-width: 38ch;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .admin-cell-role .admin-user-actions { margin-top: 0; }
@@ -12848,4 +12870,322 @@ html[data-theme="dark"] .ayuda-pop {
   background: var(--campus-cyan, #18b8e7);
   box-shadow: 0 0 0 4px rgba(24, 184, 231, .18);
   flex: 0 0 auto;
+}
+
+/* =========================================================
+   ANIMACIONES Y MOVIMIENTO (data-motion)
+   ========================================================= */
+
+/* Cuando las animaciones están activadas */
+html[data-motion="on"] .sidebar {
+  animation: slideInLeft 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+html[data-motion="on"] .topbar {
+  animation: slideInDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+html[data-motion="on"] .nav-item {
+  animation: fadeUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+html[data-motion="on"] .nav-item:nth-child(1) { animation-delay: 0.1s; }
+html[data-motion="on"] .nav-item:nth-child(2) { animation-delay: 0.15s; }
+html[data-motion="on"] .nav-item:nth-child(3) { animation-delay: 0.2s; }
+html[data-motion="on"] .nav-item:nth-child(4) { animation-delay: 0.25s; }
+html[data-motion="on"] .nav-item:nth-child(5) { animation-delay: 0.3s; }
+html[data-motion="on"] .nav-item:nth-child(6) { animation-delay: 0.35s; }
+html[data-motion="on"] .nav-item:nth-child(7) { animation-delay: 0.4s; }
+
+html[data-motion="on"] .main-wrapper {
+  animation: fadeUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Interacciones hover más marcadas cuando hay animaciones */
+html[data-motion="on"] .btn-primary:hover,
+html[data-motion="on"] .btn-primary-soft:hover,
+html[data-motion="on"] .btn-icon:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+html[data-motion="on"] .nav-item:hover {
+  transform: translateX(8px) scale(1.02);
+}
+
+/* Si el usuario las apaga, anulamos todo (ya que CSS base tiene transition) */
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion="on"] *,
+  html[data-motion="on"] *::before,
+  html[data-motion="on"] *::after {
+    animation-duration: 0.6s !important;
+    transition-duration: 0.3s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   REDISEÑO TOTAL DEL MENÚ LATERAL — "GRAFITO & CIAN"
+   Panel de grafito profundo, chips redondeados para los iconos,
+   etiquetas en caja baja y estado activo en degradado azul con
+   brillo. Sobrescribe los bloques anteriores por orden; la
+   lógica de colapso/tooltips/móvil queda intacta.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Cajón ── */
+.sidebar {
+  color: #e2e8f0;
+  background: linear-gradient(180deg, #0f172a 0%, #111c31 55%, #0c1526 100%);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 24px 48px -20px rgba(2, 6, 23, 0.75);
+}
+
+.sidebar::before {
+  background:
+    radial-gradient(120% 55% at 50% -12%, rgba(56, 189, 248, 0.16), transparent 62%),
+    radial-gradient(100% 45% at 50% 112%, rgba(227, 11, 123, 0.10), transparent 62%);
+}
+
+/* ── Cabecera e identidad ── */
+.sidebar-header {
+  padding: 20px 18px 15px;
+  gap: 12px;
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+.sidebar-header::after {
+  left: 18px; right: 18px; height: 2px;
+  background: linear-gradient(90deg, #01a5e4, rgba(227, 11, 123, 0.85));
+  opacity: 0.75;
+}
+
+.logo-box {
+  box-sizing: border-box;
+  padding: 5px;
+  background: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.65);
+}
+.logo-box:hover { transform: translateY(-1px) scale(1.04); }
+
+.brand-info h2 {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #f1f5f9;
+}
+.brand-info span {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: #94a3b8;
+}
+
+/* ── Lista ── */
+.sidebar-nav { padding: 14px 12px; gap: 5px; }
+
+.sidebar .nav-section {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #8195ad;
+}
+.sidebar .nav-section.nav-grupo:hover,
+.sidebar .nav-section.nav-grupo:focus-visible {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.10);
+}
+.sidebar .nav-section.nav-grupo > span::after {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0));
+}
+
+/* ── Elementos: chip de icono + texto en caja baja ── */
+.sidebar .nav-item {
+  gap: 11px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(226, 233, 245, 0.85);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: none;
+}
+
+.sidebar .nav-item i {
+  width: 32px; height: 32px; flex: 0 0 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #7dd3fc;
+  font-size: 1.08rem;
+}
+
+.sidebar .nav-item::before {
+  background: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+}
+
+.sidebar .nav-item:hover {
+  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #f1f5f9;
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.8);
+}
+.sidebar .nav-item:hover i {
+  background: rgba(1, 165, 228, 0.20);
+  color: #a5f3fc;
+  transform: none;
+  filter: none;
+}
+
+.sidebar .nav-item.active,
+.sidebar .nav-item.active:hover {
+  transform: none;
+  background: linear-gradient(135deg, rgba(1, 165, 228, 0.26) 0%, rgba(20, 87, 139, 0.34) 100%);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 20px -12px rgba(1, 165, 228, 0.9);
+}
+.sidebar .nav-item.active i {
+  background: linear-gradient(135deg, #01a5e4, #14578b);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  transform: none;
+  filter: none;
+  box-shadow: 0 4px 12px -4px rgba(1, 165, 228, 0.8);
+}
+
+.sidebar .nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -1px; top: 50%;
+  width: 3px; height: 56%;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #38bdf8, #01a5e4);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.85);
+  transform: translateY(-50%);
+  opacity: 1;
+}
+
+.sidebar .nav-item:focus-visible { outline-color: #38bdf8; }
+
+/* ── Badge ── */
+.sidebar .nav-item .nav-badge {
+  background: #e11d48;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px -4px rgba(225, 29, 72, 0.8);
+}
+
+/* ── Subsecciones ── */
+.sidebar .nav-hijos { border-left-color: rgba(56, 189, 248, 0.35); }
+html[data-theme="light"] .sidebar .nav-hijos { border-left-color: rgba(56, 189, 248, 0.35); }
+
+.sidebar .nav-item.nav-hijo {
+  gap: 9px;
+  font-size: 0.75rem;
+  color: rgba(203, 213, 225, 0.75);
+  background: rgba(255, 255, 255, 0.02);
+}
+.sidebar .nav-item.nav-hijo i {
+  width: 26px; height: 26px; flex: 0 0 26px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: rgba(148, 163, 184, 0.10);
+}
+.sidebar .nav-item.nav-hijo:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+.sidebar .nav-item.nav-hijo.active,
+.sidebar .nav-item.nav-hijo.active:hover {
+  background: rgba(1, 165, 228, 0.16);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #ffffff;
+  box-shadow: inset 2px 0 0 #01a5e4;
+}
+.sidebar .nav-item.nav-hijo.active i {
+  background: rgba(1, 165, 228, 0.3);
+  color: #e0f7ff;
+  box-shadow: none;
+}
+
+/* ── Flechas y chevrons ── */
+.sidebar .nav-chevron {
+  color: #94a3b8;
+  border: 1px solid transparent;
+}
+.sidebar .nav-chevron:hover {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+.sidebar .nav-grupo-chevron { color: #8195ad; }
+.sidebar .nav-section.nav-grupo:hover .nav-grupo-chevron { color: #cbd5e1; }
+
+/* ── Tooltips del rail (solo colores; posición intacta) ── */
+.sidebar .nav-item::after {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.9);
+}
+html[data-theme="dark"] .sidebar .nav-item::after {
+  background: #0b1220;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* ── Tema oscuro: mismo grafito, tono más profundo ── */
+html[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #0a111f 0%, #0d1729 55%, #09111f 100%);
+  border-color: rgba(56, 189, 248, 0.22);
+}
+html[data-theme="dark"] .sidebar::before {
+  background:
+    radial-gradient(120% 55% at 50% -12%, rgba(1, 165, 228, 0.18), transparent 62%),
+    radial-gradient(100% 45% at 50% 112%, rgba(135, 197, 64, 0.08), transparent 62%);
+}
+html[data-theme="dark"] .logo-box { background: #e2e8f0; }
+html[data-theme="dark"] .sidebar .nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+html[data-theme="dark"] .sidebar .nav-item.active,
+html[data-theme="dark"] .sidebar .nav-item.active:hover {
+  background: linear-gradient(135deg, rgba(1, 165, 228, 0.3) 0%, rgba(20, 87, 139, 0.38) 100%);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 10px 24px -12px rgba(1, 165, 228, 0.9);
+}
+/* ── Blindaje del rail (escritorio): iconos centrados sin hueco ── */
+@media (min-width: 1025px) {
+  .sidebar .nav-item { gap: 0; justify-content: center; }
+  .sidebar:hover .nav-item,
+  .sidebar:has(:focus-visible) .nav-item,
+  .sidebar.expanded .nav-item { gap: 11px; justify-content: flex-start; }
 }
