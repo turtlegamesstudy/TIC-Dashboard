@@ -940,6 +940,49 @@
         return '-';
       },
 
+      // ¿Es la columna del TOTAL del módulo (no un total de unidad)?
+      // Se reconoce por nombre: "Total", "Total Módulo", "Total del Curso"
+      // o "Total General". Los demás totales ("Total UD 1"…) son de unidad.
+      esColumnaTotalModulo(col) {
+        const n = this.normalizarTexto((col && (col.nombreDisplay || col)) || '');
+        if (!n) return false;
+        return n === 'total' || n.includes('total modulo') || n.includes('total del modulo') ||
+               n.includes('total del curso') || n.includes('total general');
+      },
+
+      // Nota final de un módulo: la calificación TOTAL del módulo (la
+      // columna "Total Módulo"/"Total del Curso"/"Total"), que es lo que
+      // muestra y pide el sistema en el Cuaderno Docente. Retirado →
+      // 'Retirado', convalidado → 'Convalidado'; si el módulo no tiene
+      // columna de total, la media de TODAS las notas numéricas (la misma
+      // fórmula que StatsEngine); y sin notas → 'S/N' (nunca 0: "no
+      // existe, no es cero"). La comparten la vista del sistema y todas
+      // las exportaciones para que todo cuadre.
+      notaFinalModuloSistema(estudiante, nombreModulo, columnasModulo) {
+        if (!estudiante) return 'S/N';
+        if (estudiante.retirado || estudiante.estado === 'Retirado') return 'Retirado';
+        if (estudiante.convalidaciones && estudiante.convalidaciones[nombreModulo]) return 'Convalidado';
+        const modData = estudiante.evaluacionesPorModulo ? estudiante.evaluacionesPorModulo[nombreModulo] : null;
+        const notasObj = modData ? (modData.notas || modData.evaluaciones) : null;
+        if (!notasObj) return 'S/N';
+        // 1) Total del módulo: por la estructura de columnas si existe…
+        const cols = columnasModulo || [];
+        let colTot = cols.filter(c => c && c.esTotal && this.esColumnaTotalModulo(c))[0] || null;
+        // …si no, por el nombre de la clave guardada en notas.
+        if (!colTot) {
+          const claveTot = Object.keys(notasObj).filter(k => this.esColumnaTotalModulo(k))[0];
+          if (claveTot) colTot = { nombreDisplay: claveTot };
+        }
+        if (colTot) {
+          const total = this.obtenerNotaEstudiante(estudiante, nombreModulo, colTot.nombreDisplay);
+          if (typeof total === 'number') return total;
+        }
+        // 2) Sin total: media de todas las notas numéricas (como StatsEngine).
+        const valores = Object.values(notasObj).filter(v => typeof v === 'number');
+        if (valores.length === 0) return 'S/N';
+        return Math.round(valores.reduce((a, b) => a + b, 0) / valores.length);
+      },
+
       // ═══════════════════════════════════════════════════════════════
       // EXCELJS EXPORT — XLSX real con estilos completos
       // Formato oficial DGFP/INATEC (Registro de Calificaciones por Módulo)
@@ -1065,12 +1108,13 @@
         // ─────────────────────────────────────────────────────────────
         // construirHojaOficial — Formato DGFP/INATEC
         // ─────────────────────────────────────────────────────────────
-        const construirHojaOficial = (ws, mNombre, columnas, estudiantesHoja) => {
+        const construirHojaOficial = (ws, mNombre, columnas, estudiantesHoja, columnasCompletas, tituloFinal) => {
           this.aplicarConfigImpresion(ws, cfg, listoParaImprimir);
 
-          const colsUD    = columnas.filter(c => !c.esTotal);
-          const colsTotal = columnas.filter(c =>  c.esTotal);
-          const numUDs    = Math.max(colsUD.length, 1);
+          // Se muestran TODAS las columnas pedidas: en modo "Exportar Todo"
+          // entran también las de Total, en modo "por unidades" solo las UDs.
+          const colsMostradas = columnas;
+          const numUDs        = Math.max(colsMostradas.length, 1);
 
           // A=Nr, B-E=Nombre (4 cols mergeadas), F..F+n-1=UDs, last=Calif.Final
           const NUM_COLS     = Math.max(12, numUDs + 6);
@@ -1084,7 +1128,7 @@
           ws.columns = [
             { width: 5 },
             { width: 10 }, { width: 11 }, { width: 11 }, { width: 11 },
-            ...colsUD.map(() => ({ width: 14 })),
+            ...Array.from({ length: numUDs }, () => ({ width: 14 })),
             ...Array(Math.max(0, NUM_COLS - COL_UD_END - 1)).fill({ width: 12 }),
             { width: 12 }
           ];
@@ -1203,17 +1247,22 @@
             'N\u00ba de la Unidad Did\u00e1ctica', FILL_HDR,
             { horizontal: 'center', vertical: 'middle', wrapText: true });
 
+          // La Calificación Final ES el total del módulo: si el módulo
+          // trae su columna de total ("Total Módulo"…) se muestra con ese
+          // mismo nombre, tal cual; si no, con el rótulo oficial.
           ws.mergeCells(r10.number, COL_FINAL, r10.number + 4, COL_FINAL);
           boldCell(ws.getCell(r10.number, COL_FINAL),
-            'Calificaci\u00f3n Final', FILL_HDR,
+            tituloFinal || 'Calificaci\u00f3n Final', FILL_HDR,
             { horizontal: 'center', vertical: 'middle', wrapText: true });
 
-          // Fila 11: Números 1, 2...
+          // Fila 11: Números 1, 2... (solo la columna del total del módulo
+          // queda sin número: se muestra aparte como Calificación Final).
           const r11 = ws.addRow([]); r11.height = 14;
-          const colsUsadasHdr = colsUD.length > 0 ? colsUD : [{ nombreDisplay: 'Evaluaci\u00f3n' }];
+          const colsUsadasHdr = colsMostradas.length > 0 ? colsMostradas : [{ nombreDisplay: 'Evaluaci\u00f3n' }];
+          let nroUD = 0;
           colsUsadasHdr.forEach((col, ci) => {
             const c = ws.getCell(r11.number, COL_UD_START + ci);
-            c.value = ci + 1;
+            c.value = (col.esTotal && CuadernoEngine.esColumnaTotalModulo(col)) ? '' : ++nroUD;
             c.font  = { name: fontName, size: fontSize, bold: true, color: { argb: 'FF000000' } };
             c.alignment = { horizontal: 'center', vertical: 'middle' };
             if (FILL_HDR && !listoParaImprimir) c.fill = FILL_HDR;
@@ -1266,17 +1315,19 @@
             if (ret && !listoParaImprimir) cName.fill = darkFill;
             applyBorder(cName);
 
-            // Notas por UD
-            const colsUsadasDatos = colsUD.length > 0 ? colsUD : columnas;
-            const notasNum = [];
+            // Notas por UD — mismos estados que en Registro de Notas del
+            // sistema: 'Retirado' y 'Convalidado' en todas las celdas.
+            const colsUsadasDatos = colsMostradas;
             colsUsadasDatos.forEach((col, ci) => {
               const c = ws.getCell(dataRow.number, COL_UD_START + ci);
               let valNota = 'S/N';
-              if (e.convalidaciones && e.convalidaciones[mNombre]) {
-                valNota = 'Cov';
+              if (ret) {
+                valNota = 'Retirado';
+              } else if (e.convalidaciones && e.convalidaciones[mNombre]) {
+                valNota = 'Convalidado';
               } else {
                 valNota = CuadernoEngine.obtenerNotaEstudiante(e, mNombre, col.nombreDisplay);
-                if ((valNota === 'S/N' || valNota === '-' || valNota == null) && ret) valNota = 'NSP';
+                if (valNota === '-' || valNota === '' || valNota == null) valNota = 'S/N';
               }
               const fmt = fmtNota(valNota);
               c.value = fmt;
@@ -1285,29 +1336,12 @@
               c.font = { name: fontName, size: fontSize, ...(st.font || {}), color: { argb: (st.font && st.font.color) ? st.font.color.argb : textColor } };
               if (st.fill && !listoParaImprimir) c.fill = st.fill;
               applyBorder(c);
-              if (typeof fmt === 'number') notasNum.push({ valor: fmt });
             });
 
-            // Calificación Final: nunca NSP. Si hay nota se exporta tal cual
-            // (total del módulo o media de las columnas) y si no hay, 0.
+            // Calificación Final: la MISMA nota final que muestra el sistema
+            // (media de todas las notas del módulo, con sus estados).
             const cF = ws.getCell(dataRow.number, COL_FINAL);
-            let notaFinal;
-            if (e.convalidaciones && e.convalidaciones[mNombre]) {
-              notaFinal = 'Cov';
-            } else {
-              const colT = colsTotal[0];
-              if (colT) {
-                const cand = CuadernoEngine.obtenerNotaEstudiante(e, mNombre, colT.nombreDisplay);
-                notaFinal = typeof cand === 'number' ? cand : null;
-              }
-              if (notaFinal == null) {
-                if (notasNum.length > 0) {
-                  notaFinal = Math.round(notasNum.reduce((a, n) => a + n.valor, 0) / notasNum.length);
-                } else {
-                  notaFinal = 0;
-                }
-              }
-            }
+            const notaFinal = CuadernoEngine.notaFinalModuloSistema(e, mNombre, columnasCompletas);
             const fmtFinal = fmtNota(notaFinal);
             cF.value = fmtFinal;
             cF.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1512,42 +1546,20 @@
             const row = [idx + 1, e.nombres, e.apellidos, e.correo || 'N/A'];
             const notasProm = [];
             modulosAExportar.forEach(m => {
-              let nd = 'S/N';
-              if (e.convalidaciones && e.convalidaciones[m]) {
-                nd = 'Cov';
-              } else {
-                const mData = e.evaluacionesPorModulo ? e.evaluacionesPorModulo[m] : null;
-                if (mData) {
-                  const notasObj = mData.notas || mData.evaluaciones;
-                  if (notasObj) {
-                    const cfgMR  = grupo.estructuraModulos ? grupo.estructuraModulos[m] : null;
-                    const colsMR = cfgMR?.columnasOrdenadas || [];
-                    const colT   = colsMR.find(c => c.esTotal);
-                    let vf = null;
-                    if (colT) {
-                      const cand = CuadernoEngine.obtenerNotaEstudiante(e, m, colT.nombreDisplay);
-                      if (typeof cand === 'number') vf = cand;
-                    }
-                    if (vf === null) {
-                      const nt = new Set(colsMR.filter(c => c.esTotal).map(c => c.nombreDisplay));
-                      const vs = Object.entries(notasObj)
-                        .filter(([k, v]) => typeof v === 'number' && !nt.has(k) && !CuadernoEngine.normalizarTexto(k).includes('total'))
-                        .map(([, v]) => v);
-                      if (vs.length > 0) vf = Math.round(vs.reduce((a, b) => a + b, 0) / vs.length);
-                    }
-                    if (vf !== null) nd = vf;
-                    else if (esRetirado(e)) nd = 'NSP';
-                  } else if (esRetirado(e)) nd = 'NSP';
-                } else if (esRetirado(e)) nd = 'NSP';
-              }
+              // Misma nota final que en la hoja del módulo y en el sistema
+              // (total del módulo; sin estructura, por el nombre en notas).
+              const colsM = grupo.estructuraModulos && grupo.estructuraModulos[m]
+                ? grupo.estructuraModulos[m].columnasOrdenadas : null;
+              const nd = CuadernoEngine.notaFinalModuloSistema(e, m, colsM);
               const fmt = fmtNota(nd);
               row.push(fmt);
               if (typeof fmt === 'number') notasProm.push(fmt);
             });
-            // Promedio Final: igual que la calificación final, sin NSP.
-            let prom = notasProm.length > 0
+            // Promedio Final: media de las notas finales numéricas; sin
+            // notas, 'S/N' — como en el sistema: no existe, no es 0.
+            const prom = notasProm.length > 0
               ? Math.round(notasProm.reduce((a, b) => a + b, 0) / notasProm.length)
-              : 0;
+              : 'S/N';
             row.push(fmtNota(prom));
 
             const dataRow = ws.addRow(row); dataRow.height = cfg.rowData || 16;
@@ -1604,14 +1616,36 @@
             columnas = Array.from(colMap.values());
           }
 
+          // Estructura completa del módulo: la necesita la Calificación
+          // Final aunque el modo de exportación filtre la banda.
+          const columnasModulo = columnas;
+          // El total del módulo ("Total Módulo", "Total del Curso"…) ES
+          // la Calificación Final: se muestra en su propia columna con su
+          // nombre original, sin duplicarlo en la banda.
+          const colTotalModulo = columnasModulo.filter(c => c && c.esTotal && CuadernoEngine.esColumnaTotalModulo(c))[0] || null;
+          const esTotalModulo = col => col && col.esTotal && CuadernoEngine.esColumnaTotalModulo(col);
+
           const exportMode = document.getElementById('select-export-mode')?.value || 'full';
           if (exportMode === 'resumen') {
-            columnas = columnas.filter(col => col.esTotal);
-            if (columnas.length === 0) return;
+            // Por unidades: en la banda "Calificaciones por Unidad
+            // Didáctica" va CADA TOTAL DE UNIDAD (los totales que no son
+            // el total del módulo); el total del módulo va en su propia
+            // columna como Calificación Final. Si el módulo no tiene
+            // totales de unidad se muestran sus columnas de evaluación y,
+            // en último caso, todas, para no perder la hoja.
+            const totalesUD = columnas.filter(col => col.esTotal && !esTotalModulo(col));
+            const evaluaciones = columnas.filter(col => !col.esTotal);
+            columnas = totalesUD.length > 0 ? totalesUD : (evaluaciones.length > 0 ? evaluaciones : columnas);
+          } else {
+            // Todo: la banda lleva todo salvo el total del módulo, que ya
+            // aparece como Calificación Final (no se duplica).
+            const banda = columnas.filter(col => !esTotalModulo(col));
+            columnas = banda.length > 0 ? banda : columnas;
           }
 
           const ws = wb.addWorksheet(`M\u00f3dulo ${idx + 1}`);
-          construirHojaOficial(ws, mNombre, columnas, estudiantes);
+          construirHojaOficial(ws, mNombre, columnas, estudiantes, columnasModulo,
+            colTotalModulo ? colTotalModulo.nombreDisplay : 'Calificaci\u00f3n Final');
         });
 
         // Blanco y negro parejo en todas las hojas (Excel y PDF)

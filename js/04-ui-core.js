@@ -897,19 +897,12 @@ actualizarNavActivo(modulo) {
           estudiantes.forEach((e, idx) => {
             html += `<tr><td>${idx + 1}</td><td><strong>${e.nombres} ${e.apellidos}</strong></td>`;
             MODULOS_TRANSVERSALES.forEach(m => {
-              let notaFinal = 'S/N';
-              if (e.retirado || e.estado === 'Retirado') notaFinal = 'Retirado';
-              else if (e.convalidaciones && e.convalidaciones[m]) notaFinal = 'Convalidado';
-              else {
-                const modData = e.evaluacionesPorModulo ? e.evaluacionesPorModulo[m] : null;
-                if (modData) {
-                  const notasObj = modData.notas || modData.evaluaciones;
-                  if (notasObj) {
-                    const valores = Object.values(notasObj).filter(v => typeof v === 'number');
-                    if (valores.length > 0) notaFinal = Math.round(valores.reduce((a, b) => a + b, 0) / valores.length);
-                  }
-                }
-              }
+              // Misma nota final que en los cuadernos exportados: una sola
+              // fórmula compartida (total del módulo; sin estructura, la
+              // media de las notas) para que todo siempre cuadre.
+              const colsM = grupo.estructuraModulos && grupo.estructuraModulos[m]
+                ? grupo.estructuraModulos[m].columnasOrdenadas : null;
+              const notaFinal = CuadernoEngine.notaFinalModuloSistema(e, m, colsM);
               const badgeClass = typeof notaFinal === 'number' && notaFinal >= 60 ? 'activo' : '';
               html += `<td><span class="badge-status ${badgeClass}">${notaFinal}</span></td>`;
             });
@@ -1696,7 +1689,7 @@ renderCuadernoDocente() {
           <span class="cuaderno-actions-spacer"></span>
           <select id="select-export-mode" class="form-control" style="width: 210px;">
             <option value="full">📋 Exportar Todo</option>
-            <option value="resumen">📊 Solo Unidades y Totales</option>
+            <option value="resumen">📊 Unidades y Nota Final</option>
           </select>
           <select id="select-formato-cuaderno" class="form-control" style="width: 165px;" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará (Excel, PDF o Avances con estadísticas y consolidados)">
             <option value="xlsx">📊 Formato: Excel</option>
