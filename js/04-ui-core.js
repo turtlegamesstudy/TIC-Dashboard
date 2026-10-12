@@ -1789,99 +1789,25 @@ const UI = {
           </div>
         </details>
 
-        <!-- PANEL 2: CENTRO DE EXPORTACIÓN -->
-        <details class="cd-panel-card" data-section-settings open>
+        <!-- PANEL 2: CENTRO DE EXPORTACIÓN Y ACCIONES EN PÁGINA -->
+        <details class="cd-panel-card" open>
           <summary class="cd-panel-summary">
             <div class="cd-panel-header-left">
               <span class="cd-step-badge cd-step-badge-export"><i class="ri-download-2-line"></i></span>
               <div>
                 <h2 class="cd-panel-title">Centro de Exportación y Descargas Oficiales</h2>
-                <p class="cd-panel-subtitle">Filtros de descarga, selección de módulos y exportación oficial en Excel, PDF o Avances.</p>
+                <p class="cd-panel-subtitle">Genera libros consolidados, actas firmadas o cuadernos listos para imprimir.</p>
               </div>
             </div>
-            <span class="cd-panel-tag cd-panel-tag-export">Descargas y Actas</span>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn-primary-soft cd-btn cd-btn-sm" onclick="event.stopPropagation(); UI.toggleSectionSettings();" title="Abrir panel lateral de filtros y ajustes">
+                <i class="ri-equalizer-2-line"></i> Filtros y Ajustes
+              </button>
+              <span class="cd-panel-tag cd-panel-tag-export">Descargas Oficiales</span>
+            </div>
           </summary>
 
-          <div class="cd-panel-body" id="panel-opciones-exportar">
-            <!-- SECCIÓN FILTROS Y OPCIONES -->
-            <div class="cd-export-filters-grid">
-              <div class="cd-filter-group">
-                <label for="select-filtro-turno" class="cd-filter-label">🕒 Turno Académico:</label>
-                <select id="select-filtro-turno" class="form-control">
-                  <option value="todos">Todos los turnos</option>
-                  <option value="matutino">Solo Matutino</option>
-                  <option value="vespertino">Solo Vespertino</option>
-                  <option value="nocturno">Solo Nocturno</option>
-                  <option value="sabatino">Solo Sabatino</option>
-                  <option value="dominical">Solo Dominical</option>
-                </select>
-              </div>
-
-              <div class="cd-filter-group">
-                <label for="select-filtro-estudiantes" class="cd-filter-label">👥 Filtro de Estudiantes:</label>
-                <select id="select-filtro-estudiantes" class="form-control">
-                  <option value="todos">Todos los estudiantes</option>
-                  <option value="activos">Solo Activos</option>
-                  <option value="retirados">Solo Retirados</option>
-                  <option value="pendientes">Solo con actividad pendiente</option>
-                  <option value="completos">Solo completos (sin pendientes)</option>
-                </select>
-              </div>
-
-              <div class="cd-filter-group">
-                <label for="select-modo-notas" class="cd-filter-label">📝 Modo de Calificación:</label>
-                <select id="select-modo-notas" class="form-control">
-                  <option value="real">Mostrar nota real (0 – 100)</option>
-                  <option value="estado">Solo Estado: Aprobado / Pendiente</option>
-                </select>
-                <div id="grupo-umbral" style="display: none; margin-top: 6px;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="input-umbral" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Mínima aprobatoria:</label>
-                    <input type="number" id="input-umbral" value="60" min="0" max="100" class="form-control" style="width: 65px; padding: 4px 8px; text-align: center;">
-                  </div>
-                </div>
-              </div>
-
-              <div class="cd-filter-group">
-                <label for="select-export-mode" class="cd-filter-label">📋 Contenido del Cuaderno:</label>
-                <select id="select-export-mode" class="form-control">
-                  <option value="full">📋 Todo el detalle de notas</option>
-                  <option value="resumen">📊 Solo Unidades y Nota Final</option>
-                </select>
-              </div>
-
-              <div class="cd-filter-group">
-                <label for="select-formato-cuaderno" class="cd-filter-label">📄 Formato de Salida:</label>
-                <select id="select-formato-cuaderno" class="form-control" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará">
-                  <option value="xlsx">📊 Formato: Excel (.xlsx)</option>
-                  <option value="pdf">📄 Formato: PDF Oficial</option>
-                  <option value="avances">📈 Formato: Avances y Estadísticas</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="margin: 12px 0 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-              <label style="cursor: pointer; font-weight: 500; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; user-select: none;">
-                <input type="checkbox" id="chk-incluir-resumen" checked style="width: 17px; height: 17px; accent-color: var(--primary-blue, #2563eb);">
-                <span>Incluir hoja <strong>Resumen General</strong> en los archivos descargados</span>
-              </label>
-            </div>
-
-            <!-- MÓDULOS CON CHECKBOXES ACCESIBLES -->
-            <fieldset class="cd-modules-fieldset">
-              <legend class="cd-modules-legend">
-                <span>📚 Módulos a Incluir en la Exportación:</span>
-                <div style="display: flex; gap: 8px; align-items: center; font-size: 0.8rem;">
-                  <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(true)">Marcar todos</button>
-                  <span style="color: var(--border-strong, #cbd5e1);">|</span>
-                  <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(false)">Desmarcar todos</button>
-                </div>
-              </legend>
-              <div id="contenedor-checkboxes-modulos" class="cd-modules-grid">
-                <!-- Se generan automáticamente por CuadernoEngine -->
-              </div>
-            </fieldset>
-
+          <div class="cd-panel-body">
             <!-- TARJETAS DE ACCIÓN DE EXPORTACIÓN -->
             <div class="cd-actions-cards-grid">
               <!-- Tarjeta 1: Grupo Actual -->
@@ -1890,7 +1816,7 @@ const UI = {
                   <i class="ri-file-user-line cd-action-box-icon"></i>
                   <div>
                     <h3 class="cd-action-box-title">Grupo Actual Seleccionado</h3>
-                    <p class="cd-action-box-desc">Descarga el cuaderno del grupo activo con encabezados y firmas.</p>
+                    <p class="cd-action-box-desc">Descarga el acta oficial del grupo activo con encabezados y firmas.</p>
                   </div>
                 </div>
                 <div class="cd-action-box-buttons">
@@ -1933,7 +1859,7 @@ const UI = {
                 </div>
                 <div class="cd-action-box-buttons">
                   <div style="display: flex; gap: 6px; width: 100%;">
-                    <select id="select-jefe-cuadernos-impresion" class="form-control" style="flex: 1;" aria-label="Filtrar cuadernos por jefe de departamento">
+                    <select id="select-jefe-cuadernos-impresion" class="form-control" style="flex: 1; min-width: 0;" aria-label="Filtrar cuadernos por jefe de departamento">
                       <option value="">Seleccionar jefe</option>
                     </select>
                     <button type="button" class="btn-primary-soft cd-btn" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Exporta solo los cuadernos de los turnos cubiertos por el jefe seleccionado">
@@ -1951,6 +1877,90 @@ const UI = {
             </div>
           </div>
         </details>
+
+        <!-- BLOQUE DEDICADO DE FILTROS Y AJUSTES (Para el cajón lateral "Filtros y ajustes") -->
+        <div data-section-settings data-settings-title="Filtros del Cuaderno" id="panel-opciones-exportar" class="cd-drawer-settings-container">
+          <div class="cd-drawer-field">
+            <label for="select-filtro-turno" class="cd-drawer-label"><i class="ri-time-line"></i> Turno Académico:</label>
+            <select id="select-filtro-turno" class="form-control">
+              <option value="todos">Todos los turnos</option>
+              <option value="matutino">Solo Matutino</option>
+              <option value="vespertino">Solo Vespertino</option>
+              <option value="nocturno">Solo Nocturno</option>
+              <option value="sabatino">Solo Sabatino</option>
+              <option value="dominical">Solo Dominical</option>
+            </select>
+          </div>
+
+          <div class="cd-drawer-field">
+            <label for="select-filtro-estudiantes" class="cd-drawer-label"><i class="ri-user-follow-line"></i> Población Estudiantil:</label>
+            <select id="select-filtro-estudiantes" class="form-control">
+              <option value="todos">Todos los estudiantes</option>
+              <option value="activos">Solo Activos</option>
+              <option value="retirados">Solo Retirados</option>
+              <option value="pendientes">Solo con actividad pendiente</option>
+              <option value="completos">Solo completos (sin pendientes)</option>
+            </select>
+          </div>
+
+          <div class="cd-drawer-field">
+            <label for="select-modo-notas" class="cd-drawer-label"><i class="ri-file-list-3-line"></i> Modo de Calificación:</label>
+            <select id="select-modo-notas" class="form-control">
+              <option value="real">Mostrar nota real (0 – 100)</option>
+              <option value="estado">Solo Estado: Aprobado / Pendiente</option>
+            </select>
+            <div id="grupo-umbral" style="display: none; margin-top: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg-hover); padding: 8px 12px; border-radius: 10px;">
+                <label for="input-umbral" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin: 0;">Nota mínima aprobatoria:</label>
+                <input type="number" id="input-umbral" value="60" min="0" max="100" class="form-control" style="width: 65px; padding: 4px 8px; text-align: center;">
+              </div>
+            </div>
+          </div>
+
+          <div class="cd-drawer-field">
+            <label for="select-export-mode" class="cd-drawer-label"><i class="ri-layout-grid-line"></i> Detalle del Archivo:</label>
+            <select id="select-export-mode" class="form-control">
+              <option value="full">📋 Todo el detalle de notas</option>
+              <option value="resumen">📊 Solo Unidades y Nota Final</option>
+            </select>
+          </div>
+
+          <div class="cd-drawer-field">
+            <label for="select-formato-cuaderno" class="cd-drawer-label"><i class="ri-file-excel-line"></i> Formato de Salida:</label>
+            <select id="select-formato-cuaderno" class="form-control" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará">
+              <option value="xlsx">📊 Formato: Excel (.xlsx)</option>
+              <option value="pdf">📄 Formato: PDF Oficial</option>
+              <option value="avances">📈 Formato: Avances y Estadísticas</option>
+            </select>
+          </div>
+
+          <div class="cd-drawer-field" style="margin-top: 4px;">
+            <label class="cd-checkbox-card" style="margin: 0;">
+              <input type="checkbox" id="chk-incluir-resumen" checked>
+              <span>Incluir hoja <strong>Resumen General</strong></span>
+            </label>
+          </div>
+
+          <div class="cd-drawer-field" style="margin-top: 6px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <label class="cd-drawer-label" style="margin: 0;"><i class="ri-book-open-line"></i> Módulos a Descargar:</label>
+              <div style="display: flex; gap: 8px; font-size: 0.8rem;">
+                <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(true)">Todos</button>
+                <span style="color: var(--border-strong);">|</span>
+                <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(false)">Ninguno</button>
+              </div>
+            </div>
+            <div id="contenedor-checkboxes-modulos" class="cd-drawer-modules-list">
+              <!-- Se generan automáticamente por CuadernoEngine -->
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-subtle);">
+            <button type="button" class="btn-primary cd-btn cd-btn-full" onclick="CuadernoEngine.exportarCuadernoOficial()" title="Descarga directa con los filtros configurados">
+              <i class="ri-file-download-line"></i> Exportar con estos Filtros
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- CONTENEDOR DE LA TABLA DEL CUADERNO -->

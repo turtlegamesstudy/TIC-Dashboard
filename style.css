@@ -13990,3 +13990,276 @@ html[data-theme="dark"] .panel:hover {
   justify-content: center;
   font-size: 2rem;
 }
+
+/* ===== CAJÓN FILTROS Y AJUSTES - PERFECCIONAMIENTO DE DISEÑO Y ESTRUCTURA ===== */
+.section-settings-sidebar {
+  width: min(420px, 94vw) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--bg-card, #ffffff) !important;
+  border-left: 1px solid var(--border-default) !important;
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.22) !important;
+  z-index: 1000 !important;
+}
+
+.section-settings-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #8b5cf6 50%, #10b981) !important;
+  z-index: 10;
+}
+
+.section-settings-header {
+  padding: 18px 20px 14px !important;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(139, 92, 246, 0.05) 60%, transparent) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.section-settings-header h2 {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+.section-settings-header h2 i {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+  color: #fff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.05rem !important;
+  flex-shrink: 0 !important;
+}
+
+.section-settings-header p {
+  font-size: 0.8rem !important;
+  color: var(--text-muted) !important;
+  margin: 2px 0 0 !important;
+  line-height: 1.35 !important;
+}
+
+.section-settings-content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 16px 18px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Tarjetas de grupos dentro del cajón */
+.section-settings-group {
+  background: var(--bg-surface, var(--bg-card)) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
+  box-shadow: var(--shadow-xs, 0 1px 3px rgba(0, 0, 0, 0.05)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+.section-settings-group h3 {
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--primary-blue, #2563eb) !important;
+  padding-bottom: 8px !important;
+  margin: 0 !important;
+  border-bottom: 1px dashed var(--border-subtle) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Bloques y campos en el cajón */
+.section-settings-block {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.section-settings-block.ajuste-global {
+  gap: 6px !important;
+}
+
+.section-settings-block > label {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 0 !important;
+}
+
+.section-settings-block > label i {
+  color: var(--primary-blue, #2563eb) !important;
+  font-size: 0.95rem !important;
+}
+
+.section-settings-block select,
+.section-settings-block input,
+.section-settings-block textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 9px 12px !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 10px !important;
+  background: var(--bg-input, var(--bg-hover)) !important;
+  font-size: 0.86rem !important;
+  color: var(--text-primary) !important;
+  min-height: 40px !important;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast) !important;
+}
+
+.section-settings-block select:focus,
+.section-settings-block input:focus {
+  border-color: var(--primary-blue, #2563eb) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+  outline: none !important;
+}
+
+/* Campos del Cuaderno dentro del drawer */
+.cd-drawer-settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cd-drawer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cd-drawer-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.cd-drawer-label i {
+  color: var(--primary-blue, #2563eb);
+  font-size: 0.95rem;
+}
+
+.cd-checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-hover);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color var(--t-fast), background var(--t-fast);
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+
+.cd-checkbox-card:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+  background: var(--bg-card);
+}
+
+.cd-checkbox-card input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  accent-color: var(--primary-blue, #2563eb);
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.cd-drawer-modules-list {
+  max-height: 190px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 8px;
+  background: var(--bg-hover);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cd-drawer-modules-list label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  font-size: 0.82rem !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  transition: all var(--t-fast) !important;
+}
+
+.cd-drawer-modules-list label:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  background: rgba(37, 99, 235, 0.04) !important;
+}
+
+.cd-drawer-modules-list input[type="checkbox"] {
+  width: 17px !important;
+  height: 17px !important;
+  accent-color: var(--primary-blue, #2563eb) !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+.cd-btn-sm {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  min-height: 34px;
+}
