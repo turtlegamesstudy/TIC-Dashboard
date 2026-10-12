@@ -1811,6 +1811,9 @@ const UI = {
           <button class="btn-primary-soft" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un archivo por cada grupo registrado, en el formato elegido">
             <i class="ri-folder-download-line"></i> Exportar TODOS los Cuadernos
           </button>
+          <button class="btn-primary-soft" onclick="UI.exportarGruposExcel()" title="Exporta todos los grupos en un solo archivo Excel con una hoja por grupo">
+            <i class="ri-file-excel-2-line"></i> Exportar Grupos (.xlsx)
+          </button>
         </div>
       </details>
 
