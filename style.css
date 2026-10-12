@@ -14272,7 +14272,7 @@ html[data-theme="dark"] .panel:hover {
   z-index: 120 !important;
   width: min(440px, 95vw) !important;
   max-height: min(85vh, 690px) !important;
-  display: flex !important;
+  display: flex;
   flex-direction: column !important;
   background: var(--bg-card, #ffffff) !important;
   backdrop-filter: blur(20px) !important;
@@ -14282,6 +14282,10 @@ html[data-theme="dark"] .panel:hover {
   box-shadow: 0 24px 65px -12px rgba(0, 0, 0, 0.32), 0 0 0 1px var(--border-subtle) !important;
   overflow: hidden !important;
   animation: avisos-slide-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+.centro-avisos[hidden] {
+  display: none !important;
 }
 
 @keyframes avisos-slide-in {
