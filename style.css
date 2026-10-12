@@ -13365,3 +13365,151 @@ html[data-theme="dark"] .banner-mantenimiento {
   background: linear-gradient(180deg, rgba(9, 23, 38, 0.88), rgba(6, 16, 27, 0.8));
   border-bottom-color: rgba(1, 165, 228, 0.22);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   35 · REFRESCO DE INTERFAZ — Parte 7: menú, tarjetas, seguimiento
+        y microinteracciones
+    · Menú: chevron suave y tarjeta de usuario con tacto
+    · Tarjetas KPI: filo de acento tricolor, icono con halo y cifras
+      tabulares
+    · Seguimiento: velo de severidad, iconos en degradado y chips con
+      punto de luz
+    · Microinteracciones: pulsación táctil, paneles que se encienden y
+      ayuda con brillo (todo bajo los guardas de movimiento)
+    ═══════════════════════════════════════════════════════════════ */
+
+/* ── Menú: el chevron de cada grupo gira con suavidad ── */
+.sidebar .nav-section.nav-grupo .nav-grupo-chevron {
+  transition: transform 240ms ease, color var(--t-base, 180ms) ease;
+}
+
+/* ── Menú: la tarjeta del usuario responde al tacto ── */
+.sidebar .user-card {
+  transition: background-color var(--t-base, 180ms) ease,
+              border-color var(--t-base, 180ms) ease,
+              transform var(--t-base, 180ms) ease,
+              box-shadow var(--t-base, 180ms) ease;
+}
+@media (hover: hover) {
+  .sidebar .user-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -12px rgba(0, 0, 0, 0.7);
+  }
+}
+.sidebar .user-card:active { transform: translateY(0) scale(0.985); }
+
+/* ── Tarjetas KPI: filo de acento con la paleta institucional ── */
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 16px; right: 16px;
+  height: 3px;
+  border-radius: 0 0 5px 5px;
+  background: linear-gradient(90deg,
+    var(--brand-blue, #14578b) 0%,
+    var(--brand-pink, #e30b7b) 52%,
+    var(--brand-green, #87c540) 100%);
+  opacity: 0.5;
+  transition: opacity var(--t-base, 180ms) ease,
+              left var(--t-base, 180ms) ease,
+              right var(--t-base, 180ms) ease;
+}
+@media (hover: hover) {
+  .kpi-card:hover::before { opacity: 1; left: 10px; right: 10px; }
+}
+
+/* ── Icono de KPI: halo de marca al acercarse ── */
+.kpi-icono {
+  transition: transform var(--t-base, 180ms) ease,
+              box-shadow var(--t-base, 180ms) ease;
+}
+@media (hover: hover) {
+  .kpi-card:hover .kpi-icono {
+    transform: translateY(-1px) scale(1.06);
+    box-shadow: 0 9px 20px -11px rgba(1, 165, 228, 0.9),
+                0 4px 10px -6px rgba(227, 11, 123, 0.5);
+  }
+}
+
+/* ── Cifras: alineadas columna a columna ── */
+.kpi-valor {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── Seguimiento: velo de severidad en cada fila ── */
+.seg-item.alta  { background: linear-gradient(90deg, rgba(239, 68, 68, 0.09), rgba(239, 68, 68, 0) 60%); }
+.seg-item.media { background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0) 60%); }
+.seg-item.baja  { background: linear-gradient(90deg, rgba(16, 185, 129, 0.09), rgba(16, 185, 129, 0) 60%); }
+
+.seg-item {
+  transition: box-shadow var(--t-base) ease, transform var(--t-base) ease,
+              border-color var(--t-base) ease;
+}
+@media (hover: hover) {
+  .seg-item:hover { border-color: rgba(1, 165, 228, 0.32); }
+}
+
+/* ── Icono de fila en degradado con la tonalidad de su alerta ── */
+.seg-item.alta .seg-icono  { background: linear-gradient(135deg, rgba(239, 68, 68, 0.26), rgba(239, 68, 68, 0.1)); }
+.seg-item.media .seg-icono { background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(245, 158, 11, 0.1)); }
+.seg-item.baja .seg-icono  { background: linear-gradient(135deg, rgba(16, 185, 129, 0.26), rgba(16, 185, 129, 0.1)); color: #0f9e82; }
+html[data-theme="dark"] .seg-item.baja .seg-icono { color: #34d399; }
+
+.seg-icono {
+  transition: transform var(--t-base, 180ms) ease,
+              box-shadow var(--t-base, 180ms) ease;
+}
+@media (hover: hover) {
+  .seg-item:hover .seg-icono { transform: scale(1.08); }
+}
+
+/* ── Chips con punto de luz ── */
+.seg-chip::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  flex: 0 0 auto;
+}
+.seg-chip {
+  transition: transform var(--t-base, 180ms) ease,
+              box-shadow var(--t-base, 180ms) ease;
+}
+@media (hover: hover) {
+  .seg-chip:hover { transform: translateY(-1px); }
+}
+
+/* ── Pulsación táctil en las píldoras de la banda de saludo ── */
+.dash-accion:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: none;
+}
+
+/* ── Ayuda de métrica: brillo al acercarse ── */
+.ayuda-btn {
+  transition: transform var(--t-base, 180ms) ease,
+              background-color var(--t-base, 180ms) ease,
+              border-color var(--t-base, 180ms) ease,
+              color var(--t-base, 180ms) ease;
+}
+@media (hover: hover) {
+  .ayuda-btn:hover { transform: scale(1.14); }
+}
+
+/* ── Paneles: el filo de cristal se enciende al acercarse ── */
+@media (hover: hover) {
+  .panel {
+    transition: border-color var(--t-base, 180ms) ease,
+                box-shadow var(--t-base, 180ms) ease;
+  }
+  .panel:hover {
+    border-color: rgba(1, 165, 228, 0.35);
+    box-shadow: 0 20px 42px -32px rgba(9, 60, 95, 0.65);
+  }
+}
+html[data-theme="dark"] .panel:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 20px 42px -30px rgba(0, 0, 0, 0.9);
+}

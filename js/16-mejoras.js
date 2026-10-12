@@ -900,11 +900,19 @@ const Mejoras = (() => {
      Versión instalada + historial de cambios + comprobación
      contra el repositorio público del proyecto.
      ═══════════════════════════════════════════════════════════ */
-  const VERSION = '2.2.0';
+  const VERSION = '2.3.0';
   const CLAVE_VERSION_VISTA = 'tic-version-vista';
   const CLAVE_COMPROBACION = 'tic-comprobacion-actualizaciones';
 
   const CAMBIOS = [
+    { version: '2.3.0', fecha: '2026-10-12', hora: '11:40', autor: 'Hanzell Mayorga',
+      titulo: 'Cuaderno que cuadra y rediseño premium', notas: [
+      'El cuaderno docente ahora cuadra con el sistema: cada unidad didáctica muestra su Total y la última columna es el total del módulo con su nombre original.',
+      'Al exportar «por unidades» salen todas las unidades del módulo y la Nota Final; la exportación «Todo» lleva todas las columnas con su Nota Final.',
+      'Las casillas reflejan los estados del sistema: Retirado, Convalidado y S/N, también en la hoja de Resumen General y en la vista ALL.',
+      'Rediseño premium de la interfaz: barra superior y menú en cristal, fondo animado INATEC con velo neutro, tarjetas KPI con filo de acento y panel de seguimiento renovado.',
+      'Microinteracciones suaves y diseño responsive para computadora, tableta y móvil.'
+    ] },
     { version: '2.2.0', fecha: '2026-10-09', hora: '10:20', autor: 'Hanzell Mayorga',
       titulo: 'TIC responsable por grupo y formato de avances', notas: [
       'Grupos de Clase: nueva sección para elegir al TIC responsable del grupo entre los docentes del sistema.',
