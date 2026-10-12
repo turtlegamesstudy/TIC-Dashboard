@@ -13197,3 +13197,171 @@ html[data-theme="dark"] .sidebar .nav-item.active:hover {
   .sidebar:has(:focus-visible) .nav-item,
   .sidebar.expanded .nav-item { gap: 11px; justify-content: flex-start; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   34 · REFRESCO DE INTERFAZ — Parte 6: estética premium
+   · Fondo animado con velo neutro: el GIF pasa a ser textura
+   · Barra superior de vidrio claro con filete de la paleta
+   · Encabezados en azul institucional profundo con auroras de marca
+   · Banner de mantenimiento neutro: el color queda en la acción
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Fondo: velo claro/oscuro encima del GIF ── */
+body::before {
+  background:
+    linear-gradient(rgba(247, 249, 252, 0.56), rgba(247, 249, 252, 0.62)),
+    url("assets/fondo-claro.gif") center / cover no-repeat;
+  opacity: 0.5;
+}
+
+html[data-theme="dark"] body::before {
+  background:
+    linear-gradient(rgba(4, 12, 21, 0.5), rgba(4, 12, 21, 0.58)),
+    url("assets/fondo-profundo.gif") center / cover no-repeat;
+  opacity: 0.6;
+}
+
+/* ── Barra superior: cristal claro, tinta oscura, aire enterprise ── */
+.topbar {
+  color: var(--text-primary);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.79));
+  backdrop-filter: blur(24px) saturate(165%);
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+  border-color: rgba(13, 59, 94, 0.12) !important;
+  box-shadow: 0 22px 48px -36px rgba(13, 59, 94, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+.topbar.scrolled {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.92));
+  box-shadow: 0 24px 50px -36px rgba(13, 59, 94, 0.6),
+              inset 0 1px 0 #fff !important;
+}
+
+html[data-theme="dark"] .topbar {
+  color: #e7eef7;
+  background: linear-gradient(180deg, rgba(9, 23, 38, 0.88), rgba(6, 16, 27, 0.8));
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border-color: rgba(1, 165, 228, 0.24) !important;
+  box-shadow: 0 22px 48px -36px rgba(0, 0, 0, 0.8),
+              inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-theme="dark"] .topbar.scrolled {
+  background: linear-gradient(180deg, rgba(9, 23, 38, 0.96), rgba(6, 16, 27, 0.93));
+}
+
+/* Franja tricolor de la paleta institucional, ahora discreta y difuminada */
+.topbar::after {
+  height: 2px;
+  border-radius: inherit;
+  opacity: 0.65;
+  background: linear-gradient(90deg, var(--brand-blue) 0%, var(--brand-pink) 55%, var(--brand-green) 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+}
+
+/* ── Buscador: campo neutro con anillo de acento al enfocar ── */
+.search-box {
+  background: rgba(13, 59, 94, 0.05);
+  border: 1px solid rgba(13, 59, 94, 0.14);
+  color: var(--text-primary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: inset 0 1px 2px rgba(13, 59, 94, 0.06);
+}
+
+.search-box input::placeholder { color: var(--text-muted); }
+
+.search-box:focus-within {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(1, 165, 228, 0.55);
+  box-shadow: 0 0 0 3px rgba(1, 165, 228, 0.18), inset 0 1px 2px rgba(13, 59, 94, 0.04);
+}
+
+html[data-theme="dark"] .search-box {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(146, 198, 228, 0.18);
+  color: #e7eef7;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .search-box:focus-within {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(1, 165, 228, 0.6);
+  box-shadow: 0 0 0 3px rgba(1, 165, 228, 0.22);
+}
+
+/* Iconos y acción de cerrar sesión con microinteracción */
+.topbar .btn-icon { color: inherit; }
+.topbar .btn-icon:hover { background: rgba(13, 59, 94, 0.07); }
+html[data-theme="dark"] .topbar .btn-icon:hover { background: rgba(255, 255, 255, 0.09); }
+
+.topbar-signout {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition: background var(--t-base), color var(--t-base), transform var(--t-base);
+}
+
+.topbar-signout:hover {
+  background: rgba(227, 11, 123, 0.1);
+  color: var(--brand-pink);
+  transform: translateY(-1px);
+}
+
+/* ── Encabezados de vista: azul institucional profundo ── */
+.view-header {
+  color: #fff;
+  background:
+    radial-gradient(460px 260px at 6% -40%, rgba(24, 184, 231, 0.42), transparent 72%),
+    radial-gradient(560px 320px at 94% 140%, rgba(227, 11, 123, 0.36), transparent 72%),
+    radial-gradient(340px 240px at 72% -50%, rgba(135, 197, 64, 0.18), transparent 70%),
+    linear-gradient(125deg, #0b3b62 0%, #14578b 54%, #0e3557 100%);
+  background-size: auto;
+  background-position: center;
+  animation: ref-bloque 360ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  box-shadow: 0 26px 52px -38px rgba(9, 44, 74, 0.85);
+}
+
+html[data-theme="dark"] .view-header {
+  background:
+    radial-gradient(460px 260px at 6% -40%, rgba(24, 184, 231, 0.34), transparent 72%),
+    radial-gradient(560px 320px at 94% 140%, rgba(227, 11, 123, 0.26), transparent 72%),
+    radial-gradient(340px 240px at 72% -50%, rgba(135, 197, 64, 0.12), transparent 70%),
+    linear-gradient(125deg, #061c30 0%, #0a2740 55%, #051422 100%);
+  box-shadow: 0 26px 52px -38px rgba(0, 0, 0, 0.9);
+}
+
+/* Título con la serif institucional del portal oficial */
+.view-header h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* Filete tricolor difuminado bajo el encabezado */
+.view-header::after {
+  height: 2px;
+  opacity: 0.7;
+  background: linear-gradient(90deg, var(--brand-blue) 0%, var(--brand-pink) 55%, var(--brand-green) 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+/* ── Banner de mantenimiento: superficie neutra, color solo en la acción ── */
+.banner-mantenimiento {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.76));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-bottom-color: rgba(13, 59, 94, 0.14);
+}
+
+html[data-theme="dark"] .banner-mantenimiento {
+  background: linear-gradient(180deg, rgba(9, 23, 38, 0.88), rgba(6, 16, 27, 0.8));
+  border-bottom-color: rgba(1, 165, 228, 0.22);
+}
