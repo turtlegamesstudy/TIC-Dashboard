@@ -1648,179 +1648,319 @@ const UI = {
     }
   },
 
+  toggleTodosModulosExport(seleccionar) {
+    document.querySelectorAll('.chk-modulo-export').forEach(cb => { cb.checked = Boolean(seleccionar); });
+  },
+
   renderCuadernoDocente() {
     const workspace = document.getElementById('workspace');
     if (!workspace) return;
     const grupos = DataEngine.getGrupos();
 
     workspace.innerHTML = `
-    <div class="module-fade-enter">
-      <div class="view-header">
-        <h1><i class="ri-file-excel-2-line"></i> Cuaderno Docente - Registro de Notas</h1>
-        <p>Gestiona, importa por módulo individual o exporta el libro Excel de 5 pestañas con formato oficial.</p>
+    <div class="module-fade-enter cd-container">
+      <!-- Cabecera de la sección -->
+      <div class="view-header" style="margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.45rem;">
+              <i class="ri-book-read-fill" style="color: var(--primary-blue, #2563eb);"></i>
+              Cuaderno Docente - Registro de Notas
+            </h1>
+            <p style="margin-top: 4px; color: var(--text-muted); font-size: 0.88rem;">
+              Gestión académica integral: visualiza calificaciones, importa por módulo y exporta actas oficiales.
+            </p>
+          </div>
+          <div class="cd-header-badges">
+            <span class="cd-badge-pill" title="Módulos transversales y ponderaciones oficiales"><i class="ri-shield-check-line"></i> Formato Oficial</span>
+            <span class="cd-badge-pill cd-badge-pill-accent"><i class="ri-file-excel-line"></i> Multi-hojas Excel</span>
+          </div>
+        </div>
       </div>
 
-      <!-- ═══ PASO 1 · QUÉ ESTOY VIENDO ═══ -->
-      <details class="cuaderno-step" open>
-        <summary class="cuaderno-step-title"><span class="cuaderno-step-num">1</span> Selecciona grupo y módulo</summary>
-        <div class="cuaderno-step-body" style="display:flex; gap:16px; flex-wrap:wrap;">
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <label class="tb-label"><i class="ri-group-line"></i> Grupo:</label>
-            <select id="select-grupo-cuaderno" class="form-control" onchange="UI.actualizarTablaCuaderno()">
+      <!-- BARRA DE CONTROL PRINCIPAL: GRUPO, MÓDULO Y ACCIONES ESENCIALES -->
+      <section class="cd-card cd-control-card" aria-label="Control principal de grupo y módulo">
+        <div class="cd-control-grid">
+          <!-- Selector Grupo -->
+          <div class="cd-control-item">
+            <label for="select-grupo-cuaderno" class="cd-label">
+              <i class="ri-group-line" aria-hidden="true"></i> Grupo Académico:
+            </label>
+            <select id="select-grupo-cuaderno" class="form-control cd-select-highlight" onchange="UI.actualizarTablaCuaderno()" aria-label="Seleccionar grupo académico">
               <option value="">-- Seleccionar Grupo --</option>
               ${grupos.map(g => `<option value="${g.id}">${g.codigo || g.nombre} - ${g.carrera} (${g.turno})</option>`).join('')}
             </select>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <label class="tb-label"><i class="ri-book-read-line"></i> Módulo:</label>
-            <select id="select-modulo-cuaderno" class="form-control" onchange="UI.actualizarTablaCuaderno()">
-              <option value="ALL">📌 Todos los Módulos (Totales)</option>
-              ${MODULOS_TRANSVERSALES.map(m => `<option value="${m}">${m}</option>`).join('')}
-            </select>
-            <button type="button" class="btn-icon" data-permiso="configurarMateria" onclick="CuadernoEngine.agregarModuloAcademico()" title="Agregar un módulo nuevo a la lista (ej. Inglés) · solo administradores" aria-label="Agregar un módulo nuevo a la lista"><i class="ri-add-line" aria-hidden="true"></i></button>
-            <button type="button" class="btn-icon" data-permiso="configurarMateria" onclick="CuadernoEngine.quitarModuloAcademico()" title="Quitar el módulo seleccionado de la lista · solo administradores" aria-label="Quitar el módulo seleccionado de la lista"><i class="ri-subtract-line" aria-hidden="true"></i></button>
-          </div>
-          <div style="display:flex; align-items:center; font-size:0.72rem; color:var(--text-muted); gap:6px;">
-            <i class="ri-lightbulb-line" aria-hidden="true"></i>
-            <span>La lista es del centro: al agregar un módulo aparece en el Cuaderno, Estadísticas, Exámenes e Informe de todos.</span>
-          </div>
-        </div>
-      </details>
 
-      <!-- ═══ PASO 2 · CARGAR NOTAS ═══ -->
-      <details class="cuaderno-step">
-        <summary class="cuaderno-step-title"><span class="cuaderno-step-num">2</span> Cargar notas desde Excel</summary>
-        <div class="cuaderno-step-body" style="display:flex; flex-direction:column; gap:14px;">
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <button class="btn-primary-soft" onclick="document.getElementById('file-import-notas').click()">
-              <i class="ri-upload-2-line"></i> Cargar Notas Módulo (.xlsx)
-            </button>
-            <input type="file" id="file-import-notas" accept=".xlsx, .xls" style="display:none;" onchange="CuadernoEngine.importarNotasExcel(event)">
-            <span style="font-size:0.78rem; color: var(--text-muted);">Sube el Excel de un módulo para el grupo seleccionado arriba.</span>
-          </div>
-
-          <div class="cuaderno-substep">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <i class="ri-stack-line" style="color: var(--p-400); font-size:1.2rem;"></i>
-              <div>
-                <div style="font-weight:600; font-size:0.85rem;">Carga masiva para TODOS los grupos</div>
-                <div style="font-size:0.72rem; color: var(--text-muted);">Un solo Excel; el sistema ubica a cada estudiante en su grupo automáticamente.</div>
-              </div>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
-              <select id="select-modulo-masivo" class="form-control" style="width: 260px;">
-                <option value="">-- Seleccionar Módulo --</option>
+          <!-- Selector Módulo -->
+          <div class="cd-control-item">
+            <label for="select-modulo-cuaderno" class="cd-label">
+              <i class="ri-book-open-line" aria-hidden="true"></i> Módulo / Materia:
+            </label>
+            <div style="display: flex; gap: 6px; align-items: center; width: 100%;">
+              <select id="select-modulo-cuaderno" class="form-control" onchange="UI.actualizarTablaCuaderno()" aria-label="Seleccionar módulo o ver todos">
+                <option value="ALL">📌 Todos los Módulos (Totales)</option>
                 ${MODULOS_TRANSVERSALES.map(m => `<option value="${m}">${m}</option>`).join('')}
               </select>
-              <button class="btn-primary-soft" onclick="document.getElementById('file-import-notas-masivo').click()">
-                <i class="ri-upload-cloud-2-line"></i> Cargar para Todos los Grupos (.xlsx)
+              <button type="button" class="btn-icon cd-icon-btn" data-permiso="configurarMateria" onclick="CuadernoEngine.agregarModuloAcademico()" title="Agregar un módulo nuevo a la lista (ej. Inglés) · solo administradores" aria-label="Agregar un módulo nuevo a la lista">
+                <i class="ri-add-line" aria-hidden="true"></i>
               </button>
-              <input type="file" id="file-import-notas-masivo" accept=".xlsx, .xls" style="display:none;" onchange="CuadernoEngine.importarNotasModuloTodosGrupos(event)">
-            </div>
-          </div>
-        </div>
-      </details>
-
-      <!-- ═══ PASO 3 · OPCIONES DE EXPORTACIÓN (colapsable) ═══ -->
-      <details class="cuaderno-step" data-section-settings open>
-        <summary class="cuaderno-step-title"><span class="cuaderno-step-num">3</span> Opciones de exportación</summary>
-        <div class="cuaderno-step-body" id="panel-opciones-exportar">
-
-          <div style="margin-bottom: 12px;">
-            <label style="cursor: pointer; font-weight: 500; font-size: 0.85rem;">
-              <input type="checkbox" id="chk-incluir-resumen" checked style="margin-right: 6px;">
-              Incluir hoja <b>Resumen General</b>
-            </label>
-          </div>
-
-          <div style="display:flex; gap:20px; margin-bottom:14px; flex-wrap:wrap;">
-            <div>
-              <label for="select-filtro-turno" style="font-weight:600; display:block; margin-bottom:4px; font-size:0.8rem;">🕒 Turno (aplica a "Exportar Todos"):</label>
-              <select id="select-filtro-turno" class="form-control">
-                <option value="todos">Todos los turnos</option>
-                <option value="matutino">Solo Matutino</option>
-                <option value="vespertino">Solo Vespertino</option>
-                <option value="nocturno">Solo Nocturno</option>
-                <option value="sabatino">Solo Sabatino</option>
-                <option value="dominical">Solo Dominical</option>
-              </select>
-            </div>
-            <div>
-              <label for="select-filtro-estudiantes" style="font-weight:600; display:block; margin-bottom:4px; font-size:0.8rem;">👥 Estudiantes a incluir:</label>
-              <select id="select-filtro-estudiantes" class="form-control">
-                <option value="todos">Todos</option>
-                <option value="activos">Solo Activos</option>
-                <option value="retirados">Solo Retirados</option>
-                <option value="pendientes">Solo con actividad pendiente</option>
-                <option value="completos">Solo completos (sin pendientes)</option>
-              </select>
-            </div>
-            <div>
-              <label for="select-modo-notas" style="font-weight: 600; display: block; margin-bottom: 4px; font-size: 0.8rem;">📝 Modo de calificación:</label>
-              <select id="select-modo-notas" class="form-control">
-                <option value="real">Mostrar nota real (0 – 100)</option>
-                <option value="estado">Solo Estado: Aprobado / Pendiente</option>
-              </select>
-            </div>
-            <div id="grupo-umbral" style="display: none;">
-              <label for="input-umbral" style="font-weight: 600; display: block; margin-bottom: 4px; font-size: 0.8rem;">Nota mínima aprobatoria:</label>
-              <input type="number" id="input-umbral" value="60" min="0" max="100" class="form-control" style="width: 70px; text-align: center;">
+              <button type="button" class="btn-icon cd-icon-btn" data-permiso="configurarMateria" onclick="CuadernoEngine.quitarModuloAcademico()" title="Quitar el módulo seleccionado de la lista · solo administradores" aria-label="Quitar el módulo seleccionado de la lista">
+                <i class="ri-subtract-line" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
 
-          <fieldset style="border: 1px solid var(--border-default); border-radius: var(--r-lg); padding: 10px 12px;">
-            <legend style="font-weight: 600; color: var(--p-500); font-size: 0.8rem; padding: 0 6px;">📚 Módulos a descargar:</legend>
-            <div id="contenedor-checkboxes-modulos" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8rem;">
-              <!-- Se generan automáticamente -->
+          <!-- Acciones de módulo -->
+          <div class="cd-control-actions">
+            <label class="cd-label cd-label-empty" aria-hidden="true">&nbsp;</label>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn-warning cd-btn" onclick="UI.abrirModalConvalidaciones()" title="Gestionar convalidaciones de notas para estudiantes de este módulo">
+                <i class="ri-award-line" aria-hidden="true"></i> Convalidar Módulo
+              </button>
+              <button type="button" class="btn-secondary cd-btn btn-delete-action" title="Borrar las calificaciones del módulo seleccionado en este grupo" onclick="DataEngine.borrarDatosModulo()">
+                <i class="ri-delete-bin-5-line" aria-hidden="true"></i> Borrar Módulo
+              </button>
             </div>
-          </fieldset>
+          </div>
         </div>
-      </details>
-
-      <!-- ═══ PASO 4 · ACCIONES ═══ -->
-      <details class="cuaderno-step cuaderno-actions-step" open>
-        <summary class="cuaderno-step-title"><span class="cuaderno-step-num">4</span> Acciones</summary>
-        <div class="cuaderno-step-body cuaderno-actions">
-          <button type="button" class="btn-warning" onclick="UI.abrirModalConvalidaciones()">🎓 Convalidar Módulo</button>
-          <button type="button" class="btn-secondary btn-delete-action" title="Borrar todos los datos del módulo seleccionado" onclick="DataEngine.borrarDatosModulo()"><i class="ri-delete-bin-5-line" aria-hidden="true"></i> Borrar Módulo</button>
-          <span class="cuaderno-actions-spacer"></span>
-          <select id="select-export-mode" class="form-control" style="width: 210px;">
-            <option value="full">📋 Exportar Todo</option>
-            <option value="resumen">📊 Unidades y Nota Final</option>
-          </select>
-          <select id="select-formato-cuaderno" class="form-control" style="width: 165px;" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará (Excel, PDF o Avances con estadísticas y consolidados)">
-            <option value="xlsx">📊 Formato: Excel</option>
-            <option value="pdf">📄 Formato: PDF</option>
-            <option value="avances">📈 Formato: Avances</option>
-          </select>
-          <button type="button" class="btn-secondary" data-permiso="configurarInstitucion" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
-            <i class="ri-settings-3-line"></i> Configurar responsables
-          </button>
-          <button type="button" class="btn-primary-soft" onclick="CuadernoEngine.exportarCuadernosListosParaImprimir()" title="Descarga un cuaderno por grupo, en Legal horizontal, blanco y negro y sin rellenos, en el formato elegido">
-            <i class="ri-printer-line"></i> Exportar cuadernos para imprimir
-          </button>
-          <select id="select-jefe-cuadernos-impresion" class="form-control" aria-label="Filtrar cuadernos por jefe de departamento">
-            <option value="">Seleccionar jefe</option>
-          </select>
-          <button type="button" class="btn-primary-soft" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Exporta solo los cuadernos de los turnos cubiertos por el jefe seleccionado">
-            <i class="ri-user-settings-line"></i> Exportar por jefe
-          </button>
-          <button class="btn-primary" onclick="CuadernoEngine.exportarCuadernoOficial()" title="Descarga el cuaderno del grupo en el formato elegido (Excel o PDF), con firmas y estadísticas">
-            <i class="ri-file-download-line"></i> Exportar Cuaderno Oficial (Firmado)
-          </button>
-          <button class="btn-primary-soft" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un archivo por cada grupo registrado, en el formato elegido">
-            <i class="ri-folder-download-line"></i> Exportar TODOS los Cuadernos
-          </button>
-          <button class="btn-primary-soft" onclick="CuadernoEngine.exportarTodosCuadernosEnUnArchivo()" title="Exporta todos los cuadernos docente en UN SOLO archivo Excel con múltiples hojas">
-            <i class="ri-file-excel-2-line"></i> Exportar TODO en 1 Archivo
-          </button>
+        
+        <div class="cd-control-helper">
+          <i class="ri-information-line" aria-hidden="true"></i>
+          <span>La configuración de materias es general: cualquier módulo agregado estará disponible en Cuaderno, Estadísticas, Exámenes e Informes.</span>
         </div>
-      </details>
+      </section>
 
-      <div id="contenedor-tabla-cuaderno" style="margin-top: 16px;">
-        <div class="table-container" style="padding: 40px; text-align: center; color: var(--text-muted);">
-          <i class="ri-file-search-line" style="font-size: 3rem; color: var(--secondary-blue);"></i>
-          <p style="margin-top: 10px;">Selecciona un grupo para visualizar o cargar las calificaciones.</p>
+      <!-- PANELES DE OPERACIÓN: CARGA Y EXPORTACIÓN -->
+      <div class="cd-accordion-container">
+        <!-- PANEL 1: CARGA DE NOTAS -->
+        <details class="cd-panel-card">
+          <summary class="cd-panel-summary">
+            <div class="cd-panel-header-left">
+              <span class="cd-step-badge"><i class="ri-upload-cloud-2-line"></i></span>
+              <div>
+                <h2 class="cd-panel-title">Cargar Calificaciones desde Excel</h2>
+                <p class="cd-panel-subtitle">Importa notas individuales para el grupo activo o ejecuta una carga masiva centralizada.</p>
+              </div>
+            </div>
+            <span class="cd-panel-tag">Subida de notas</span>
+          </summary>
+          
+          <div class="cd-panel-body">
+            <div class="cd-import-grid">
+              <!-- Opción 1: Grupo y Módulo actual -->
+              <div class="cd-subcard">
+                <div class="cd-subcard-header">
+                  <i class="ri-file-upload-line cd-subcard-icon"></i>
+                  <div>
+                    <h3 class="cd-subcard-title">Cargar al Módulo Activo</h3>
+                    <p class="cd-subcard-text">Aplica las notas directamente al grupo y módulo que tienes seleccionado arriba.</p>
+                  </div>
+                </div>
+                <div style="margin-top: 14px;">
+                  <button type="button" class="btn-primary-soft cd-btn cd-btn-full" onclick="document.getElementById('file-import-notas').click()">
+                    <i class="ri-upload-2-line"></i> Seleccionar Archivo Excel (.xlsx)
+                  </button>
+                  <input type="file" id="file-import-notas" accept=".xlsx, .xls" style="display:none;" onchange="CuadernoEngine.importarNotasExcel(event)">
+                </div>
+              </div>
+
+              <!-- Opción 2: Carga masiva -->
+              <div class="cd-subcard cd-subcard-masivo">
+                <div class="cd-subcard-header">
+                  <i class="ri-stack-line cd-subcard-icon cd-icon-accent"></i>
+                  <div>
+                    <h3 class="cd-subcard-title">Carga Masiva (Para Todos los Grupos)</h3>
+                    <p class="cd-subcard-text">Un solo archivo general; el sistema ubica automáticamente a cada estudiante en su grupo.</p>
+                  </div>
+                </div>
+                <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+                  <select id="select-modulo-masivo" class="form-control" style="flex: 1 1 200px;" aria-label="Módulo a cargar masivamente">
+                    <option value="">-- Seleccionar Módulo a Cargar --</option>
+                    ${MODULOS_TRANSVERSALES.map(m => `<option value="${m}">${m}</option>`).join('')}
+                  </select>
+                  <button type="button" class="btn-primary-soft cd-btn" onclick="document.getElementById('file-import-notas-masivo').click()">
+                    <i class="ri-upload-cloud-2-line"></i> Cargar Masivo (.xlsx)
+                  </button>
+                  <input type="file" id="file-import-notas-masivo" accept=".xlsx, .xls" style="display:none;" onchange="CuadernoEngine.importarNotasModuloTodosGrupos(event)">
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- PANEL 2: CENTRO DE EXPORTACIÓN -->
+        <details class="cd-panel-card" data-section-settings open>
+          <summary class="cd-panel-summary">
+            <div class="cd-panel-header-left">
+              <span class="cd-step-badge cd-step-badge-export"><i class="ri-download-2-line"></i></span>
+              <div>
+                <h2 class="cd-panel-title">Centro de Exportación y Descargas Oficiales</h2>
+                <p class="cd-panel-subtitle">Filtros de descarga, selección de módulos y exportación oficial en Excel, PDF o Avances.</p>
+              </div>
+            </div>
+            <span class="cd-panel-tag cd-panel-tag-export">Descargas y Actas</span>
+          </summary>
+
+          <div class="cd-panel-body" id="panel-opciones-exportar">
+            <!-- SECCIÓN FILTROS Y OPCIONES -->
+            <div class="cd-export-filters-grid">
+              <div class="cd-filter-group">
+                <label for="select-filtro-turno" class="cd-filter-label">🕒 Turno Académico:</label>
+                <select id="select-filtro-turno" class="form-control">
+                  <option value="todos">Todos los turnos</option>
+                  <option value="matutino">Solo Matutino</option>
+                  <option value="vespertino">Solo Vespertino</option>
+                  <option value="nocturno">Solo Nocturno</option>
+                  <option value="sabatino">Solo Sabatino</option>
+                  <option value="dominical">Solo Dominical</option>
+                </select>
+              </div>
+
+              <div class="cd-filter-group">
+                <label for="select-filtro-estudiantes" class="cd-filter-label">👥 Filtro de Estudiantes:</label>
+                <select id="select-filtro-estudiantes" class="form-control">
+                  <option value="todos">Todos los estudiantes</option>
+                  <option value="activos">Solo Activos</option>
+                  <option value="retirados">Solo Retirados</option>
+                  <option value="pendientes">Solo con actividad pendiente</option>
+                  <option value="completos">Solo completos (sin pendientes)</option>
+                </select>
+              </div>
+
+              <div class="cd-filter-group">
+                <label for="select-modo-notas" class="cd-filter-label">📝 Modo de Calificación:</label>
+                <select id="select-modo-notas" class="form-control">
+                  <option value="real">Mostrar nota real (0 – 100)</option>
+                  <option value="estado">Solo Estado: Aprobado / Pendiente</option>
+                </select>
+                <div id="grupo-umbral" style="display: none; margin-top: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <label for="input-umbral" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Mínima aprobatoria:</label>
+                    <input type="number" id="input-umbral" value="60" min="0" max="100" class="form-control" style="width: 65px; padding: 4px 8px; text-align: center;">
+                  </div>
+                </div>
+              </div>
+
+              <div class="cd-filter-group">
+                <label for="select-export-mode" class="cd-filter-label">📋 Contenido del Cuaderno:</label>
+                <select id="select-export-mode" class="form-control">
+                  <option value="full">📋 Todo el detalle de notas</option>
+                  <option value="resumen">📊 Solo Unidades y Nota Final</option>
+                </select>
+              </div>
+
+              <div class="cd-filter-group">
+                <label for="select-formato-cuaderno" class="cd-filter-label">📄 Formato de Salida:</label>
+                <select id="select-formato-cuaderno" class="form-control" aria-label="Formato de archivo de exportación" title="Formato del archivo que se descargará">
+                  <option value="xlsx">📊 Formato: Excel (.xlsx)</option>
+                  <option value="pdf">📄 Formato: PDF Oficial</option>
+                  <option value="avances">📈 Formato: Avances y Estadísticas</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin: 12px 0 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <label style="cursor: pointer; font-weight: 500; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; user-select: none;">
+                <input type="checkbox" id="chk-incluir-resumen" checked style="width: 17px; height: 17px; accent-color: var(--primary-blue, #2563eb);">
+                <span>Incluir hoja <strong>Resumen General</strong> en los archivos descargados</span>
+              </label>
+            </div>
+
+            <!-- MÓDULOS CON CHECKBOXES ACCESIBLES -->
+            <fieldset class="cd-modules-fieldset">
+              <legend class="cd-modules-legend">
+                <span>📚 Módulos a Incluir en la Exportación:</span>
+                <div style="display: flex; gap: 8px; align-items: center; font-size: 0.8rem;">
+                  <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(true)">Marcar todos</button>
+                  <span style="color: var(--border-strong, #cbd5e1);">|</span>
+                  <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(false)">Desmarcar todos</button>
+                </div>
+              </legend>
+              <div id="contenedor-checkboxes-modulos" class="cd-modules-grid">
+                <!-- Se generan automáticamente por CuadernoEngine -->
+              </div>
+            </fieldset>
+
+            <!-- TARJETAS DE ACCIÓN DE EXPORTACIÓN -->
+            <div class="cd-actions-cards-grid">
+              <!-- Tarjeta 1: Grupo Actual -->
+              <div class="cd-action-box cd-action-box-primary">
+                <div class="cd-action-box-header">
+                  <i class="ri-file-user-line cd-action-box-icon"></i>
+                  <div>
+                    <h3 class="cd-action-box-title">Grupo Actual Seleccionado</h3>
+                    <p class="cd-action-box-desc">Descarga el cuaderno del grupo activo con encabezados y firmas.</p>
+                  </div>
+                </div>
+                <div class="cd-action-box-buttons">
+                  <button type="button" class="btn-primary cd-btn cd-btn-full" onclick="CuadernoEngine.exportarCuadernoOficial()" title="Descarga el cuaderno del grupo seleccionado con firmas y estadísticas">
+                    <i class="ri-file-download-line"></i> Exportar Cuaderno Oficial (Firmado)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tarjeta 2: Todos los Grupos -->
+              <div class="cd-action-box cd-action-box-featured">
+                <div class="cd-action-box-header">
+                  <i class="ri-folder-zip-line cd-action-box-icon cd-icon-success"></i>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <h3 class="cd-action-box-title">Todos los Grupos</h3>
+                      <span class="cd-micro-badge">Recomendado</span>
+                    </div>
+                    <p class="cd-action-box-desc">Genera el reporte consolidado para toda la institución.</p>
+                  </div>
+                </div>
+                <div class="cd-action-box-buttons">
+                  <button type="button" class="btn-success cd-btn cd-btn-full" onclick="CuadernoEngine.exportarTodosCuadernosEnUnArchivo()" title="Exporta todos los cuadernos docente en UN SOLO archivo Excel con múltiples hojas">
+                    <i class="ri-file-excel-2-line"></i> Exportar TODO en 1 Archivo Excel
+                  </button>
+                  <button type="button" class="btn-primary-soft cd-btn cd-btn-full" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un archivo independiente por cada grupo registrado">
+                    <i class="ri-folder-download-line"></i> Descargar Cuadernos Individuales
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tarjeta 3: Impresión y Jefaturas -->
+              <div class="cd-action-box">
+                <div class="cd-action-box-header">
+                  <i class="ri-printer-line cd-action-box-icon"></i>
+                  <div>
+                    <h3 class="cd-action-box-title">Impresión y Jefaturas</h3>
+                    <p class="cd-action-box-desc">Formato Legal horizontal en B/N o filtrado por turno de jefe.</p>
+                  </div>
+                </div>
+                <div class="cd-action-box-buttons">
+                  <div style="display: flex; gap: 6px; width: 100%;">
+                    <select id="select-jefe-cuadernos-impresion" class="form-control" style="flex: 1;" aria-label="Filtrar cuadernos por jefe de departamento">
+                      <option value="">Seleccionar jefe</option>
+                    </select>
+                    <button type="button" class="btn-primary-soft cd-btn" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Exporta solo los cuadernos de los turnos cubiertos por el jefe seleccionado">
+                      <i class="ri-user-settings-line"></i> Por jefe
+                    </button>
+                  </div>
+                  <button type="button" class="btn-secondary cd-btn cd-btn-full" onclick="CuadernoEngine.exportarCuadernosListosParaImprimir()" title="Descarga en Legal horizontal, blanco y negro sin rellenos">
+                    <i class="ri-printer-line"></i> Cuadernos para Imprimir (Legal B/N)
+                  </button>
+                  <button type="button" class="btn-secondary cd-btn cd-btn-full" data-permiso="configurarInstitucion" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
+                    <i class="ri-settings-3-line"></i> Configurar Responsables y Firmas
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- CONTENEDOR DE LA TABLA DEL CUADERNO -->
+      <div id="contenedor-tabla-cuaderno" class="cd-table-wrapper" role="region" aria-label="Registro de Calificaciones">
+        <div class="table-container cd-empty-state">
+          <div class="cd-empty-icon-wrap">
+            <i class="ri-file-search-line"></i>
+          </div>
+          <h3 style="margin-top: 14px; font-weight: 600; font-size: 1.05rem;">Sin grupo seleccionado</h3>
+          <p style="margin-top: 6px; max-width: 440px; font-size: 0.88rem; color: var(--text-muted);">Selecciona un grupo académico en la barra superior para visualizar o registrar las calificaciones.</p>
         </div>
       </div>
     </div>
