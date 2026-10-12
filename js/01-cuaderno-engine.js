@@ -992,7 +992,7 @@
         return 'FF' + hex.replace('#', '').toUpperCase();
       },
 
-      buildWorkbookForGroup(grupoId, modulosAExportar, conResumen, configNotas, filtroEstudiantes = 'todos', listoParaImprimir = false) {
+      buildWorkbookForGroup(grupoId, modulosAExportar, conResumen, configNotas, filtroEstudiantes = 'todos', listoParaImprimir = false, externalWb = null, sheetPrefix = '') {
         const cfgGuardada = ConfigExport.load();
         const cfg = listoParaImprimir ? {
           ...cfgGuardada,
@@ -1047,9 +1047,13 @@
         const textColor   = this.hexToArgb(cfg.textColor   || '#000000');
         const headerColor = this.hexToArgb(cfg.headerColor || '#1E40AF');
 
-        const wb = new ExcelJS.Workbook();
-        wb.creator = 'TIC Dashboard';
-        wb.created = new Date();
+        const wb = externalWb || new ExcelJS.Workbook();
+        if (!externalWb) {
+          wb.creator = 'TIC Dashboard';
+          wb.created = new Date();
+        }
+        // Prefijo para nombres de hoja cuando se combinan varios grupos
+        const _sp = sheetPrefix;
 
         const applyBorder = (cell) => {
           cell.border = {
@@ -1481,7 +1485,7 @@
         // ─────────────────────────────────────────────────────────────
         if (conResumen) {
           const totalCols = modulosAExportar.length + 5;
-          const ws = wb.addWorksheet('Resumen General');
+          const ws = wb.addWorksheet((_sp + 'Resumen General').substring(0, 31));
           this.aplicarConfigImpresion(ws, cfg, listoParaImprimir);
 
           ws.columns = [
@@ -1643,7 +1647,7 @@
             columnas = banda.length > 0 ? banda : columnas;
           }
 
-          const ws = wb.addWorksheet(`M\u00f3dulo ${idx + 1}`);
+          const ws = wb.addWorksheet((_sp + `Módulo ${idx + 1}`).substring(0, 31));
           construirHojaOficial(ws, mNombre, columnas, estudiantes, columnasModulo,
             colTotalModulo ? colTotalModulo.nombreDisplay : 'Calificaci\u00f3n Final');
         });
@@ -2559,6 +2563,64 @@
           : listoParaImprimir
             ? `🖨️ ${exportados} cuaderno(s) exportado(s) ${detalleFormato} en Legal horizontal, blanco y negro y sin rellenos.`
             : `📦 ${exportados} grupo(s) exportado(s) ${detalleFormato} en blanco y negro, texto en negrita.`);
+      },
+
+      // Exportar TODOS los cuadernos docente en UN SOLO archivo Excel
+      // con múltiples hojas (una sección por grupo).
+      async exportarTodosCuadernosEnUnArchivo() {
+        if (typeof ExcelJS === 'undefined') {
+          UI.showToast('❌ No se pudo cargar el módulo de Excel.'); return;
+        }
+        const grupos = DataEngine.getGrupos();
+        if (!grupos || grupos.length === 0) {
+          UI.showToast('⚠️ No hay grupos para exportar.', 'warning'); return;
+        }
+        const modulosAExportar = this.obtenerModulosSeleccionados();
+        const conResumen = this.incluirResumenGeneral();
+        const configNotas = this.obtenerConfigNotas();
+        const filtroEstudiantes = this.obtenerFiltroEstudiantes();
+        if (modulosAExportar.length === 0 && !conResumen) {
+          UI.showToast('⚠️ Seleccione al menos un módulo o incluya el resumen general.');
+          return;
+        }
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'TIC Dashboard';
+        wb.created = new Date();
+        let exportados = 0;
+        UI.showLoading(`Preparando ${grupos.length} cuaderno(s) en un solo archivo…`, 'exportacion');
+        try {
+          let indice = 0;
+          for (const grupo of grupos) {
+            indice++;
+            const etiqueta = document.getElementById('app-loading-message');
+            if (etiqueta) etiqueta.textContent = `Generando cuaderno ${indice} de ${grupos.length}: ${grupo.nombre || grupo.id}`;
+            const estudiantes = DataEngine.getEstudiantesByGrupo(grupo.id);
+            if (!estudiantes || estudiantes.length === 0) continue;
+            // Prefijo corto para las hojas de este grupo
+            const prefix = (grupo.codigo || grupo.nombre || grupo.id).substring(0, 12) + ' ';
+            const result = this.buildWorkbookForGroup(
+              grupo.id, modulosAExportar, conResumen, configNotas,
+              filtroEstudiantes, false, wb, prefix
+            );
+            if (result) exportados++;
+            await new Promise(r => setTimeout(r, 100));
+          }
+        } finally {
+          UI.hideLoading(300);
+        }
+        if (exportados === 0) {
+          UI.showToast('⚠️ No se generó ninguna hoja. Verifique que los grupos tienen datos.', 'warning');
+          return;
+        }
+        try {
+          const buffer = await wb.xlsx.writeBuffer();
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          this.descargarBlob(blob, `Cuadernos_Docentes_Todos.xlsx`);
+          UI.showToast(`✅ ${exportados} cuaderno(s) exportado(s) en un solo archivo Excel.`);
+        } catch (err) {
+          console.error('Error al generar el archivo combinado:', err);
+          UI.showToast(`❌ Error al generar el archivo: ${err.message}`, 'error');
+        }
       },
 
       // Deja la hoja en blanco y negro parejo: texto negro en negrita,
