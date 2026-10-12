@@ -768,9 +768,13 @@ const Mejoras = (() => {
       ` data-persona="${esc(aviso.persona || '')}" data-afectado="${esc(aviso.afectado || '')}"` +
       ` tabindex="0" role="button"` +
       ` aria-label="${aviso.leido ? 'Aviso leído' : 'Aviso sin leer. Marcar como leído'}">` +
-      `<span class="aviso-icono"><i class="${esc(icono)}" aria-hidden="true"></i></span>` +
+      `<span class="aviso-icono aviso-icono-${esc(aviso.clase || 'info')}"><i class="${esc(icono)}" aria-hidden="true"></i></span>` +
       `<span class="aviso-cuerpo">` +
-        `<span class="aviso-cab"><strong>${esc(aviso.titulo)}</strong><time>${esc(aviso.hora)}</time></span>` +
+        `<span class="aviso-cab">` +
+          `<strong class="aviso-titulo-txt">${esc(aviso.titulo)}</strong>` +
+          `${aviso.leido ? '' : '<span class="aviso-punto-no-leido" title="Sin leer"></span>'}` +
+          `<time>${esc(aviso.hora)}</time>` +
+        `</span>` +
         `<span class="aviso-texto">${esc(aviso.texto)}</span>` +
         `${aviso.detalle ? `<small class="aviso-detalle">${esc(aviso.detalle)}</small>` : ''}` +
         `<span class="aviso-etiquetas">` +
@@ -786,10 +790,20 @@ const Mejoras = (() => {
   function filtrosAvisosHTML(vista) {
     const f = filtrosAvisos;
     const yo = usuarioActual();
+    const iconosTipo = {
+      todos: 'ri-apps-line',
+      confirmacion: 'ri-checkbox-circle-line',
+      cambio: 'ri-history-line',
+      error: 'ri-error-warning-line',
+      advertencia: 'ri-alert-line',
+      info: 'ri-information-line',
+      sistema: 'ri-settings-4-line'
+    };
     const chips = ['todos'].concat(Object.keys(TIPOS_AVISO)).map(t => {
       const activo = f.tipo === t;
+      const ic = iconosTipo[t] || 'ri-circle-line';
       return `<button type="button" class="af-chip${activo ? ' activo' : ''}" data-avisos-tipo="${t}"` +
-        ` aria-pressed="${activo}">${t === 'todos' ? 'Todo' : esc(TIPOS_AVISO[t])}</button>`;
+        ` aria-pressed="${activo}"><i class="${ic}" aria-hidden="true"></i> ${t === 'todos' ? 'Todo' : esc(TIPOS_AVISO[t])}</button>`;
     }).join('');
     const nombres = personasDeAvisos();
     const opciones = ['<option value="todas">Todas las personas</option>'];
@@ -808,16 +822,16 @@ const Mejoras = (() => {
         </div>
         <div class="af-chips" role="group" aria-label="Filtrar por tipo">${chips}</div>
         <div class="af-filas">
-          <label class="af-campo"><span>Periodo</span>
+          <label class="af-campo"><span><i class="ri-calendar-line"></i> Periodo</span>
             <select data-av-periodo aria-label="Filtrar por fecha">
               <option value="todo"${f.periodo === 'todo' ? ' selected' : ''}>Todo</option>
               <option value="hoy"${f.periodo === 'hoy' ? ' selected' : ''}>Hoy</option>
               <option value="7"${f.periodo === '7' ? ' selected' : ''}>Últimos 7 días</option>
               <option value="30"${f.periodo === '30' ? ' selected' : ''}>Últimos 30 días</option>
             </select></label>
-          <label class="af-campo"><span>Persona</span>
+          <label class="af-campo"><span><i class="ri-user-3-line"></i> Persona</span>
             <select data-av-persona aria-label="Filtrar por persona">${opciones.join('')}</select></label>
-          <label class="af-campo"><span>Lectura</span>
+          <label class="af-campo"><span><i class="ri-eye-line"></i> Lectura</span>
             <select data-av-leido aria-label="Filtrar por lectura">
               <option value="todos"${f.leido === 'todos' ? ' selected' : ''}>Todos</option>
               <option value="no"${f.leido === 'no' ? ' selected' : ''}>Sin leer</option>
@@ -825,10 +839,10 @@ const Mejoras = (() => {
             </select></label>
         </div>
         <div class="af-pie">
-          <span class="af-conteo">${vista.length} de ${avisos.length} aviso(s)</span>
+          <span class="af-conteo"><i class="ri-list-check"></i> ${vista.length} de ${avisos.length} aviso(s)</span>
           <span class="af-acciones">
-            <button type="button" class="btn-ghost" data-avisos-todo-leido><i class="ri-check-double-line" aria-hidden="true"></i> Marcar todo leído</button>
-            <button type="button" class="btn-ghost" data-avisos-borrar ${hayFiltro ? '' : 'disabled'}><i class="ri-delete-bin-line" aria-hidden="true"></i> Borrar filtrados</button>
+            <button type="button" class="btn-ghost af-btn-action" data-avisos-todo-leido><i class="ri-check-double-line" aria-hidden="true"></i> Marcar todo leído</button>
+            <button type="button" class="btn-ghost af-btn-action" data-avisos-borrar ${hayFiltro ? '' : 'disabled'}><i class="ri-delete-bin-line" aria-hidden="true"></i> Borrar filtrados</button>
           </span>
         </div>
       </div>`;
@@ -843,30 +857,35 @@ const Mejoras = (() => {
       ? vista.map(aviso => {
           const dia = rotuloDia(aviso.ts);
           const cabecera = dia !== diaActual
-            ? `<li class="aviso-dia" role="presentation">${esc(dia)}</li>` : '';
+            ? `<li class="aviso-dia" role="presentation"><span>${esc(dia)}</span></li>` : '';
           diaActual = dia;
           return cabecera + itemAvisoHTML(aviso);
         }).join('')
-      : `<li class="aviso-vacio"><i class="ri-inbox-line" aria-hidden="true"></i>
-           <p>${avisos.length ? 'Ningún aviso coincide con los filtros.' : 'Todavía no hay avisos.'}</p>
-           <small>${avisos.length ? 'Prueba a quitar algún filtro.' : 'Aquí quedarán las confirmaciones, los cambios y los errores.'}</small>
-           ${avisos.length ? '<button type="button" class="btn-ghost" data-avisos-quitar-filtros>Quitar filtros</button>' : ''}</li>`;
+      : `<li class="aviso-vacio"><div class="aviso-vacio-icon"><i class="ri-inbox-line" aria-hidden="true"></i></div>
+           <p>${avisos.length ? 'Ningún aviso coincide con los filtros.' : 'No tienes avisos por ahora.'}</p>
+           <small>${avisos.length ? 'Prueba a cambiar o restablecer los filtros de arriba.' : 'Aquí verás el historial de actividad, sincronizaciones y cambios en el sistema.'}</small>
+           ${avisos.length ? '<button type="button" class="btn-ghost af-btn-reset" data-avisos-quitar-filtros><i class="ri-filter-off-line"></i> Quitar filtros</button>' : ''}</li>`;
     const sinLeer = avisos.filter(a => !a.leido).length;
     centro.innerHTML =
-      `<header class="drawer-cabecera">
-         <div><h2 id="avisos-titulo"><i class="ri-notification-3-line" aria-hidden="true"></i> Centro de avisos</h2>
-         <p>${sinLeer ? `${sinLeer} sin leer · ` : ''}${avisos.length} guardado(s)</p></div>
+      `<header class="drawer-cabecera avisos-cabecera">
+         <div class="avisos-cabecera-info">
+           <h2 id="avisos-titulo"><i class="ri-notification-3-line" aria-hidden="true"></i> Centro de avisos</h2>
+           <div class="avisos-cabecera-meta">
+             ${sinLeer ? `<span class="badge-sin-leer"><i class="ri-record-circle-line"></i> ${sinLeer} sin leer</span>` : '<span class="badge-al-dia"><i class="ri-check-line"></i> Al día</span>'}
+             <span class="avisos-total-pill">${avisos.length} guardado(s)</span>
+           </div>
+         </div>
          <span class="drawer-cabecera-acciones">
-           ${avisos.length ? '<button class="btn-ghost" type="button" data-avisos-exportar title="Descargar el registro completo en CSV"><i class="ri-file-download-line" aria-hidden="true"></i> CSV</button>' : ''}
-           ${avisos.length ? '<button class="btn-ghost" type="button" data-avisos-limpiar><i class="ri-delete-bin-line"></i> Limpiar</button>' : ''}
-           <button class="btn-icon" type="button" data-cerrar-avisos aria-label="Cerrar avisos"><i class="ri-close-line"></i></button>
+           ${avisos.length ? '<button class="btn-ghost af-header-btn" type="button" data-avisos-exportar title="Descargar el registro completo en CSV"><i class="ri-file-download-line" aria-hidden="true"></i> CSV</button>' : ''}
+           ${avisos.length ? '<button class="btn-ghost af-header-btn" type="button" data-avisos-limpiar title="Limpiar todos los avisos"><i class="ri-delete-bin-line"></i> Limpiar</button>' : ''}
+           <button class="btn-icon af-close-btn" type="button" data-cerrar-avisos aria-label="Cerrar avisos" title="Cerrar avisos"><i class="ri-close-line"></i></button>
          </span>
        </header>
        ${filtrosAvisosHTML(vista)}
        <ul class="aviso-lista" aria-live="polite">${cuerpo}</ul>
        <footer class="avisos-pie">
-         <button type="button" class="btn-ghost" data-actualizaciones>
-           <i class="ri-git-branch-line" aria-hidden="true"></i> Actualizaciones <span class="pie-version">v${esc(VERSION)}</span>
+         <button type="button" class="btn-ghost avisos-pie-btn" data-actualizaciones>
+           <i class="ri-git-branch-line" aria-hidden="true"></i> Actualizaciones del Sistema <span class="pie-version">v${esc(VERSION)}</span>
            <span class="pie-nuevo" ${actualizacionPendiente() ? '' : 'hidden'}>nueva</span>
          </button>
        </footer>`;
