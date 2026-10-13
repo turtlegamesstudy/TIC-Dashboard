@@ -1795,15 +1795,15 @@ const UI = {
             <div class="cd-panel-header-left">
               <span class="cd-step-badge cd-step-badge-export"><i class="ri-download-2-line"></i></span>
               <div>
-                <h2 class="cd-panel-title">Centro de Exportación y Descargas Oficiales</h2>
-                <p class="cd-panel-subtitle">Genera libros consolidados, actas firmadas o cuadernos listos para imprimir.</p>
+                <h2 class="cd-panel-title">Exportar Cuadernos</h2>
+                <p class="cd-panel-subtitle">Descarga calificaciones del grupo actual o de toda la institución.</p>
               </div>
             </div>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <button type="button" class="btn-primary-soft cd-btn cd-btn-sm" onclick="event.stopPropagation(); UI.toggleSectionSettings();" title="Abrir panel lateral de filtros y ajustes">
-                <i class="ri-equalizer-2-line"></i> Filtros y Ajustes
+                <i class="ri-equalizer-2-line"></i> Filtros
               </button>
-              <span class="cd-panel-tag cd-panel-tag-export">Descargas Oficiales</span>
+              <span class="cd-panel-tag cd-panel-tag-export">Descargas</span>
             </div>
           </summary>
 
@@ -1815,13 +1815,13 @@ const UI = {
                 <div class="cd-action-box-header">
                   <i class="ri-file-user-line cd-action-box-icon"></i>
                   <div>
-                    <h3 class="cd-action-box-title">Grupo Actual Seleccionado</h3>
-                    <p class="cd-action-box-desc">Descarga el acta oficial del grupo activo con encabezados y firmas.</p>
+                    <h3 class="cd-action-box-title">Grupo Seleccionado</h3>
+                    <p class="cd-action-box-desc">Descarga las calificaciones del grupo elegido arriba.</p>
                   </div>
                 </div>
                 <div class="cd-action-box-buttons">
                   <button type="button" class="btn-primary cd-btn cd-btn-full" onclick="CuadernoEngine.exportarCuadernoOficial()" title="Descarga el cuaderno del grupo seleccionado con firmas y estadísticas">
-                    <i class="ri-file-download-line"></i> Exportar Cuaderno Oficial (Firmado)
+                    <i class="ri-file-download-line"></i> Exportar Cuaderno
                   </button>
                 </div>
               </div>
@@ -1832,29 +1832,29 @@ const UI = {
                   <i class="ri-folder-zip-line cd-action-box-icon cd-icon-success"></i>
                   <div>
                     <div style="display: flex; align-items: center; gap: 6px;">
-                      <h3 class="cd-action-box-title">Todos los Grupos</h3>
+                      <h3 class="cd-action-box-title">Toda la Institución</h3>
                       <span class="cd-micro-badge">Recomendado</span>
                     </div>
-                    <p class="cd-action-box-desc">Genera el reporte consolidado para toda la institución.</p>
+                    <p class="cd-action-box-desc">Descarga calificaciones de todos los grupos.</p>
                   </div>
                 </div>
                 <div class="cd-action-box-buttons">
-                  <button type="button" class="btn-success cd-btn cd-btn-full" onclick="CuadernoEngine.exportarTodosCuadernosEnUnArchivo()" title="Exporta todos los cuadernos docente en UN SOLO archivo Excel con múltiples hojas">
-                    <i class="ri-file-excel-2-line"></i> Exportar TODO en 1 Archivo Excel
+                  <button type="button" class="btn-success cd-btn cd-btn-full" onclick="CuadernoEngine.exportarTodosCuadernosEnUnArchivo()" title="Descarga todos los cuadernos en un solo archivo Excel">
+                    <i class="ri-file-excel-2-line"></i> Un Solo Archivo
                   </button>
-                  <button type="button" class="btn-primary-soft cd-btn cd-btn-full" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un archivo independiente por cada grupo registrado">
-                    <i class="ri-folder-download-line"></i> Descargar Cuadernos Individuales
+                  <button type="button" class="btn-primary-soft cd-btn cd-btn-full" onclick="CuadernoEngine.exportarTodosLosCuadernos()" title="Descarga un archivo independiente por cada grupo">
+                    <i class="ri-folder-download-line"></i> Archivos Separados
                   </button>
                 </div>
               </div>
 
-              <!-- Tarjeta 3: Impresión y Jefaturas -->
+              <!-- Tarjeta 3: Por Jefe de Departamento -->
               <div class="cd-action-box">
                 <div class="cd-action-box-header">
-                  <i class="ri-printer-line cd-action-box-icon"></i>
+                  <i class="ri-user-settings-line cd-action-box-icon"></i>
                   <div>
-                    <h3 class="cd-action-box-title">Impresión y Jefaturas</h3>
-                    <p class="cd-action-box-desc">Formato Legal horizontal en B/N o filtrado por turno de jefe.</p>
+                    <h3 class="cd-action-box-title">Por Jefe de Departamento</h3>
+                    <p class="cd-action-box-desc">Descarga solo los grupos de un jefe, listos para imprimir.</p>
                   </div>
                 </div>
                 <div class="cd-action-box-buttons">
@@ -1862,16 +1862,10 @@ const UI = {
                     <select id="select-jefe-cuadernos-impresion" class="form-control" style="flex: 1; min-width: 0;" aria-label="Filtrar cuadernos por jefe de departamento">
                       <option value="">Seleccionar jefe</option>
                     </select>
-                    <button type="button" class="btn-primary-soft cd-btn" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Exporta solo los cuadernos de los turnos cubiertos por el jefe seleccionado">
-                      <i class="ri-user-settings-line"></i> Por jefe
+                    <button type="button" class="btn-primary-soft cd-btn" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Descarga los cuadernos de los turnos del jefe seleccionado, en formato Legal B/N">
+                      <i class="ri-printer-line"></i> Imprimir
                     </button>
                   </div>
-                  <button type="button" class="btn-secondary cd-btn cd-btn-full" onclick="CuadernoEngine.exportarCuadernosListosParaImprimir()" title="Descarga en Legal horizontal, blanco y negro sin rellenos">
-                    <i class="ri-printer-line"></i> Cuadernos para Imprimir (Legal B/N)
-                  </button>
-                  <button type="button" class="btn-secondary cd-btn cd-btn-full" data-permiso="configurarInstitucion" onclick="CuadernoEngine.abrirConfiguracionAcademica()">
-                    <i class="ri-settings-3-line"></i> Configurar Responsables y Firmas
-                  </button>
                 </div>
               </div>
             </div>
@@ -1931,6 +1925,11 @@ const UI = {
               <option value="xlsx">📊 Formato: Excel (.xlsx)</option>
               <option value="pdf">📄 Formato: PDF Oficial</option>
               <option value="avances">📈 Formato: Avances y Estadísticas</option>
+              <option value="modular">📋 Formato: Modular (Solo Nota Final por Módulo)</option>
+              <option value="modular_todo">📋 Formato: Modular Todo Junto (Una hoja, todos los módulos)</option>
+              <option value="compacto">📊 Formato: Compacto (Tabla Compacta)</option>
+              <option value="calificaciones">📝 Formato: Calificaciones (Lista Simple)</option>
+              <option value="acta">📜 Formato: Acta de Calificaciones</option>
             </select>
           </div>
 
@@ -1956,9 +1955,9 @@ const UI = {
           </div>
 
           <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-subtle);">
-            <button type="button" class="btn-primary cd-btn cd-btn-full" onclick="CuadernoEngine.exportarCuadernoOficial()" title="Descarga directa con los filtros configurados">
-              <i class="ri-file-download-line"></i> Exportar con estos Filtros
-            </button>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+              Los filtros se aplican automáticamente al usar los botones de descarga.
+            </p>
           </div>
         </div>
       </div>
