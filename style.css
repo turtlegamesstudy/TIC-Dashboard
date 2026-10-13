@@ -13,68 +13,84 @@
 :root {
   color-scheme: light;
 
-  /* ── Colores de marca ──────────────────────────────────────────── */
-  --brand-blue:   #14578b;   /* azul institucional */
-  --brand-navy:   #0d3b5e;   /* azul profundo (degradados de cabecera) */
-  --brand-cyan:   #01a5e4;   /* azul claro oficial (color-primary) */
-  --brand-green:  #87c540;   /* verde institucional (navbar activo) */
-  --brand-pink:   #e10b7b;   /* rosado institucional */
-  --brand-orange: #f57e20;   /* reservado (ya no es color de marca) */
+  /* ── Colores de marca INATEC ──────────────────────────────────── */
+  --brand-pink:   #E6007E;   /* magenta institucional */
+  --brand-blue:   #005CA9;   /* azul institucional */
+  --brand-green:  #00A859;   /* verde institucional */
 
-  /* Azul complementario */
-  --p-50:  #eef4fa;
-  --p-100: #d9e7f4;
-  --p-200: #b4cee7;
-  --p-300: #7fa8d1;
-  --p-400: #2f7ab3;
-  --p-500: #14578b;
-  --p-600: #114a76;
-  --p-700: #0d3b5e;
-  --p-800: #0a2c47;
-  --p-900: #071e31;
+  /* Escala del azul (#005CA9) */
+  --p-50:  #e6f0f8;
+  --p-100: #cce1f1;
+  --p-200: #99c3e3;
+  --p-300: #66a5d5;
+  --p-400: #3387c7;
+  --p-500: #005CA9;
+  --p-600: #004d8f;
+  --p-700: #003e75;
+  --p-800: #002f5b;
+  --p-900: #002041;
 
-  /* Color secundario: rosado */
-  --brand-2:      var(--brand-pink);
-  --brand-2-dark: #b80865;
-  --brand-2-soft: #fde7f1;
+  /* Escala del magenta (#E6007E) */
+  --pink-50:  #fde7f3;
+  --pink-100: #fbcfe8;
+  --pink-200: #f9a8d4;
+  --pink-300: #f472b6;
+  --pink-400: #ec4899;
+  --pink-500: #E6007E;
+  --pink-600: #c4006a;
+  --pink-700: #a20056;
+  --pink-800: #800042;
+  --pink-900: #5e002e;
 
-  /* Superficies blancas */
+  /* Escala del verde (#00A859) */
+  --green-50:  #e6f7ee;
+  --green-100: #ccefdd;
+  --green-200: #99dfbb;
+  --green-300: #66cf99;
+  --green-400: #33bf77;
+  --green-500: #00A859;
+  --green-600: #008f4b;
+  --green-700: #00763d;
+  --green-800: #005d2f;
+  --green-900: #004421;
+
+  /* Superficies — modo claro */
   --bg-body:      #ffffff;
   --bg-surface:   #ffffff;
   --bg-elevated:  #ffffff;
   --bg-card:      #ffffff;
-  --bg-hover:     #fff2f8;
-  --bg-active:    #fde7f1;
+  --bg-hover:     #f8f9fa;
+  --bg-active:    #f0f1f2;
   --bg-input:     #f8fafc;
 
   /* Texto — suaves y legibles */
-  --text-primary:   #1a2736;
-  --text-secondary: #52607a;
+  --text-primary:   #1a1a1a;
+  --text-secondary: #4a4a4a;
   --text-muted:     #6b7686;
   --text-disabled:  #c8d0dc;
 
   /* Bordes — suaves y sutiles */
-  --border-subtle:  rgba(20, 87, 139, 0.06);
-  --border-default: rgba(20, 87, 139, 0.10);
-  --border-strong:  rgba(20, 87, 139, 0.18);
-  --border-focus:   var(--p-500);
+  --border-subtle:  rgba(0, 92, 169, 0.06);
+  --border-default: rgba(0, 92, 169, 0.10);
+  --border-strong:  rgba(0, 92, 169, 0.18);
+  --border-focus:   var(--brand-blue);
 
-  /* Acentos complementarios y colores de estado */
-  --neon-blue:   var(--brand-blue);  /* azul institucional INATEC */
-  --neon-cyan:   var(--brand-cyan);  /* azul claro oficial (color-primary) */
-  --neon-green:  #16a34a;            /* éxito / activo (estado) */
-  --neon-amber:  #d97706;            /* advertencia (estado) */
-  --neon-red:    #dc2626;            /* error / crítico (estado) */
-  --neon-purple: var(--brand-pink);  /* categoría Hackathon (rosado oficial) */
-  --neon-pink:   #ea008b;            /* categoría secundaria */
+  /* Acentos y colores de estado */
+  --neon-blue:   var(--brand-blue);
+  --neon-cyan:   var(--brand-blue);
+  --neon-green:  var(--brand-green);
+  --neon-amber:  #d97706;
+  --neon-red:    #dc2626;
+  --neon-purple: var(--brand-pink);
+  --neon-pink:   var(--brand-pink);
 
   /* Glows — suaves y difuminados */
-  --glow-blue:   0 0 12px rgba(20, 87, 139, 0.10);
-  --glow-cyan:   0 0 12px rgba(1, 165, 228, 0.10);
-  --glow-green:  0 0 12px rgba(22, 163, 74, 0.08);
+  --glow-blue:   0 0 12px rgba(0, 92, 169, 0.10);
+  --glow-cyan:   0 0 12px rgba(0, 92, 169, 0.10);
+  --glow-green:  0 0 12px rgba(0, 168, 89, 0.08);
   --glow-amber:  0 0 12px rgba(217, 119, 6, 0.10);
   --glow-red:    0 0 12px rgba(220, 38, 38, 0.10);
-  --glow-brand2: 0 0 16px rgba(225, 11, 123, 0.15);
+  --glow-brand2: 0 0 16px rgba(230, 0, 126, 0.15);
 
   /* Tipografía — Montserrat para el cuerpo (como "Nova, Monserrat" del
      portal oficial) y serif para los títulos (como "SerifBook"). */
@@ -4050,57 +4066,82 @@ body {
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Azules claros para texto/iconos sobre superficies oscuras */
-  --p-50:  #e6f2fb;
-  --p-100: #cfe7f8;
-  --p-200: #a5d3f2;
-  --p-300: #6db9e8;
-  --p-400: #33a3dd;
-  --p-500: #0e7fbe;
-  --p-600: #0b6a9f;
-  --p-700: #095577;
-  --p-800: #073f5a;
-  --p-900: #052b3f;
+  /* Escala del azul para texto/iconos sobre fondo oscuro */
+  --p-50:  #e6f0f8;
+  --p-100: #cce1f1;
+  --p-200: #99c3e3;
+  --p-300: #66a5d5;
+  --p-400: #3387c7;
+  --p-500: #005CA9;
+  --p-600: #004d8f;
+  --p-700: #003e75;
+  --p-800: #002f5b;
+  --p-900: #002041;
 
-  --brand-2-soft: #3a0f27;
+  --pink-50:  #fde7f3;
+  --pink-100: #fbcfe8;
+  --pink-200: #f9a8d4;
+  --pink-300: #f472b6;
+  --pink-400: #ec4899;
+  --pink-500: #E6007E;
+  --pink-600: #c4006a;
+  --pink-700: #a20056;
+  --pink-800: #800042;
+  --pink-900: #5e002e;
 
-  --bg-body:      #071523;
-  --bg-surface:   #0c2033;
-  --bg-elevated:  #0f2740;
-  --bg-card:      #0d2438;
-  --bg-hover:     #14354f;
-  --bg-active:    #1a4465;
-  --bg-input:     #0a1b2c;
+  --green-50:  #e6f7ee;
+  --green-100: #ccefdd;
+  --green-200: #99dfbb;
+  --green-300: #66cf99;
+  --green-400: #33bf77;
+  --green-500: #00A859;
+  --green-600: #008f4b;
+  --green-700: #00763d;
+  --green-800: #005d2f;
+  --green-900: #004421;
 
-  --text-primary:   #e9f2fa;
-  --text-secondary: #a9bfd2;
-  --text-muted:     #7c93a9;
-  --text-disabled:  #46586b;
+  /* Superficies — modo oscuro */
+  --bg-body:      #000000;
+  --bg-surface:   #0a0a0a;
+  --bg-elevated:  #141414;
+  --bg-card:      #1a1a1a;
+  --bg-hover:     #222222;
+  --bg-active:    #2a2a2a;
+  --bg-input:     #111111;
 
-  --border-subtle:  rgba(1, 165, 228, 0.10);
-  --border-default: rgba(1, 165, 228, 0.20);
-  --border-strong:  rgba(1, 165, 228, 0.40);
-  --border-focus:   var(--brand-cyan);
+  /* Texto */
+  --text-primary:   #ffffff;
+  --text-secondary: #d0d0d0;
+  --text-muted:     #8a8a8a;
+  --text-disabled:  #4a4a4a;
 
-  --neon-cyan:  #29b6f0;
-  --neon-green: #7ac943;
+  /* Bordes */
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.20);
+  --border-focus:   var(--brand-blue);
+
+  /* Acentos */
+  --neon-cyan:  #4da6ff;
+  --neon-green: #2ecc71;
   --neon-amber: #f5a623;
   --neon-red:   #ff6b6b;
 
-  --glow-blue:   0 0 8px rgba(1, 165, 228, 0.28);
-  --glow-cyan:   0 0 8px rgba(1, 165, 228, 0.28);
-  --glow-green:  0 0 8px rgba(122, 201, 67, 0.22);
+  /* Glows */
+  --glow-blue:   0 0 8px rgba(0, 92, 169, 0.28);
+  --glow-cyan:   0 0 8px rgba(0, 92, 169, 0.28);
+  --glow-green:  0 0 8px rgba(0, 168, 89, 0.22);
   --glow-amber:  0 0 8px rgba(245, 166, 35, 0.22);
   --glow-red:    0 0 8px rgba(255, 107, 107, 0.22);
-  --glow-brand2: 0 0 10px rgba(225, 11, 123, 0.30);
+  --glow-brand2: 0 0 10px rgba(230, 0, 126, 0.30);
 
-  --shadow-xs:  0 1px 2px rgba(0,0,0,0.45);
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.35);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-lg:  0 12px 28px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.45);
-  --shadow-xl:  0 20px 44px rgba(0,0,0,0.65), 0 4px 10px rgba(0,0,0,0.5);
-  --shadow-2xl: 0 30px 64px rgba(0,0,0,0.72);
-  --shadow-inner: inset 0 1px 2px rgba(0,0,0,0.45);
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.6);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.75), 0 1px 3px rgba(0,0,0,0.55);
+  --shadow-lg:  0 12px 28px rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.6);
+  --shadow-xl:  0 20px 44px rgba(0,0,0,0.85), 0 4px 10px rgba(0,0,0,0.65);
+  --shadow-2xl: 0 30px 64px rgba(0,0,0,0.9);
+  --shadow-inner: inset 0 1px 2px rgba(0,0,0,0.6);
 }
 
 /* ── Superficie general ── */
@@ -4122,12 +4163,12 @@ html[data-theme="dark"] * { scrollbar-color: var(--brand-cyan) var(--bg-body); }
 
 /* ── Sidebar institucional (más profundo) ── */
 html[data-theme="dark"] .sidebar {
-  background: linear-gradient(180deg, #0a2c47 0%, #08223a 55%, #061a2d 100%);
-  border-right-color: rgba(1, 165, 228, 0.42);
+  background: linear-gradient(180deg, #000000 0%, #0a0a0a 55%, #141414 100%);
+  border-right-color: rgba(255, 255, 255, 0.15);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
 }
 html[data-theme="dark"] .sidebar::before {
-  background: linear-gradient(180deg, rgba(1, 165, 228,0.20) 0%, transparent 22%, transparent 78%, rgba(135, 197, 64,0.12) 100%);
+  background: linear-gradient(180deg, rgba(230, 0, 126, 0.15) 0%, transparent 22%, transparent 78%, rgba(0, 168, 89, 0.10) 100%);
 }
 html[data-theme="dark"] .sidebar-footer { background: rgba(0, 0, 0, 0.32); }
 html[data-theme="dark"] .user-card { background: rgba(255, 255, 255, 0.06); }
