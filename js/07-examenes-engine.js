@@ -312,7 +312,7 @@ Juan Perez, 85
 Maria Garcia, 92
 Luis Martinez, 78"></textarea>
             <div style="display:flex;flex-direction:column;gap:8px;">
-              <button class="btn-primary" onclick="ExamenesEngine.procesarImportacionMasiva()" style="white-space:nowrap;"><i class="ri-upload-line"></i> Procesar</button>
+              <button class="btn-primary" onclick="ExamenesEngine.procesarImportacionMasiva()" style="white-space:nowrap;"><i class="ri-upload-line"></i> Cargar Datos</button>
               <button class="btn-secondary" onclick="document.getElementById('import-masivo-texto').value='';document.getElementById('import-masivo-resultado').innerHTML='';" style="white-space:nowrap;">Limpiar</button>
             </div>
           </div>

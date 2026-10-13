@@ -328,7 +328,7 @@ const InformeEngine = {
 
         <div style="text-align:right;">
           <button class="btn-primary" onclick="InformeEngine.generarDocumento()">
-            <i class="ri-download-2-line"></i> Generar y Descargar Informe (Word)
+            <i class="ri-download-2-line"></i> Descargar Informe
           </button>
         </div>
       </div>
