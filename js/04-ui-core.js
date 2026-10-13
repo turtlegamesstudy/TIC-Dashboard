@@ -1430,9 +1430,7 @@ const UI = {
                 <h1>¡Hola de nuevo, ${this.escaparTexto(this.nombreDocente())}! <span class="dash-emoji" aria-hidden="true">👋</span></h1>
                 <p>Bienvenido al panel principal de gestión docente en el <strong>${this.escaparTexto(this.nombreCentro())}</strong>.</p>
                 <div class="dash-acciones">
-                  <button type="button" class="dash-accion primaria" onclick="UI.irA('estadisticas')"><i class="ri-bar-chart-2-line" aria-hidden="true"></i> Ver estadísticas</button>
-                  <button type="button" class="dash-accion" onclick="UI.irA('grupos')"><i class="ri-file-excel-line" aria-hidden="true"></i> Cargar lista de grupo</button>
-                  <button type="button" class="dash-accion" onclick="UI.irA('cuaderno-docente')"><i class="ri-book-2-line" aria-hidden="true"></i> Cuaderno Docente</button>
+                  <button type="button" class="dash-accion primaria" onclick="UI.irA('cuaderno-docente')"><i class="ri-book-2-line" aria-hidden="true"></i> Ir al Cuaderno Docente</button>
                 </div>
               </div>
               <div class="header-actions dash-hero-estado">
@@ -1558,12 +1556,7 @@ const UI = {
         <div class="estado-panel estado-vacio" id="dir-estado-vacio" role="status" hidden>
           <i class="ri-user-search-line" aria-hidden="true"></i>
           <h3>No hay estudiantes con ese estado.</h3>
-          <p>Prueba con otro filtro o límpialo para volver a ver la lista completa.</p>
-          <div class="estado-acciones">
-            <button type="button" class="btn-ghost" data-limpiar-filtros data-vista-filtro="estudiantes">
-              <i class="ri-filter-off-line" aria-hidden="true"></i> Limpiar filtros
-            </button>
-          </div>
+          <p>Prueba con otro filtro para volver a ver la lista completa.</p>
         </div>
       </div>`;
   },
@@ -1705,7 +1698,7 @@ const UI = {
               <button type="button" class="btn-icon cd-icon-btn" data-permiso="configurarMateria" onclick="CuadernoEngine.agregarModuloAcademico()" title="Agregar un módulo nuevo a la lista (ej. Inglés) · solo administradores" aria-label="Agregar un módulo nuevo a la lista">
                 <i class="ri-add-line" aria-hidden="true"></i>
               </button>
-              <button type="button" class="btn-icon cd-icon-btn" data-permiso="configurarMateria" onclick="CuadernoEngine.quitarModuloAcademico()" title="Quitar el módulo seleccionado de la lista · solo administradores" aria-label="Quitar el módulo seleccionado de la lista">
+              <button type="button" class="btn-icon cd-icon-btn" data-permiso="configurarMateria" onclick="CuadernoEngine.quitarModuloAcademico()" title="Eliminar módulo de la lista (no borra notas) · solo administradores" aria-label="Eliminar módulo de la lista">
                 <i class="ri-subtract-line" aria-hidden="true"></i>
               </button>
             </div>
@@ -1718,8 +1711,8 @@ const UI = {
               <button type="button" class="btn-warning cd-btn" onclick="UI.abrirModalConvalidaciones()" title="Gestionar convalidaciones de notas para estudiantes de este módulo">
                 <i class="ri-award-line" aria-hidden="true"></i> Convalidar Módulo
               </button>
-              <button type="button" class="btn-secondary cd-btn btn-delete-action" title="Borrar las calificaciones del módulo seleccionado en este grupo" onclick="DataEngine.borrarDatosModulo()">
-                <i class="ri-delete-bin-5-line" aria-hidden="true"></i> Borrar Módulo
+              <button type="button" class="btn-secondary cd-btn btn-delete-action" title="Eliminar las calificaciones del módulo seleccionado en este grupo" onclick="DataEngine.borrarDatosModulo()">
+                <i class="ri-delete-bin-5-line" aria-hidden="true"></i> Eliminar Notas del Módulo
               </button>
             </div>
           </div>
@@ -1799,12 +1792,7 @@ const UI = {
                 <p class="cd-panel-subtitle">Descarga calificaciones del grupo actual o de toda la institución.</p>
               </div>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <button type="button" class="btn-primary-soft cd-btn cd-btn-sm" onclick="event.stopPropagation(); UI.toggleSectionSettings();" title="Abrir panel lateral de filtros y ajustes">
-                <i class="ri-equalizer-2-line"></i> Filtros
-              </button>
-              <span class="cd-panel-tag cd-panel-tag-export">Descargas</span>
-            </div>
+            <span class="cd-panel-tag cd-panel-tag-export">Descargas</span>
           </summary>
 
           <div class="cd-panel-body">
