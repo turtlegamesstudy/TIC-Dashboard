@@ -460,6 +460,98 @@ body {
   opacity: 0.85;
 }
 
+/* ── Fondo institucional en la cabecera del menú ── */
+.sidebar-header-bg {
+  position: absolute; inset: 0;
+  background-image: url('../assets/fondo-claro.gif');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.55;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.sidebar-header-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(20, 87, 139, 0.55) 0%, rgba(225, 11, 123, 0.25) 100%);
+  border-radius: inherit;
+}
+
+html[data-theme="dark"] .sidebar-header-bg {
+  background-image: url('../assets/fondo-profundo.gif');
+  opacity: 0.7;
+}
+
+html[data-theme="dark"] .sidebar-header-bg::after {
+  background: linear-gradient(135deg, rgba(7, 30, 49, 0.72) 0%, rgba(20, 87, 139, 0.45) 100%);
+}
+
+/* Logo INATEC con imágenes claras/oscuras */
+.logo-imagen {
+  width: 52px; height: 52px;
+  object-fit: contain;
+  position: relative; z-index: 1;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+  display: none;
+}
+
+.logo-imagen-claro { display: block; }
+html[data-theme="dark"] .logo-imagen-claro { display: none; }
+html[data-theme="dark"] .logo-imagen-oscuro { display: block; }
+
+.brand-subtitle {
+  display: block;
+  font-size: 0.58rem;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+html:not([data-theme="dark"]) .brand-subtitle {
+  color: var(--text-secondary);
+  text-shadow: none;
+}
+
+/* ── Pie del menú lateral ── */
+.sidebar-footer {
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid var(--border-default);
+  text-align: center;
+}
+
+.sidebar-footer-divider {
+  height: 1px;
+  margin-bottom: var(--s-3);
+  background: linear-gradient(90deg, transparent, rgba(225, 11, 123, 0.4), rgba(135, 197, 64, 0.4), transparent);
+}
+
+.sidebar-footer-text {
+  margin: 0 0 var(--s-2);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.sidebar-footer-credit {
+  margin: 0;
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+.sidebar-footer-credit strong {
+  color: var(--brand-pink);
+  font-weight: 700;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    LOGO CON IMAGEN — Reemplaza gradiente por logo institucional
    ═══════════════════════════════════════════════════════════════ */
@@ -567,6 +659,10 @@ body {
   transition: all var(--t-base);
   position: relative; overflow: hidden;
   border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(20, 30, 45, 0.06);
   white-space: nowrap;
   min-height: 44px;
 }
@@ -602,9 +698,10 @@ body {
 
 .nav-item:hover {
   color: var(--brand-pink);
-  background: var(--brand-2-soft);
+  background: linear-gradient(135deg, rgba(225, 11, 123, 0.08), rgba(20, 87, 139, 0.05));
   border-color: rgba(225, 11, 123, 0.12);
   transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(225, 11, 123, 0.1);
 }
 
 .nav-item:hover i {
@@ -617,9 +714,9 @@ body {
 
 .nav-item.active {
   color: var(--brand-pink);
-  background: var(--brand-2-soft);
+  background: linear-gradient(135deg, rgba(225, 11, 123, 0.12), rgba(20, 87, 139, 0.08));
   border-color: rgba(225, 11, 123, 0.28);
-  box-shadow: inset 3px 0 0 var(--brand-pink);
+  box-shadow: inset 3px 0 0 var(--brand-pink), 0 2px 8px rgba(225, 11, 123, 0.15);
   font-weight: 700;
 }
 

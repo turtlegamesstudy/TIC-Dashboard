@@ -226,18 +226,25 @@
   <div class="app-container" id="app-container" hidden aria-hidden="true" inert>
     <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
       <div class="sidebar-header">
+        <div class="sidebar-header-bg" aria-hidden="true"></div>
         <div class="logo-box">
-          <img class="logo-imagen" src="assets/emblema.png" alt="INATEC" width="44" height="44">
-          <i class="ri-government-line" aria-hidden="true"></i>
+          <img class="logo-imagen logo-imagen-claro" src="assets/logo-inatec.png" alt="INATEC" width="52" height="52">
+          <img class="logo-imagen logo-imagen-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" width="52" height="52">
         </div>
         <div class="brand-info">
           <h2>INATEC</h2>
+          <span class="brand-subtitle">Tecnológico Nacional</span>
           <span id="sidebar-center-name">Centro tecnológico</span>
         </div>
       </div>
       <!-- El menú se genera desde el registro de secciones (js/14-secciones.js):
            aquí solo vive el contenedor. -->
       <nav class="sidebar-nav" id="sidebar-nav" aria-label="Secciones del panel"></nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-divider" aria-hidden="true"></div>
+        <p class="sidebar-footer-text">Sistema de Gestión Académica<br>Cuaderno Docente Digital</p>
+        <p class="sidebar-footer-credit">Desarrollado por Docente TIC<br><strong>Hanzell Mayorga</strong> · INATEC</p>
+      </div>
     </aside>
     <!-- Fondo que cierra el menú al tocar fuera (móvil / tablet) -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="UI.closeSidebar()"></div>
