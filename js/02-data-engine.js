@@ -80,6 +80,8 @@
         }
 
         const reference = this._centerDataReference(database);
+        const profile = AuthManager && AuthManager.profile ? AuthManager.profile : {};
+        const canWrite = profile.role === 'admin' || profile.role === 'docente';
         const snapshot = await reference.once('value');
         const remoteData = snapshot.val();
         if (!remoteData) {
@@ -98,7 +100,9 @@
             this._migrationNotice = 'Se migraron a Firebase los datos guardados anteriormente en este navegador.';
           }
           const initialData = this._serializeDatabase(this.db);
-          await reference.set({ ...initialData, updatedBy: AuthManager.user.uid });
+          if (canWrite) {
+            await reference.set({ ...initialData, updatedBy: AuthManager.user.uid });
+          }
           this._syncSnapshot = this._clone(initialData);
           this._keyEncodingVersion = 1;
           if (this._migrationNotice) {
@@ -134,7 +138,9 @@
             // del centro. Antes solo lo hacía un administrador y el resto
             // de los docentes no podía entrar hasta que él iniciaba sesión.
             try {
-              await reference.set({ ...normalized, updatedBy: AuthManager.user.uid });
+              if (canWrite) {
+                await reference.set({ ...normalized, updatedBy: AuthManager.user.uid });
+              }
             } catch (error) {
               console.error('No se pudo actualizar el formato de la base compartida:', error);
               throw new Error(`No se pudo actualizar el formato de la base compartida: ${error.message}. La información no fue modificada.`);
