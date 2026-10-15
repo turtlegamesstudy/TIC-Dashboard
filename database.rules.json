@@ -13,7 +13,7 @@
     "staffProfiles": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
-        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && ((auth.uid === $uid && root.child('users').child(auth.uid).child('role').val() !== 'invitado') || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && ((auth.uid === $uid && root.child('users').child(auth.uid).child('role').val() !== 'invitado') || root.child('users').child(auth.uid).child('role').val() === 'admin')"
       }
     },
