@@ -94,7 +94,13 @@ const AuthManager = {
         return;
       }
 
-      await DataEngine.prepareAccount(profile, user, services.database);
+      try {
+        await DataEngine.prepareAccount(profile, user, services.database);
+      } catch (prepareError) {
+        const wrapped = new Error(`Preparación de cuenta (${prepareError.code || 'sin código'}): ${prepareError.message || this.describeError(prepareError)}`);
+        wrapped.code = prepareError.code;
+        throw wrapped;
+      }
       this.user = user;
       this.profile = profile;
       this.activeCenterId = profile.centerId;
@@ -156,7 +162,13 @@ const AuthManager = {
       // registro de secciones (js/14-secciones.js) y solo incluye lo que el
       // rol puede ver.
 
-      await DataEngine.init();
+      try {
+        await DataEngine.init();
+      } catch (initError) {
+        const wrapped = new Error(`Carga de datos (${initError.code || 'sin código'}): ${initError.message || this.describeError(initError)}`);
+        wrapped.code = initError.code;
+        throw wrapped;
+      }
       if (typeof CuadernoEngine !== 'undefined' && CuadernoEngine.inicializarSelectoresExportacion) {
         CuadernoEngine.inicializarSelectoresExportacion();
       }
@@ -174,7 +186,7 @@ const AuthManager = {
     } catch (error) {
       console.error('No se pudo abrir la sesión del panel:', error);
       const message = error.code === 'PERMISSION_DENIED'
-        ? 'Firebase rechazó el acceso. El administrador debe revisar las reglas y habilitar tu cuenta.'
+          ? `Firebase rechazó el acceso: ${error.message || 'sin detalle'}. El administrador debe revisar las reglas y habilitar tu cuenta.`
         : `No se pudo cargar el panel: ${this.describeError(error)}`;
       this._notice = message;
       await services.auth.signOut().catch(signOutError => console.error('No se pudo cerrar la sesión no autorizada:', signOutError));
