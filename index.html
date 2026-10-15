@@ -38,53 +38,51 @@
 
 <body>
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
-    <div class="auth-bg" aria-hidden="true"></div>
-    <div class="auth-layout">
-      <aside class="auth-branding">
-        <img class="auth-brand-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="72">
-        <img class="auth-brand-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="72">
-        <h2 class="auth-brand-title">Cuaderno Docente</h2>
-        <p class="auth-brand-sub">Sistema de Gestión Académica<br>Red de Centros Tecnológicos</p>
-        <div class="auth-brand-logos">
-          <img class="auth-gov-logo auth-logo-claro" src="assets/logo-gobierno-2025.png" alt="Gobierno de Reconciliación y Unidad Nacional" height="44">
-          <img class="auth-gov-logo auth-logo-oscuro" src="assets/logo-gobierno-2025.png" alt="Gobierno de Reconciliación y Unidad Nacional" height="44">
+    <div class="auth-videos" aria-hidden="true">
+      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/Qs61XTYrGeI?autoplay=1&mute=1&controls=0&loop=1&playlist=Qs61XTYrGeI&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/1r5A0blFjwA?autoplay=1&mute=1&controls=0&loop=1&playlist=1r5A0blFjwA&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/dW-PTLYoEFI?autoplay=1&mute=1&controls=0&loop=1&playlist=dW-PTLYoEFI&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/ZFhE59VMEno?autoplay=1&mute=1&controls=0&loop=1&playlist=ZFhE59VMEno&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/axJCLOA0D-s?autoplay=1&mute=1&controls=0&loop=1&playlist=axJCLOA0D-s&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/iGt5T9N1gBc?autoplay=1&mute=1&controls=0&loop=1&playlist=iGt5T9N1gBc&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+    </div>
+    <div class="auth-glass-overlay" aria-hidden="true"></div>
+    <div class="auth-card" id="auth-login-form" novalidate>
+      <div class="auth-card-inner">
+        <div class="auth-header">
+          <img class="auth-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="52">
+          <img class="auth-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="52">
+          <p class="auth-eyebrow">Panel TIC · Cuaderno Docente</p>
+          <h1 id="auth-title">Bienvenido</h1>
+          <p class="auth-description">Ingresa tus credenciales para acceder</p>
         </div>
-        <p class="auth-brand-credit">Docente TIC · Hanzell Mayorga</p>
-      </aside>
-      <div class="auth-card" id="auth-login-form" novalidate>
-        <div class="auth-card-inner">
-          <div class="auth-header">
-            <p class="auth-eyebrow">Panel TIC</p>
-            <h1 id="auth-title">Bienvenido</h1>
-            <p class="auth-description">Ingresa tus credenciales para acceder</p>
+        <div class="auth-form">
+          <label class="auth-field" for="auth-email">Correo electrónico</label>
+          <div class="auth-input-wrap">
+            <i class="ri-mail-line" aria-hidden="true"></i>
+            <input id="auth-email" name="email" type="email" autocomplete="username" required
+              placeholder="docente@inatec.edu.ni">
           </div>
-          <div class="auth-form">
-            <label class="auth-field" for="auth-email">Correo electrónico</label>
-            <div class="auth-input-wrap">
-              <i class="ri-mail-line" aria-hidden="true"></i>
-              <input id="auth-email" name="email" type="email" autocomplete="username" required
-                placeholder="docente@inatec.edu.ni">
-            </div>
-            <label class="auth-field" for="auth-password">Contraseña</label>
-            <div class="auth-input-wrap">
-              <i class="ri-lock-line" aria-hidden="true"></i>
-              <input id="auth-password" name="password" type="password" autocomplete="current-password" required
-                placeholder="••••••••">
-              <button type="button" class="auth-password-toggle" id="auth-password-toggle"
-                aria-label="Mostrar contraseña" title="Mostrar contraseña">
-                <i class="ri-eye-line" aria-hidden="true"></i>
-              </button>
-            </div>
-            <p class="auth-message" id="auth-message" role="alert" aria-live="polite"></p>
-            <button class="auth-submit" type="submit" id="auth-submit">
-              <span>Ingresar</span><i class="ri-arrow-right-line" aria-hidden="true"></i>
+          <label class="auth-field" for="auth-password">Contraseña</label>
+          <div class="auth-input-wrap">
+            <i class="ri-lock-line" aria-hidden="true"></i>
+            <input id="auth-password" name="password" type="password" autocomplete="current-password" required
+              placeholder="••••••••">
+            <button type="button" class="auth-password-toggle" id="auth-password-toggle"
+              aria-label="Mostrar contraseña" title="Mostrar contraseña">
+              <i class="ri-eye-line" aria-hidden="true"></i>
             </button>
-            <button class="auth-reset" type="button" id="auth-reset">¿Olvidaste tu contraseña?</button>
           </div>
-          <div class="auth-footer">
-            <img class="auth-emblem auth-emblem-claro" src="assets/emblema.png" alt="" height="18">
-            <img class="auth-emblem auth-emblem-oscuro" src="assets/emblema-blanco.png" alt="" height="18">
-            <span>INATEC · Nicaragua</span>
+          <p class="auth-message" id="auth-message" role="alert" aria-live="polite"></p>
+          <button class="auth-submit" type="submit" id="auth-submit">
+            <span>Ingresar</span><i class="ri-arrow-right-line" aria-hidden="true"></i>
+          </button>
+          <button class="auth-reset" type="button" id="auth-reset">¿Olvidaste tu contraseña?</button>
+        </div>
+        <div class="auth-footer">
+          <img class="auth-emblem auth-emblem-claro" src="assets/emblema.png" alt="" height="18">
+          <img class="auth-emblem auth-emblem-oscuro" src="assets/emblema-blanco.png" alt="" height="18">
+          <span>INATEC · Nicaragua</span>
           </div>
         </div>
       </div>
