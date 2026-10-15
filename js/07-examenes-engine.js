@@ -45,6 +45,7 @@ const ExamenesEngine = {
   },
 
   async guardarNotaExamen(estId, grupoId, modulo, nota) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('editarRegistros')) return false;
     const student = DataEngine.getEstudiantesByGrupo(grupoId).find(item => item.id === estId);
     if (!student) return;
     UI.showLoading('Guardando la nota del examen…', 'subida');
@@ -78,6 +79,7 @@ const ExamenesEngine = {
 
   /* ── IMPORTADOR DESDE GOOGLE FORMS / EXCEL / TEXTO ── */
   async procesarImportacionMasiva() {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('importarListado')) return false;
     const raw = document.getElementById('import-masivo-texto')?.value || '';
     const out = document.getElementById('import-masivo-resultado');
     if(!raw.trim()){ out.innerHTML=''; return; }

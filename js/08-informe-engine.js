@@ -72,6 +72,7 @@ const InformeEngine = {
   },
 
   async actualizarCampo(campo, valor) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('configurarInforme')) return false;
     const cfg = this.getConfig();
     const previousValue = cfg[campo];
     cfg[campo] = valor;
@@ -84,6 +85,7 @@ const InformeEngine = {
   },
 
   async actualizarMapeo(grupoId, valor) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('configurarInforme')) return false;
     const cfg = this.getConfig();
     const previousValue = cfg.mapeo[grupoId];
     if (!valor) delete cfg.mapeo[grupoId]; else cfg.mapeo[grupoId] = valor;

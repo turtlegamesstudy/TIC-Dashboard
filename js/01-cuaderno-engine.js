@@ -350,10 +350,17 @@ const CuadernoEngine = {
     const jefes = Array.isArray(config.jefesDepartamento)
       ? config.jefesDepartamento
       : (Array.isArray(config.departamentos) ? config.departamentos : []);
-    return jefes.map(jefe => ({
+    const resultado = jefes.map(jefe => ({
       nombre: String(jefe.jefe || jefe.nombre || '').trim(),
       turnos: Array.isArray(jefe.turnos) ? jefe.turnos : []
     })).filter(jefe => jefe.nombre && jefe.turnos.length);
+    if (resultado.length === 0) {
+      return [
+        { nombre: 'Jonatham Salinas', turnos: ['Matutino', 'Vespertino'] },
+        { nombre: 'Miguel Sanchez', turnos: ['Nocturno', 'Sabatino', 'Dominical'] }
+      ];
+    }
+    return resultado;
   },
 
   obtenerNombreCoordinador() {
@@ -395,6 +402,7 @@ const CuadernoEngine = {
     const nombreGuardado = this.cargarPreferenciasExportacion().jefeImpresion;
     const indiceGuardado = jefes.findIndex(jefe => jefe.nombre === nombreGuardado);
     if (indiceGuardado >= 0) selectorJefe.value = String(indiceGuardado);
+    else if (selectorJefe.options.length > 1) selectorJefe.selectedIndex = 1;
   },
 
   escaparHTML(valor) {
@@ -520,14 +528,16 @@ const CuadernoEngine = {
   inicializarSelectoresExportacion() {
     this.poblarSelectorJefesImpresion();
 
-    const contenedor = document.getElementById('contenedor-checkboxes-modulos');
-    if (!contenedor) return;
-    contenedor.innerHTML = '';
-    MODULOS_TRANSVERSALES.forEach((mod, i) => {
-      const label = document.createElement('label');
-      label.style.cssText = 'cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 5px;';
-      label.innerHTML = `<input type="checkbox" class="chk-modulo-export" value="${mod}" checked style="margin:0;"> <span>${mod}</span>`;
-      contenedor.appendChild(label);
+    const contenedores = document.querySelectorAll('#contenedor-checkboxes-modulos, .contenedor-checkboxes-modulos');
+    if (!contenedores || contenedores.length === 0) return;
+    contenedores.forEach(contenedor => {
+      contenedor.innerHTML = '';
+      MODULOS_TRANSVERSALES.forEach((mod, i) => {
+        const label = document.createElement('label');
+        label.style.cssText = 'cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 5px;';
+        label.innerHTML = `<input type="checkbox" class="chk-modulo-export" value="${mod}" checked style="margin:0;"> <span>${mod}</span>`;
+        contenedor.appendChild(label);
+      });
     });
 
     // [NUEVO] Poblar el filtro de turno con los turnos REALES presentes en los grupos
@@ -553,9 +563,10 @@ const CuadernoEngine = {
   },
 
   // [NUEVO] Obtiene los módulos seleccionados por el usuario
+  // (se deduplican porque el selector se renderiza en más de una zona).
   obtenerModulosSeleccionados() {
     const checkboxes = document.querySelectorAll('.chk-modulo-export:checked');
-    return Array.from(checkboxes).map(cb => cb.value);
+    return [...new Set(Array.from(checkboxes).map(cb => cb.value))];
   },
 
   // [NUEVO] Determina si se debe incluir el resumen general

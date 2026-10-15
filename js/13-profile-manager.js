@@ -343,6 +343,10 @@ const ProfileManager = {
   },
 
   async save(form) {
+    if (AuthManager.profile?.role === 'invitado') {
+      UI?.showToast('🔒 Tu cuenta de invitado es de solo lectura: no puedes modificar el perfil.');
+      return false;
+    }
     const submitButton = form.querySelector('[data-profile-submit]');
     if (submitButton?.disabled) return;
     const values = new FormData(form);
@@ -385,7 +389,7 @@ const ProfileManager = {
       const currentRole = document.getElementById('current-user-role');
       if (currentRole) currentRole.textContent = AuthManager.profile.role === 'admin'
         ? 'Administrador global'
-        : AuthManager.getAreaLabel(profile.area);
+        : (AuthManager.profile.role === 'invitado' ? 'Invitado (solo lectura)' : AuthManager.getAreaLabel(profile.area));
       this.applyAvatar();
       let authDisplayNameUpdated = true;
       try {

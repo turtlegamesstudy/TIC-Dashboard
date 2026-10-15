@@ -387,6 +387,7 @@ Secciones.registrarVarias([
     id: 'envio-mensajes',
     etiqueta: 'Envío de Mensajes',
     icono: 'ri-mail-line',
+    roles: ['admin', 'docente'],
     grupo: 'Comunicación e innovación',
     orden: 80,
     render: Secciones.desdeHTML(() => MessageEngine.renderVistaMensajes())
@@ -396,6 +397,7 @@ Secciones.registrarVarias([
     etiqueta: 'Equipos Innovatec',
     titulo: 'Equipos Innovatec / Hackathon',
     icono: 'ri-trophy-line',
+    roles: ['admin', 'docente'],
     grupo: 'Comunicación e innovación',
     orden: 90,
     render: Secciones.desdeHTML(() => EquiposEngine.renderVista())

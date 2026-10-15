@@ -1031,6 +1031,7 @@ const UI = {
   },
 
   async deleteStudent(groupId, studentId) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('eliminarRegistros')) return;
     if (!confirm("¿Estás seguro de que deseas eliminar a este estudiante del grupo?")) return;
     const group = DataEngine.db.grupos.find(g => g.id === groupId);
     if (group) {
@@ -1061,6 +1062,7 @@ const UI = {
   },
 
   async deleteGroup(groupId) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('eliminarRegistros')) return;
     const group = DataEngine.db.grupos.find(g => g.id === groupId);
     if (!group) return;
     if (!confirm(`¿Estás seguro de eliminar el grupo "${group.nombre}"? Se perderán sus ${group.estudiantes.length} estudiantes.`)) return;
@@ -1851,7 +1853,7 @@ const UI = {
                       <option value="">Seleccionar jefe</option>
                     </select>
                     <button type="button" class="btn-primary-soft cd-btn" onclick="CuadernoEngine.exportarCuadernosPorJefe()" title="Descarga los cuadernos de los turnos del jefe seleccionado, en formato Legal B/N">
-                      <i class="ri-printer-line"></i> Imprimir
+                      <i class="ri-file-download-line"></i> Exportar
                     </button>
                   </div>
                 </div>
@@ -1859,6 +1861,21 @@ const UI = {
             </div>
           </div>
         </details>
+
+         <!-- SELECTOR VISIBLE DE MODULOS A INCLUIR EN LA EXPORTACION -->
+         <div class="cd-drawer-field" style="margin: 0 0 18px;">
+           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+             <label class="cd-drawer-label" style="margin: 0;"><i class="ri-book-open-line"></i> Modulos a Descargar:</label>
+             <div style="display: flex; gap: 8px; font-size: 0.8rem;">
+               <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(true)">Todos</button>
+               <span style="color: var(--border-strong);">|</span>
+               <button type="button" class="cd-link-btn" onclick="UI.toggleTodosModulosExport(false)">Ninguno</button>
+             </div>
+           </div>
+           <div class="contenedor-checkboxes-modulos cd-drawer-modules-list">
+             ${MODULOS_TRANSVERSALES.map(mod => `<label><input type="checkbox" class="chk-modulo-export" value="${mod}" checked><span>${mod}</span></label>`).join('')}
+           </div>
+         </div>
 
         <!-- BLOQUE DEDICADO DE FILTROS Y AJUSTES (Para el cajón lateral "Filtros y ajustes") -->
         <div data-section-settings data-settings-title="Filtros del Cuaderno" id="panel-opciones-exportar" class="cd-drawer-settings-container">
@@ -2016,6 +2033,7 @@ const UI = {
 
   async saveStudentEdit(e) {
     e.preventDefault();
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('editarRegistros')) return;
     const groupId = document.getElementById('edit-group-id').value;
     const studentId = document.getElementById('edit-student-id').value;
     const group = DataEngine.db.grupos.find(g => g.id === groupId);

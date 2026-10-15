@@ -122,6 +122,7 @@ const AdminManager = {
                 <label for="admin-new-role">Rol inicial</label>
                 <select id="admin-new-role" name="role" required>
                   <option value="docente">Docente</option>
+                   <option value="invitado">Invitado (solo lectura)</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
@@ -185,6 +186,7 @@ const AdminManager = {
               <select data-admin-filter-rol aria-label="Filtrar por rol">
                 <option value="todos">Todos los roles</option>
                 <option value="docente">Docentes</option>
+                 <option value="invitado">Invitados</option>
                 <option value="admin">Administradores</option>
               </select>
               <select data-admin-filter-estado aria-label="Filtrar por estado">
@@ -349,7 +351,7 @@ const AdminManager = {
     const { texto, rol, estado } = this._filtros;
     const busqueda = String(texto || '').trim().toLowerCase();
     return entries.filter(([uid, profile]) => {
-      if (rol !== 'todos' && (profile.role === 'admin' ? 'admin' : 'docente') !== rol) return false;
+      if (rol !== 'todos' && (profile.role === 'admin' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente')) !== rol) return false;
       if (estado === 'activas' && profile.active !== true) return false;
       if (estado === 'inactivas' && profile.active === true) return false;
       if (!busqueda) return true;
@@ -437,7 +439,7 @@ const AdminManager = {
 
   _renderUserRow(uid, profile, activeAdmins) {
     const safeUid = this._escape(uid);
-    const role = profile.role === 'admin' ? 'admin' : 'docente';
+    const role = profile.role === 'admin' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente');
     const isCurrentUser = uid === AuthManager.user?.uid;
     const isOnlyActiveAdmin = role === 'admin' && profile.active === true && activeAdmins <= 1;
     const roleDisabled = isCurrentUser || isOnlyActiveAdmin;
@@ -459,11 +461,11 @@ const AdminManager = {
       <tr data-user-row data-uid="${safeUid}">
         <td class="admin-cell-user">
           <div class="admin-user-cell">
-            <span class="admin-avatar ${role === 'admin' ? 'admin' : 'docente'}" aria-hidden="true">${this._escape(iniciales)}</span>
+            <span class="admin-avatar ${role === 'admin' ? 'admin' : (role === 'invitado' ? 'invitado' : 'docente')}" aria-hidden="true">${this._escape(iniciales)}</span>
             <span class="admin-user-copy">
               <span class="admin-user-name">${this._escape(name)}${isCurrentUser ? '<span class="admin-you">tú</span>' : ''}</span>
               <span class="admin-user-email">${this._escape(email)}</span>
-              <span class="admin-rol-badge${role === 'admin' ? ' es-admin' : ''}">${role === 'admin' ? 'Administrador' : 'Docente'}</span>
+              <span class="admin-rol-badge${role === 'admin' ? ' es-admin' : ''}">${role === 'admin' ? 'Administrador' : (role === 'invitado' ? 'Invitado' : 'Docente')}</span>
               <span class="admin-user-uid" title="Identificador de la cuenta: ${safeUid}">UID: ${safeUid}</span>
             </span>
           </div>
@@ -472,7 +474,8 @@ const AdminManager = {
           <div class="admin-user-actions">
             <select aria-label="Rol de ${this._escape(name)}" data-user-role ${roleDisabled ? 'disabled' : ''} onchange="AdminManager.actualizarPistaRol(this)">
               <option value="docente"${role === 'docente' ? ' selected' : ''}>Docente</option>
-              <option value="admin"${role === 'admin' ? ' selected' : ''}>Administrador</option>
+              <option value="invitado"${role === 'invitado' ? ' selected' : ''}>Invitado (solo lectura)</option>
+<option value="admin"${role === 'admin' ? ' selected' : ''}>Administrador</option>
             </select>
             ${roleDisabled ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="save-role" data-uid="${safeUid}"><i class="ri-check-line" aria-hidden="true"></i> Guardar</button>`}
           </div>
@@ -612,7 +615,7 @@ const AdminManager = {
     const role = String(formData.get('role') || '');
     const centerId = String(formData.get('centerId') || '');
     const area = String(formData.get('area') || '');
-    if (!displayName || !email || !['admin', 'docente'].includes(role) ||
+    if (!displayName || !email || !['admin', 'docente', 'invitado'].includes(role) ||
       !['general', 'ingles', 'tic', 'otra'].includes(area) || !this.centers[centerId]) {
       UI.showToast('❌ Completa los datos, selecciona un área y asigna un centro activo.');
       return;
@@ -775,7 +778,7 @@ const AdminManager = {
   async updateRole(uid, role) {
     try {
       const profile = this._getTargetProfile(uid);
-      if (!['admin', 'docente'].includes(role)) throw new Error('El rol seleccionado no es válido.');
+      if (!['admin', 'docente', 'invitado'].includes(role)) throw new Error('El rol seleccionado no es válido.');
       this._preventLockout(uid, profile, undefined, role);
       await window.FirebaseServices.database.ref(`users/${uid}`).update({ role });
       UI.showToast('✅ Rol actualizado.');
@@ -831,7 +834,12 @@ const AdminManager = {
         await window.FirebaseServices.database.ref(`users/${uid}`).update({ email });
         profile.email = email;
       }
-      await window.FirebaseServices.auth.sendPasswordResetEmail(email);
+      const actionCodeSettings = { url: `${window.location.origin}/`, handleCodeInApp: false };
+     try {
+       await window.FirebaseServices.auth.sendPasswordResetEmail(email, actionCodeSettings);
+     } catch (settingsError) {
+       await window.FirebaseServices.auth.sendPasswordResetEmail(email);
+     }
       UI.showToast(`✅ Se envió un correo de recuperación a ${email}.`);
     } catch (error) {
       console.error('No se pudo enviar el correo de recuperación:', error);

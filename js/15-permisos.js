@@ -34,7 +34,14 @@ const Permisos = {
     editarRegistros:      { roles: ['admin', 'docente'], etiqueta: 'editar estudiantes y registros' },
     eliminarRegistros:    { roles: ['admin', 'docente'], etiqueta: 'eliminar estudiantes y registros' },
     exportarDocumentos:   { roles: ['admin', 'docente'], etiqueta: 'exportar e imprimir documentos' },
-    descargarBase:        { roles: ['admin', 'docente'], etiqueta: 'descargar una copia de la base' }
+    descargarBase:        { roles: ['admin', 'docente'], etiqueta: 'descargar una copia de la base' },
+    /* El invitado solo puede consultar y exportar el formato de Avances. */
+    exportarAvance:       { roles: ['admin', 'docente', 'invitado'], etiqueta: 'exportar el formato de Avances' },
+    exportarInformeAvance:{ roles: ['admin', 'docente', 'invitado'], etiqueta: 'exportar el informe de avance' },
+    exportarFormatoAvance:{ roles: ['admin', 'docente', 'invitado'], etiqueta: 'exportar el formato de avances' },
+    descargarInformeAvance:{ roles: ['admin', 'docente', 'invitado'], etiqueta: 'descargar el informe de avance' },
+    configurarInforme:    { roles: ['admin', 'docente'], etiqueta: 'configurar el informe de avance' },
+    editarInforme:        { roles: ['admin', 'docente'], etiqueta: 'editar el informe de avance' }
   },
 
   rolesDe(accion) {
@@ -85,7 +92,7 @@ const Permisos = {
     const permitidas = Object.entries(this.ACCIONES)
       .filter(([, def]) => Array.isArray(def.roles) && def.roles.includes(rol))
       .map(([, def]) => def.etiqueta);
-    const rol_ = rol === 'admin' ? 'Administrador' : 'Docente';
+    const rol_ = rol === 'admin' ? 'Administrador' : (rol === 'invitado' ? 'Invitado' : 'Docente');
     return permitidas.length
       ? `${rol_}: ${permitidas.join('; ')}.`
       : `${rol_}: sin permisos registrados.`;

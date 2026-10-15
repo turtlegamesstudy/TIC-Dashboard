@@ -384,6 +384,7 @@ const EquiposEngine = {
   },
 
   async guardarEquipo(event) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('editarRegistros')) return false;
     event.preventDefault();
     const id = document.getElementById('equipo-id').value;
     const datos = {
@@ -437,6 +438,7 @@ const EquiposEngine = {
   },
 
   async eliminarEquipo(equipoId) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('eliminarRegistros')) return false;
     const eq = DataEngine.getEquipoById(equipoId);
     if (!eq) return;
     const adjuntosDeOtros = (eq.archivos || []).filter(file =>
@@ -564,6 +566,7 @@ const EquiposEngine = {
   },
 
   async guardarIntegrante(event) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('editarRegistros')) return false;
     event.preventDefault();
     const equipoId = document.getElementById('integrante-equipo-id').value;
     const integranteId = document.getElementById('integrante-id').value;
@@ -630,6 +633,7 @@ const EquiposEngine = {
   },
 
   async eliminarIntegrante(equipoId, integranteId) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('eliminarRegistros')) return false;
     const eq = DataEngine.getEquipoById(equipoId);
     if (!eq) return;
     const integrante = (eq.integrantes || []).find(i => i.id === integranteId);
@@ -703,6 +707,7 @@ const EquiposEngine = {
   },
 
   async eliminarArchivo(equipoId, archivoId) {
+    if (typeof Permisos !== 'undefined' && !Permisos.exigir('eliminarRegistros')) return false;
     const eq = DataEngine.getEquipoById(equipoId);
     if (!eq) return;
     const archivo = (eq.archivos || []).find(a => a.id === archivoId);

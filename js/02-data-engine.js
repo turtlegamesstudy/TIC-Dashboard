@@ -622,6 +622,11 @@
       },
 
       async save() {
+        if (AuthManager.profile?.role === 'invitado') {
+          const msg = '🔒 Tu cuenta de invitado es de solo lectura: no se pueden modificar ni guardar datos.';
+          if (typeof UI !== 'undefined' && UI && typeof UI.showToast === 'function') UI.showToast(msg);
+          throw new Error(msg);
+        }
         if (!AuthManager.user || !this._syncSnapshot) {
           throw new Error('No se guardaron los cambios: no hay una sesión conectada a la base compartida.');
         }

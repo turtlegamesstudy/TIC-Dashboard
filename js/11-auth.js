@@ -49,6 +49,10 @@ const AuthManager = {
   bindEvents() {
     document.getElementById('auth-login-form')?.addEventListener('submit', event => this.signIn(event));
     document.getElementById('auth-reset')?.addEventListener('click', () => this.resetPassword());
+    const toggle = document.getElementById('auth-password-toggle');
+    if (toggle) {
+      toggle.addEventListener('click', () => this.alternarVisibilidadContrasena());
+    }
   },
 
   async activate(user) {
@@ -71,7 +75,7 @@ const AuthManager = {
     try {
       const snapshot = await services.database.ref(`users/${user.uid}`).once('value');
       const profile = snapshot.val();
-      if (!profile || profile.active !== true || !['admin', 'docente'].includes(profile.role)) {
+      if (!profile || profile.active !== true || !['admin', 'docente', 'invitado'].includes(profile.role)) {
         this._notice = 'La cuenta no está habilitada para este panel. Solicita acceso al administrador.';
         await services.auth.signOut();
         this.showLogin(this._notice);
@@ -109,15 +113,17 @@ const AuthManager = {
       const rolElement = document.getElementById('current-user-role');
       if (rolElement) {
         const esAdmin = profile.role === 'admin';
+        const esInvitado = profile.role === 'invitado';
         rolElement.textContent = esAdmin
           ? 'Administrador global'
-          : this.getAreaLabel(this.staffProfile.area);
+          : (esInvitado ? 'Invitado (solo lectura)' : this.getAreaLabel(this.staffProfile.area));
         // Insignia de rol: se distingue de un vistazo en la barra superior.
         rolElement.classList.toggle('rol-admin', esAdmin);
-        rolElement.classList.toggle('rol-docente', !esAdmin);
-        rolElement.title = esAdmin && typeof Permisos !== 'undefined'
-          ? Permisos.resumenRol('admin')
-          : (typeof Permisos !== 'undefined' ? Permisos.resumenRol('docente') : '');
+        rolElement.classList.toggle('rol-docente', !esAdmin && !esInvitado);
+        rolElement.classList.toggle('rol-invitado', esInvitado);
+        rolElement.title = typeof Permisos !== 'undefined'
+          ? Permisos.resumenRol(profile.role)
+          : '';
       }
       const centerName = document.getElementById('current-user-center');
       if (centerName) centerName.textContent = this.getActiveCenterName();
@@ -211,7 +217,15 @@ const AuthManager = {
       return;
     }
     try {
-      await window.FirebaseServices.auth.sendPasswordResetEmail(email);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/`,
+        handleCodeInApp: false
+      };
+      try {
+        await window.FirebaseServices.auth.sendPasswordResetEmail(email, actionCodeSettings);
+      } catch (settingsError) {
+        await window.FirebaseServices.auth.sendPasswordResetEmail(email);
+      }
       this.setMessage('Si la cuenta existe, recibirás un correo para restablecer la contraseña.', 'success');
     } catch (error) {
       console.error('No se pudo solicitar el restablecimiento:', error);
@@ -271,6 +285,19 @@ const AuthManager = {
     node.textContent = message;
     node.classList.toggle('is-success', kind === 'success');
     node.hidden = !message;
+  },
+
+  alternarVisibilidadContrasena() {
+    const input = document.getElementById('auth-password');
+    const toggle = document.getElementById('auth-password-toggle');
+    if (!input || !toggle) return;
+    const visible = input.type === 'text';
+    input.type = visible ? 'password' : 'text';
+    const icono = toggle.querySelector('i');
+    if (icono) icono.className = visible ? 'ri-eye-line' : 'ri-eye-off-line';
+    toggle.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    toggle.title = visible ? 'Mostrar contraseña' : 'Ocultar contraseña';
+    input.focus();
   },
 
   describeError(error) {
