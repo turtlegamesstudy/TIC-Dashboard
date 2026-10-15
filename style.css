@@ -6696,6 +6696,14 @@ html[data-theme="dark"] .group-accordion summary {
   font-size: 18px;
 }
 
+.rol-invitado [data-permiso] {
+  display: none !important;
+}
+
+[data-modo-invitado="oculto"] {
+  display: none !important;
+}
+
 .auth-message {
   margin: 14px 0 0;
   color: #b43c50;

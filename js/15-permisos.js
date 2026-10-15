@@ -98,6 +98,66 @@ const Permisos = {
       : `${rol_}: sin permisos registrados.`;
   },
 
+  /* ── Modo invitado: solo lectura en toda la interfaz ──
+     Además de [data-permiso], oculta botones/links de acciones de
+     modificación, eliminación, añadir, cargar, importar, exportar (salvo
+     el informe de avance) y configuración. */
+  _selectorControlesPeligrosos: 'button, a[href="#"], [role="button"], input[type="button"], input[type="submit"]',
+  _verbosModificacion: ['agregar', 'añadir', 'crear', 'cargar', 'importar', 'guardar', 'editar', 'modificar', 'eliminar', 'borrar', 'quitar', 'enviar', 'subir', 'actualizar', 'cambiar', 'configurar', 'convalidar', 'exportar', 'descargar', 'imprimir'],
+  _mutationObserver: null,
+
+  esSoloVista(nodo) {
+    if (!nodo || !nodo.closest) return true;
+    if (nodo.closest('.auth-screen, #sidebar-nav, .nav-grupo, .nav-hijos, .nav-chevron, [data-permitido-invitado], .auth-reset, #btn-toggle-section-settings')) return true;
+    const etiquetas = `${nodo.textContent || ''} ${nodo.getAttribute('aria-label') || ''} ${nodo.getAttribute('title') || ''}`.toLowerCase();
+    if (etiquetas.includes('informe') && etiquetas.includes('descargar')) return true;
+    return false;
+  },
+
+  esControlModificable(nodo) {
+    const etiquetas = `${nodo.textContent || ''} ${nodo.getAttribute('aria-label') || ''} ${nodo.getAttribute('title') || ''} ${nodo.getAttribute('onclick') || ''}`.toLowerCase();
+    return this._verbosModificacion.some(verbo => etiquetas.includes(verbo));
+  },
+
+  aplicarModoInvitado() {
+    if (typeof document === 'undefined') return false;
+    if (this.rolActual() !== 'invitado') return false;
+    document.body.classList.add('rol-invitado');
+    const ocultar = nodo => {
+      if (this.esSoloVista(nodo)) return;
+      const contenedorPermiso = nodo.closest?.('[data-permiso]') || null;
+      const permiso = contenedorPermiso?.getAttribute?.('data-permiso') || '';
+      const permitido = permiso ? this.puede(permiso) : true;
+      const peligroso = this.esControlModificable(nodo);
+      if (!permitido || peligroso) {
+        nodo.hidden = true;
+        nodo.setAttribute('data-modo-invitado', 'oculto');
+      }
+    };
+    document.querySelectorAll(this._selectorControlesPeligrosos).forEach(ocultar);
+    document.querySelectorAll('[data-permiso]').forEach(nodo => {
+      if (!this.puede(nodo.getAttribute('data-permiso'))) {
+        nodo.hidden = true;
+        nodo.setAttribute('data-modo-invitado', 'oculto');
+      }
+    });
+    if (typeof MutationObserver === 'undefined') return true;
+    if (!this._mutationObserver) {
+      this._mutationObserver = new MutationObserver(() => {
+        if (this.rolActual() !== 'invitado') return;
+        document.querySelectorAll(this._selectorControlesPeligrosos).forEach(ocultar);
+        document.querySelectorAll('[data-permiso]').forEach(nodo => {
+          if (!this.puede(nodo.getAttribute('data-permiso'))) {
+            nodo.hidden = true;
+            nodo.setAttribute('data-modo-invitado', 'oculto');
+          }
+        });
+      });
+      this._mutationObserver.observe(document.body, { childList: true, subtree: true });
+    }
+    return true;
+  },
+
   /* Oculta del DOM lo que el rol no debe ver. Busca [data-permiso="..."]
      y lo marca con `hidden`. Devuelve cuántos nodos se ocultaron. */
   aplicar(raiz) {

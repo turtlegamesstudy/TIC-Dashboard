@@ -173,6 +173,9 @@ const AuthManager = {
         CuadernoEngine.inicializarSelectoresExportacion();
       }
       UI.init();
+      if (typeof Permisos !== 'undefined' && typeof Permisos.aplicarModoInvitado === 'function') {
+        Permisos.aplicarModoInvitado();
+      }
       if (DataEngine._migrationNotice) {
         UI.showToast(`ℹ️ ${DataEngine._migrationNotice}`);
         DataEngine._migrationNotice = '';
