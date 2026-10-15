@@ -6763,17 +6763,37 @@ html[data-theme="dark"] .auth-card {
 .auth-header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
+/* Badge del logo: fondo blanco sólido para que resalte sobre el vidrio */
+.auth-logo-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12), inset 0 1px 0 #fff;
+  overflow: hidden;
+}
+
+html[data-theme="dark"] .auth-logo-badge {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
 .auth-logo {
-  height: 48px;
+  height: 54px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
   display: none;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
 }
 
 .auth-logo-claro { display: block; }
@@ -6784,36 +6804,52 @@ html[data-theme="dark"] .auth-logo-oscuro { display: block; }
   min-width: 0;
 }
 
+.auth-eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #0e7490;
+}
+
+html[data-theme="dark"] .auth-eyebrow {
+  color: #38bdf8;
+}
+
 .auth-card h1 {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #020617;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 html[data-theme="dark"] .auth-card h1 {
-  color: #f1f5f9;
+  color: #f8fafc;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .auth-description {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   font-size: 0.78rem;
-  color: #64748b;
+  font-weight: 500;
+  color: #334155;
 }
 
 html[data-theme="dark"] .auth-description {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 /* ── Línea divisoria decorativa ── */
 .auth-divider {
-  height: 2px;
+  height: 3px;
   margin-bottom: 24px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #14578b, #01a5e0, transparent);
-  opacity: 0.25;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #0e7490, #0284c7 45%, transparent);
+  opacity: 0.5;
 }
 
 /* ── Campos ── */
@@ -6821,14 +6857,14 @@ html[data-theme="dark"] .auth-description {
   display: block;
   margin: 16px 0 6px;
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #475569;
+  color: #1e293b;
 }
 
 html[data-theme="dark"] .auth-field {
-  color: #94a3b8;
+  color: #e2e8f0;
 }
 
 .auth-input-wrap {
@@ -6837,15 +6873,15 @@ html[data-theme="dark"] .auth-field {
   gap: 10px;
   padding: 0 14px;
   height: 46px;
-  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border: 1.5px solid rgba(148, 163, 184, 0.7);
   border-radius: 14px;
-  background: rgba(248, 250, 252, 0.6);
+  background: rgba(255, 255, 255, 0.85);
   transition: all 200ms ease;
 }
 
 html[data-theme="dark"] .auth-input-wrap {
-  background: rgba(30, 41, 59, 0.5);
-  border-color: rgba(51, 65, 85, 0.6);
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.4);
 }
 
 .auth-input-wrap:focus-within {
@@ -6862,8 +6898,12 @@ html[data-theme="dark"] .auth-input-wrap:focus-within {
 
 .auth-input-wrap i {
   font-size: 17px;
-  color: #94a3b8;
+  color: #64748b;
   flex-shrink: 0;
+}
+
+html[data-theme="dark"] .auth-input-wrap i {
+  color: #94a3b8;
 }
 
 .auth-input-wrap input {
@@ -6873,16 +6913,18 @@ html[data-theme="dark"] .auth-input-wrap:focus-within {
   outline: 0;
   background: transparent;
   font: inherit;
-  font-size: 0.88rem;
-  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #020617;
 }
 
 html[data-theme="dark"] .auth-input-wrap input {
-  color: #f1f5f9;
+  color: #f8fafc;
 }
 
 .auth-input-wrap input::placeholder {
-  color: #b0bec5;
+  color: #78909c;
+  font-weight: 400;
 }
 
 .auth-password-toggle {
@@ -6893,7 +6935,7 @@ html[data-theme="dark"] .auth-input-wrap input {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   transition: color 150ms ease, background 150ms ease;
   flex-shrink: 0;
@@ -6993,15 +7035,15 @@ html[data-theme="dark"] .auth-submit {
   padding: 4px;
   border: 0;
   background: transparent;
-  color: #475569;
+  color: #1e293b;
   font: inherit;
   font-size: 0.78rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: color 150ms ease;
 }
 
-html[data-theme="dark"] .auth-reset { color: #94a3b8; }
+html[data-theme="dark"] .auth-reset { color: #cbd5e1; }
 
 .auth-reset:hover { color: #0ea5e9; text-decoration: underline; }
 
@@ -7034,16 +7076,16 @@ html[data-theme="dark"] .auth-emblem-oscuro { display: block; }
 
 .auth-footer span {
   font-size: 0.62rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
   .auth-card {
-    width: min(100%, 360px);
+    width: min(100%, 400px);
     border-radius: 22px;
   }
 
@@ -7053,7 +7095,7 @@ html[data-theme="dark"] .auth-emblem-oscuro { display: block; }
 }
 
 html[data-theme="dark"] .auth-footer span {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .auth-signout {
@@ -7098,32 +7140,30 @@ html[data-theme="dark"] .auth-footer span {
 }
 
 html[data-theme="dark"] .auth-screen {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(24, 184, 231, 0.12), transparent 34%),
-    linear-gradient(130deg, #071b2e 0%, #0d2940 52%, #261d35 100%);
+  background: #060b14;
 }
 
 html[data-theme="dark"] .auth-card {
-  border-color: rgba(145, 207, 229, 0.13);
-  background: #112b42;
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.5);
 }
 
 html[data-theme="dark"] .auth-card h1,
 html[data-theme="dark"] .auth-field {
-  color: #e0edf4;
+  color: #f1f5f9;
 }
 
 html[data-theme="dark"] .auth-description {
-  color: #a0b5c2;
+  color: #cbd5e1;
 }
 
 html[data-theme="dark"] .auth-input-wrap {
-  border-color: #375164;
-  background: #0c2135;
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 html[data-theme="dark"] .auth-input-wrap input {
-  color: #e0edf4;
+  color: #f8fafc;
 }
 
 
