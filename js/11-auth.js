@@ -75,8 +75,20 @@ const AuthManager = {
     try {
       const snapshot = await services.database.ref(`users/${user.uid}`).once('value');
       const profile = snapshot.val();
-      if (!profile || profile.active !== true || !['admin', 'docente', 'invitado'].includes(profile.role)) {
-        this._notice = 'La cuenta no está habilitada para este panel. Solicita acceso al administrador.';
+      if (!profile) {
+        this._notice = 'No se encontró el perfil de esta cuenta. Solicita acceso al administrador.';
+        await services.auth.signOut();
+        this.showLogin(this._notice);
+        return;
+      }
+      if (profile.active !== true) {
+        this._notice = 'La cuenta está desactivada. Solicita al administrador que la active.';
+        await services.auth.signOut();
+        this.showLogin(this._notice);
+        return;
+      }
+      if (!['admin', 'docente', 'invitado'].includes(profile.role)) {
+        this._notice = `El rol de la cuenta no está habilitado (rol actual: "${profile.role || 'sin rol'}"). Solicita acceso al administrador.`;
         await services.auth.signOut();
         this.showLogin(this._notice);
         return;
