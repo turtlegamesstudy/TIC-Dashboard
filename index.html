@@ -38,29 +38,22 @@
 
 <body>
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
-    <div class="auth-videos" aria-hidden="true">
-      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/Qs61XTYrGeI?autoplay=1&mute=1&controls=0&loop=1&playlist=Qs61XTYrGeI&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
-      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/1r5A0blFjwA?autoplay=1&mute=1&controls=0&loop=1&playlist=1r5A0blFjwA&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
-      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/dW-PTLYoEFI?autoplay=1&mute=1&controls=0&loop=1&playlist=dW-PTLYoEFI&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
-      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/ZFhE59VMEno?autoplay=1&mute=1&controls=0&loop=1&playlist=ZFhE59VMEno&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
-      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/axJCLOA0D-s?autoplay=1&mute=1&controls=0&loop=1&playlist=axJCLOA0D-s&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
-      <div class="auth-video-cell"><iframe src="https://www.youtube.com/embed/iGt5T9N1gBc?autoplay=1&mute=1&controls=0&loop=1&playlist=iGt5T9N1gBc&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe></div>
+    <div class="auth-video-bg" aria-hidden="true">
+      <iframe src="https://www.youtube.com/embed/Qs61XTYrGeI?autoplay=1&mute=1&controls=0&loop=1&playlist=Qs61XTYrGeI&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0"
+        frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe>
     </div>
-    <div class="auth-glass-overlay" aria-hidden="true"></div>
+    <div class="auth-overlay" aria-hidden="true"></div>
     <div class="auth-card" id="auth-login-form" novalidate>
-      <aside class="auth-branding">
-        <img class="auth-brand-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="64">
-        <img class="auth-brand-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="64">
-        <h2 class="auth-brand-title">Cuaderno Docente</h2>
-        <p class="auth-brand-sub">Sistema de Gestión Académica<br>Red de Centros Tecnológicos</p>
-        <p class="auth-brand-credit">Docente TIC · Hanzell Mayorga</p>
-      </aside>
       <div class="auth-card-inner">
         <div class="auth-header">
-          <p class="auth-eyebrow">Panel TIC</p>
-          <h1 id="auth-title">Bienvenido</h1>
-          <p class="auth-description">Ingresa tus credenciales para acceder</p>
+          <img class="auth-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="48">
+          <img class="auth-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="48">
+          <div class="auth-title-block">
+            <h1 id="auth-title">Bienvenido</h1>
+            <p class="auth-description">Cuaderno Docente · Panel TIC</p>
+          </div>
         </div>
+        <div class="auth-divider" aria-hidden="true"></div>
         <div class="auth-form">
           <label class="auth-field" for="auth-email">Correo electrónico</label>
           <div class="auth-input-wrap">
@@ -85,8 +78,8 @@
           <button class="auth-reset" type="button" id="auth-reset">¿Olvidaste tu contraseña?</button>
         </div>
         <div class="auth-footer">
-          <img class="auth-emblem auth-emblem-claro" src="assets/emblema.png" alt="" height="18">
-          <img class="auth-emblem auth-emblem-oscuro" src="assets/emblema-blanco.png" alt="" height="18">
+          <img class="auth-emblem auth-emblem-claro" src="assets/emblema.png" alt="" height="16">
+          <img class="auth-emblem auth-emblem-oscuro" src="assets/emblema-blanco.png" alt="" height="16">
           <span>INATEC · Nicaragua</span>
         </div>
       </div>
