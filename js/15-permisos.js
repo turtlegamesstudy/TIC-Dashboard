@@ -102,7 +102,7 @@ const Permisos = {
      Además de [data-permiso], oculta botones/links de acciones de
      modificación, eliminación, añadir, cargar, importar, exportar (salvo
      el informe de avance) y configuración. */
-  _selectorControlesPeligrosos: 'button, a[href="#"], [role="button"], input[type="button"], input[type="submit"]',
+  _selectorControlesPeligrosos: 'button, a[href="#"], [role="button"], input[type="button"], input[type="submit"], input[type="file"]',
   _verbosModificacion: ['agregar', 'añadir', 'crear', 'cargar', 'importar', 'guardar', 'editar', 'modificar', 'eliminar', 'borrar', 'quitar', 'enviar', 'subir', 'actualizar', 'cambiar', 'configurar', 'convalidar', 'exportar', 'descargar', 'imprimir', 'edit', 'delete', 'add', 'create', 'load', 'save', 'modify', 'remove', 'upload', 'download', 'print', 'send', 'update'],
   _mutationObserver: null,
 
@@ -130,7 +130,7 @@ const Permisos = {
       const contenedorPermiso = nodo.closest?.('[data-permiso]') || null;
       const permiso = contenedorPermiso?.getAttribute?.('data-permiso') || '';
       const permitido = permiso ? this.puede(permiso) : true;
-      const peligroso = this.esControlModificable(nodo);
+      const peligroso = nodo.type === 'file' || this.esControlModificable(nodo);
       if (!permitido || peligroso) {
         nodo.hidden = true;
         nodo.setAttribute('data-modo-invitado', 'oculto');
