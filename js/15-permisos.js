@@ -103,7 +103,7 @@ const Permisos = {
      modificación, eliminación, añadir, cargar, importar, exportar (salvo
      el informe de avance) y configuración. */
   _selectorControlesPeligrosos: 'button, a[href="#"], [role="button"], input[type="button"], input[type="submit"]',
-  _verbosModificacion: ['agregar', 'añadir', 'crear', 'cargar', 'importar', 'guardar', 'editar', 'modificar', 'eliminar', 'borrar', 'quitar', 'enviar', 'subir', 'actualizar', 'cambiar', 'configurar', 'convalidar', 'exportar', 'descargar', 'imprimir'],
+  _verbosModificacion: ['agregar', 'añadir', 'crear', 'cargar', 'importar', 'guardar', 'editar', 'modificar', 'eliminar', 'borrar', 'quitar', 'enviar', 'subir', 'actualizar', 'cambiar', 'configurar', 'convalidar', 'exportar', 'descargar', 'imprimir', 'edit', 'delete', 'add', 'create', 'load', 'save', 'modify', 'remove', 'upload', 'download', 'print', 'send', 'update'],
   _mutationObserver: null,
 
   esSoloVista(nodo) {
@@ -115,7 +115,9 @@ const Permisos = {
   },
 
   esControlModificable(nodo) {
-    const etiquetas = `${nodo.textContent || ''} ${nodo.getAttribute('aria-label') || ''} ${nodo.getAttribute('title') || ''} ${nodo.getAttribute('onclick') || ''}`.toLowerCase();
+    const etiquetas = `${nodo.textContent || ''} ${nodo.getAttribute('aria-label') || ''} ${nodo.getAttribute('title') || ''} ${nodo.getAttribute('onclick') || ''} ${nodo.getAttribute('data-action') || ''}`.toLowerCase();
+    const clase = typeof nodo.className === 'string' ? nodo.className.toLowerCase() : '';
+    if (/(edit|pencil|delete|trash|plus|upload)/.test(clase)) return true;
     return this._verbosModificacion.some(verbo => etiquetas.includes(verbo));
   },
 
