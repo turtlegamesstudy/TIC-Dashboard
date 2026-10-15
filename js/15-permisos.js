@@ -108,7 +108,7 @@ const Permisos = {
 
   esSoloVista(nodo) {
     if (!nodo || !nodo.closest) return true;
-    if (nodo.closest('.auth-screen, #sidebar-nav, .nav-grupo, .nav-hijos, .nav-chevron, [data-permitido-invitado], .auth-reset, #btn-toggle-section-settings')) return true;
+    if (nodo.closest('.auth-screen, [data-permitido-invitado], .auth-reset, #btn-toggle-section-settings')) return true;
     const etiquetas = `${nodo.textContent || ''} ${nodo.getAttribute('aria-label') || ''} ${nodo.getAttribute('title') || ''}`.toLowerCase();
     if (etiquetas.includes('informe') && etiquetas.includes('descargar')) return true;
     return false;
