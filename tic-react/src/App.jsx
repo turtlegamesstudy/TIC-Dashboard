@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import DashboardScreen from "./screens/DashboardScreen.jsx";
 import SectionScreen from "./screens/SectionScreen.jsx";
+import AdminScreen from "./screens/AdminScreen.jsx";
 import AppLayout from "./layouts/AppLayout.jsx";
 
 function PrivateRoute({ children }) {
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="avisos" element={<SectionScreen title="Avisos" descrip="Centro de mensajes y notificaciones." icon="ri-notification-3-line" />} />
           <Route path="cuaderno" element={<SectionScreen title="Cuaderno Docente" descrip="Registro de actividades docentes." icon="ri-book-read-fill" />} />
           <Route path="mensajes" element={<SectionScreen title="Envío de Mensajes" descrip="WhatsApp y comunicaciones." icon="ri-whatsapp-line" />} />
+          <Route path="admin" element={<AdminScreen />} />
         </Route>
       </Routes>
     </AuthProvider>
