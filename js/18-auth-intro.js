@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════
-   18-auth-intro.js — Intro épica INATEC al iniciar sesión
-   Secuencia: flash → rayos giratorios → ondas de choque (rosa,
-   azul, verde) → logo con glow → título "INATEC" letra por letra
-   → barrido de brillo → barra de progreso → zoom + flash de salida.
+   18-auth-intro.js — Intro épica INATEC al iniciar sesión (v3)
+   Secuencia cinemática: regla fina → logo con barrido escáner →
+   banda tricolor → tipografía cinética enmascarada → subtitulo con
+   borrado lateral → progreso con cifras tabulares → log de
+   arranque → salida tipo obturador con línea de luz.
    Se omite con ESC o clic. Duración total ≈ 4.2s.
    ═══════════════════════════════════════════════════════════════ */
 window.AuthIntro = (function () {
@@ -37,27 +38,10 @@ window.AuthIntro = (function () {
       });
     }
 
-    var cont = $('ai-particles');
-    if (cont) {
-      cont.innerHTML = '';
-      var colores = ['#E6007E', '#4da6ff', '#2ecc71', '#ffffff'];
-      for (var i = 0; i < 44; i++) {
-        var p = document.createElement('span');
-        var ang = Math.random() * Math.PI * 2;
-        var dist = 150 + Math.random() * 340;
-        p.style.setProperty('--x', (Math.cos(ang) * dist).toFixed(1) + 'px');
-        p.style.setProperty('--y', (Math.sin(ang) * dist).toFixed(1) + 'px');
-        p.style.setProperty('--s', (2 + Math.random() * 5).toFixed(1) + 'px');
-        p.style.setProperty('--c', colores[i % colores.length]);
-        p.style.setProperty('--d', (0.55 + Math.random() * 1.15).toFixed(2) + 's');
-        cont.appendChild(p);
-      }
-    }
-
     var relleno = $('ai-progress-fill');
     if (relleno) relleno.style.width = '0%';
     var pct = $('ai-pct');
-    if (pct) pct.textContent = '0';
+    if (pct) pct.textContent = '00';
     var estado = $('ai-status-text');
     if (estado) estado.textContent = 'VERIFICANDO ACCESO';
   }
@@ -72,7 +56,7 @@ window.AuthIntro = (function () {
       var e = Math.min(1, (t - inicio) / (DURACION - RETRASO_PROGRESO - 200));
       var p = Math.round(e * 100);
       if (relleno) relleno.style.width = p + '%';
-      if (pctEl) pctEl.textContent = p;
+      if (pctEl) pctEl.textContent = String(p).padStart(2, '0');
       if (estado) {
         estado.textContent = p < 25 ? 'VERIFICANDO ACCESO'
           : p < 55 ? 'CARGANDO DATOS'
@@ -108,7 +92,7 @@ window.AuthIntro = (function () {
       overlay.classList.remove('is-playing', 'is-exit');
       cierreTimer = null;
       finalizarPromesa();
-    }, 760);
+    }, 820);
   }
 
   function finalizarPromesa() {

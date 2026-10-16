@@ -39,38 +39,35 @@
 <body>
   <!-- ═══ Intro épica INATEC: se reproduce al iniciar sesión ═══ -->
   <div class="auth-intro" id="auth-intro" hidden aria-hidden="true">
-    <div class="ai-bg" aria-hidden="true">
-      <div class="ai-grid"></div>
-      <div class="ai-rays"></div>
-      <div class="ai-sunburst"></div>
-      <div class="ai-ring ai-ring--rosa"></div>
-      <div class="ai-ring ai-ring--azul"></div>
-      <div class="ai-ring ai-ring--verde"></div>
-      <div class="ai-streak ai-streak--uno"></div>
-      <div class="ai-streak ai-streak--dos"></div>
-      <div class="ai-particles" id="ai-particles"></div>
-    </div>
+    <div class="ai-watermark" aria-hidden="true"><img src="assets/emblema-blanco.png" alt=""></div>
+    <div class="ai-grain" aria-hidden="true"></div>
     <div class="ai-vignette" aria-hidden="true"></div>
     <div class="ai-core">
-      <div class="ai-frame">
-        <span class="ai-corner ai-corner--tl" aria-hidden="true"></span>
-        <span class="ai-corner ai-corner--tr" aria-hidden="true"></span>
-        <span class="ai-corner ai-corner--bl" aria-hidden="true"></span>
-        <span class="ai-corner ai-corner--br" aria-hidden="true"></span>
-        <img class="ai-logo" src="assets/logo-inatec-blanco.png" alt="" height="110">
-        <div class="ai-title" id="ai-title" aria-label="INATEC"></div>
-        <div class="ai-sub">Cuaderno Docente Digital</div>
-        <div class="ai-progress"><span id="ai-progress-fill"></span></div>
-        <div class="ai-status"><span id="ai-status-text">VERIFICANDO ACCESO</span> · <span id="ai-pct">0</span>%</div>
-        <ul class="ai-log">
-          <li>Sesión segura establecida</li>
-          <li>Recursos institucionales verificados</li>
-          <li>Panel académico preparado</li>
-        </ul>
+      <span class="ai-rule" aria-hidden="true"></span>
+      <div class="ai-logo-wrap">
+        <img class="ai-logo" src="assets/logo-inatec-blanco.png" alt="" height="104">
+        <span class="ai-logo-edge" aria-hidden="true"></span>
       </div>
+      <span class="ai-tricolor" aria-hidden="true"></span>
+      <div class="ai-title-mask">
+        <div class="ai-title" id="ai-title" aria-label="INATEC"></div>
+      </div>
+      <div class="ai-sub-mask"><span class="ai-sub">Cuaderno Docente Digital</span></div>
+      <div class="ai-progress">
+        <div class="ai-progress-head">
+          <span class="ai-state"><span id="ai-status-text">VERIFICANDO ACCESO</span><i class="ai-cursor"></i></span>
+          <span class="ai-pct"><span id="ai-pct">00</span>%</span>
+        </div>
+        <div class="ai-progress-track"><span id="ai-progress-fill"></span></div>
+      </div>
+      <ul class="ai-log">
+        <li>Sesión segura establecida</li>
+        <li>Recursos institucionales verificados</li>
+        <li>Panel académico preparado</li>
+      </ul>
     </div>
     <div class="ai-skip">Pulsa ESC o haz clic para omitir</div>
-    <div class="ai-flash" aria-hidden="true"></div>
+    <span class="ai-flashline" aria-hidden="true"></span>
   </div>
 
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
