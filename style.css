@@ -6784,7 +6784,9 @@ html[data-theme="dark"] .auth-card {
   align-items: center;
   justify-content: center;
   padding: 44px 30px;
-  background: linear-gradient(165deg, rgba(0, 92, 169, 0.92) 0%, rgba(6, 20, 42, 0.96) 100%);
+  background: linear-gradient(165deg, rgba(0, 92, 169, 0.46) 0%, rgba(6, 20, 42, 0.48) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   overflow: hidden;
 }
 
@@ -6793,7 +6795,7 @@ html[data-theme="dark"] .auth-card {
   position: absolute;
   inset: 0;
   background: url('../assets/fondo-profundo.gif') center/cover;
-  opacity: 0.14;
+  opacity: 0.07;
   pointer-events: none;
 }
 
@@ -6828,27 +6830,30 @@ html[data-theme="dark"] .auth-logo-oscuro { display: block; }
 
 .auth-brand-eyebrow {
   margin: 18px 0 0;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .auth-brand-title {
   margin: 6px 0 0;
-  font-size: 1.9rem;
-  font-weight: 800;
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 600;
   color: #fff;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 .auth-brand-slogan {
   margin: 12px 0 0;
-  font-size: 0.78rem;
-  line-height: 1.6;
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
   color: rgba(255, 255, 255, 0.78);
 }
 
@@ -6862,13 +6867,13 @@ html[data-theme="dark"] .auth-logo-oscuro { display: block; }
 }
 
 .auth-brand-pills span {
-  padding: 5px 12px;
+  padding: 5px 13px;
   border-radius: 999px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #fff;
 }
@@ -6893,9 +6898,10 @@ html[data-theme="dark"] .auth-logo-oscuro { display: block; }
 
 .auth-brand-credit {
   margin: 26px 0 0;
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -6935,9 +6941,9 @@ html[data-theme="dark"] .auth-panel {
 
 .auth-eyebrow {
   margin: 0;
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #ff5aa8;
 }
@@ -6948,16 +6954,17 @@ html[data-theme="dark"] .auth-eyebrow {
 
 .auth-welcome {
   margin: 6px 0 0;
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: 1.32rem;
+  font-weight: 600;
   color: #f8fafc;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .auth-description {
   margin: 4px 0 0;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   color: #b9c7d6;
 }
 
@@ -6968,10 +6975,10 @@ html[data-theme="dark"] .auth-description {
 /* ── Campos píldora sobre vidrio oscuro ── */
 .auth-field {
   display: block;
-  margin: 16px 0 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  margin: 16px 0 7px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #dbe4ee;
 }
@@ -7012,13 +7019,13 @@ html[data-theme="dark"] .auth-input-wrap:focus-within {
 }
 
 .auth-input-wrap i {
-  font-size: 17px;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.42);
   flex-shrink: 0;
 }
 
 html[data-theme="dark"] .auth-input-wrap i {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .auth-input-wrap input {
@@ -7029,8 +7036,9 @@ html[data-theme="dark"] .auth-input-wrap i {
   outline: 0;
   background: transparent;
   font: inherit;
-  font-size: 0.88rem;
-  font-weight: 500;
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   color: #f8fafc;
 }
 
@@ -7045,30 +7053,30 @@ html[data-theme="dark"] .auth-input-wrap input {
 
 .auth-password-toggle {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.45);
   cursor: pointer;
-  transition: color 150ms ease, background 150ms ease;
+  transition: color 150ms ease;
   flex-shrink: 0;
 }
 
 .auth-password-toggle:hover {
   color: #ff5aa8;
-  background: rgba(230, 0, 126, 0.14);
+  background: transparent;
 }
 
 html[data-theme="dark"] .auth-password-toggle {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.42);
 }
 
 html[data-theme="dark"] .auth-password-toggle:hover {
   color: #ff5aa8;
-  background: rgba(230, 0, 126, 0.14);
+  background: transparent;
 }
 
 /* ── Mensajes ── */
@@ -7087,57 +7095,60 @@ html[data-theme="dark"] .auth-message {
 .auth-message.is-success { color: #34d399; }
 html[data-theme="dark"] .auth-message.is-success { color: #34d399; }
 
-/* ── Botón píldora rosa (color principal de la paleta) ── */
+/* ── Botón píldora rosa — minimalista y elegante ── */
 .auth-submit {
   display: flex;
   width: 100%;
-  height: 48px;
+  height: 44px;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: 22px;
+  margin-top: 24px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #E6007E, #b80062);
+  background: #E6007E;
   color: #fff;
   font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 200ms ease;
-  box-shadow: 0 6px 22px rgba(230, 0, 126, 0.35);
+  transition: background 200ms ease, box-shadow 200ms ease, transform 150ms ease;
+  box-shadow: 0 2px 10px rgba(230, 0, 126, 0.22);
 }
 
 .auth-submit:hover:not(:disabled) {
+  background: #cf0070;
   transform: translateY(-1px);
-  box-shadow: 0 10px 30px rgba(230, 0, 126, 0.45);
+  box-shadow: 0 4px 16px rgba(230, 0, 126, 0.3);
 }
 
 .auth-submit:active:not(:disabled) { transform: translateY(0); }
 
 .auth-submit:disabled { opacity: 0.6; cursor: wait; }
 
-.auth-submit i { font-size: 16px; transition: transform 200ms ease; }
+.auth-submit i { font-size: 15px; transition: transform 200ms ease; opacity: 0.85; }
 
-.auth-submit:hover:not(:disabled) i { transform: translateX(4px); }
+.auth-submit:hover:not(:disabled) i { transform: translateX(3px); opacity: 1; }
 
 html[data-theme="dark"] .auth-submit {
-  background: linear-gradient(135deg, #E6007E, #b80062);
-  box-shadow: 0 6px 22px rgba(230, 0, 126, 0.3);
+  background: #E6007E;
+  box-shadow: 0 2px 10px rgba(230, 0, 126, 0.2);
 }
 
 /* ── Enlace recuperar (hover rosa) ── */
 .auth-reset {
   display: block;
-  margin: 13px auto 0;
+  margin: 14px auto 0;
   padding: 4px;
   border: 0;
   background: transparent;
   color: #dbe4ee;
   font: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition: color 150ms ease;
 }
@@ -7174,9 +7185,9 @@ html[data-theme="dark"] .auth-emblem-claro { display: none; }
 html[data-theme="dark"] .auth-emblem-oscuro { display: block; }
 
 .auth-footer span {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
 }
@@ -7230,15 +7241,18 @@ html[data-theme="dark"] .auth-footer span {
 }
 
 .apf-brand-text strong {
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   color: #fff;
 }
 
 .apf-brand-text span {
-  font-size: 0.64rem;
-  line-height: 1.45;
+  font-size: 0.62rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.65);
 }
 
@@ -7263,9 +7277,9 @@ html[data-theme="dark"] .auth-footer-emblem.auth-logo-oscuro { display: block; }
 }
 
 .apf-links a {
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   transition: color 150ms ease;
@@ -7283,15 +7297,18 @@ html[data-theme="dark"] .auth-footer-emblem.auth-logo-oscuro { display: block; }
 }
 
 .apf-legal strong {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: #fff;
 }
 
 .apf-legal span {
-  font-size: 0.6rem;
-  line-height: 1.45;
+  font-size: 0.59rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.6);
 }
 
