@@ -44,19 +44,29 @@
     </div>
     <div class="auth-overlay" aria-hidden="true"></div>
     <form class="auth-card" id="auth-login-form" novalidate>
-      <div class="auth-card-inner">
-        <div class="auth-header">
-          <div class="auth-logo-badge">
-            <img class="auth-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="54">
-            <img class="auth-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="54">
+      <!-- Panel de marca (izquierda) -->
+      <aside class="auth-brand" aria-hidden="true">
+        <div class="auth-brand-glass">
+          <img class="auth-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="64">
+          <img class="auth-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="64">
+          <p class="auth-brand-eyebrow">Instituto Nacional Tecnológico</p>
+          <h1 class="auth-brand-title" id="auth-title">TIC Dashboard</h1>
+          <p class="auth-brand-slogan">Cuaderno Docente Digital<br>Sistema de gestión académica</p>
+          <div class="auth-brand-pills">
+            <span>Estadísticas</span>
+            <span>Avances</span>
+            <span>Reportes</span>
           </div>
-          <div class="auth-title-block">
-            <p class="auth-eyebrow">Cuaderno Docente</p>
-            <h1 id="auth-title">TIC Dashboard</h1>
-            <p class="auth-description">Sistema de gestión académica · INATEC</p>
-          </div>
+          <p class="auth-brand-credit">Docente TIC · Hanzell Mayorga</p>
         </div>
-        <div class="auth-divider" aria-hidden="true"></div>
+      </aside>
+      <!-- Formulario (derecha) -->
+      <div class="auth-panel">
+        <div class="auth-panel-header">
+          <p class="auth-eyebrow">Acceso docente</p>
+          <p class="auth-welcome">Bienvenido de nuevo 👋</p>
+          <p class="auth-description">Ingresa tus credenciales para continuar</p>
+        </div>
         <div class="auth-form">
           <label class="auth-field" for="auth-email">Correo electrónico</label>
           <div class="auth-input-wrap">
