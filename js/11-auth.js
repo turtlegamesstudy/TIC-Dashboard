@@ -125,6 +125,11 @@ const AuthManager = {
       document.body.classList.add('is-authenticated');
       document.body.classList.remove('auth-required');
 
+      /* Presencia y último acceso: se guardan en `userSessions/{uid}` para que
+         el panel de administración muestre «En línea» y la última vez que
+         cada usuario inició sesión. */
+      this._iniciarSeguimientoSesion(user);
+
       const profileName = [this.staffProfile.firstName, this.staffProfile.lastName].filter(Boolean).join(' ').trim();
       const displayName = String(profileName || profile.displayName || user.displayName || user.email || 'Docente');
       document.getElementById('current-user-name').textContent = displayName;
@@ -266,9 +271,43 @@ const AuthManager = {
     }
   },
 
+  /* Presencia y último acceso por cuenta. Se escribe en `userSessions/{uid}`:
+     - `lastSignInAt`: fecha del último inicio de sesión (timestamp del servidor).
+     - `online`: true mientras la cuenta tenga una conexión abierta; Firebase la
+       pone en false con onDisconnect al cerrar o perder la red. */
+  _iniciarSeguimientoSesion(user) {
+    try {
+      const services = window.FirebaseServices;
+      if (!services?.database) return;
+      const sessionRef = services.database.ref(`userSessions/${user.uid}`);
+      sessionRef.update({
+        email: user.email || '',
+        displayName: this.profile?.displayName || user.displayName || '',
+        lastSignInAt: firebase.database.ServerValue.TIMESTAMP
+      }).catch(error => console.error('No se pudo registrar el inicio de sesión:', error));
+      sessionRef.child('online').onDisconnect().set(false)
+        .catch(error => console.error('No se pudo preparar la desconexión:', error));
+      services.database.ref('.info/connected').on('value', snapshot => {
+        if (snapshot.val() === true) {
+          sessionRef.update({ online: true })
+            .catch(error => console.error('No se pudo marcar la conexión:', error));
+        }
+      });
+    } catch (error) {
+      console.error('No se pudo preparar la presencia:', error);
+    }
+  },
+
+  _marcarDesconectado() {
+    if (!this.user) return;
+    window.FirebaseServices.database.ref(`userSessions/${this.user.uid}/online`).set(false)
+      .catch(() => { /* cerrar sesión no debe fallar por la presencia */ });
+  },
+
   async signOut() {
     try {
       this.showLoading('Cerrando sesión...');
+      await this._marcarDesconectado();
       await window.FirebaseServices.auth.signOut();
     } catch (error) {
       console.error('No se pudo cerrar la sesión:', error);

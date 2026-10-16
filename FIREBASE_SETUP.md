@@ -56,7 +56,7 @@ Añade a la lista `origin` el dominio HTTPS donde publiques la aplicación. No p
 
 Sirve la carpeta con un servidor web HTTPS. Los archivos `database.rules.json` y `storage.rules` deben publicarse en Firebase Console o desplegarse con Firebase CLI. La aplicación no contiene credenciales administrativas ni puede publicar reglas desde el navegador.
 
-Los perfiles docentes pueden editar registros de grupos y equipos; solo los administradores pueden reemplazar la base completa y administrar perfiles. La sección **Administración** aparece solo para cuentas con rol `admin`; permite crear cuentas, enviar el enlace para establecer contraseña, cambiar roles, activar/desactivar perfiles y reenviar correos de recuperación. Al crear un usuario, la aplicación usa una sesión secundaria de Firebase Authentication para no cerrar la sesión del administrador. Las reglas de Realtime Database deben incluir el permiso de lectura de `/users` reservado al administrador para mostrar la lista. Publica `database.rules.json` actualizado antes de usar esta sección.
+Los perfiles docentes pueden editar registros de grupos y equipos; solo los administradores pueden reemplazar la base completa y administrar perfiles. La sección **Administración** aparece solo para cuentas con rol `admin`; permite crear cuentas (con correo de acceso o con contraseña manual), enviar el enlace para establecer contraseña, cambiar manualmente la contraseña de una cuenta conociendo la actual, cambiar roles, activar/desactivar perfiles y reenviar correos de recuperación. Al crear un usuario, la aplicación usa una sesión secundaria de Firebase Authentication para no cerrar la sesión del administrador. Las reglas de Realtime Database deben incluir el permiso de lectura de `/users` reservado al administrador para mostrar la lista. Publica `database.rules.json` actualizado antes de usar esta sección.
 
 Desactivar un perfil bloquea las lecturas y escrituras de esa cuenta en Realtime Database mediante las reglas. La aplicación impide desactivar al administrador conectado o retirar el rol del último administrador activo.
 
@@ -67,6 +67,25 @@ Storage Rules no puede consultar los perfiles de Realtime Database: la restricci
 No se puede eliminar un equipo mientras conserve archivos almacenados que pertenezcan a otras cuentas; sus propietarios deben retirarlos primero. Así se conserva la referencia y no se dejan objetos huérfanos en Storage.
 
 Los registros de grupos y equipos mantienen `updatedAt` y `updatedBy` al modificarse, para facilitar la atribución y el diagnóstico de cambios. Esto es metadato del último cambio, no un historial inmutable ni un sistema de auditoría; para trazabilidad completa se requiere un backend con retención y acceso administrativo.
+
+## Cambio manual de contraseñas (sin plan de pago)
+
+Firebase Authentication no permite que el navegador actualice la contraseña de otra cuenta: solo la de la sesión activa. Por eso el panel usa una **sesión secundaria temporal** (persistencia `NONE`): con el correo de la cuenta y la contraseña actual que conoce el administrador, inicia sesión en una app auxiliar, actualiza la contraseña con `updatePassword()` y cierra esa sesión. La sesión del administrador en el panel no se ve afectada y no se despliega ningún servidor ni se requiere el plan Blaze.
+
+En **Administración**:
+
+- **Crear una cuenta**: el campo «Contraseña manual (opcional)» permite escribir la contraseña desde el principio. Si se deja vacío, se conserva el comportamiento anterior (contraseña aleatoria y correo para que la persona la establezca). Si se escribe, no se envía correo: compártela directamente. Mínimo 8 caracteres sin espacios.
+- **Botón «Contraseña»** en cada fila: pide la contraseña actual y la nueva (dos veces). Si la persona cambió la contraseña por su cuenta y el administrador no la conoce, el modal incluye el atajo «No recuerdo la actual: enviar correo de recuperación», que usa el restablecimiento por correo ya existente.
+
+Limitaciones heredadas de este método gratuito: el administrador debe conocer la contraseña actual (por eso conviene crear las cuentas con contraseña manual), y cambiar la contraseña no cierra las sesiones abiertas en otros dispositivos; esos tokens siguen vigentes hasta que Firebase los refresque. Para poder cambiar cualquier contraseña sin conocer la anterior haría falta un backend con el Admin SDK (plan Blaze), que este proyecto no usa.
+
+**Cuando nadie recuerda la contraseña y no hay tiempo para el correo:** se restablece en segundos y gratis desde la consola de Firebase: <https://console.firebase.google.com/project/ina-tions/authentication/users> → buscar a la persona → menú ⋮ → «Restablecer contraseña» (fija una nueva directamente) o «Eliminar usuario» (recrear después la cuenta desde el panel). El modal «Cambiar contraseña» incluye el enlace directo a esa página.
+
+## Presencia y último acceso de usuarios
+
+Cada inicio de sesión escribe en `userSessions/{uid}` (con `ServerValue.TIMESTAMP`): `lastSignInAt` (último acceso), `email`, `displayName` y `online` (con `onDisconnect` a `false`). La regla de `userSessions` permite escribir solo a la propia cuenta o a un administrador, y leer solo a administradores. En Administración, cada fila muestra un indicador «En línea» (punto verde pulsante) o «Desconectado», más una línea «Último acceso: hace X», actualizada en vivo con un listener de `userSessions`.
+
+Publica el `database.rules.json` actualizado antes de usar esta sección; sin la regla de lectura, la lista no podría mostrar los datos de presencia.
 
 ## Despliegue de reglas con Firebase CLI (opcional)
 

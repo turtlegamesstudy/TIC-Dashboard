@@ -29,3 +29,7 @@ preview-remodel.html
 tic-react/node_modules/
 tic-react/dist/
 tic-react/.vite/
+
+# Cloud Functions (Firebase)
+.firebase/
+functions/.env

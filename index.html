@@ -41,11 +41,15 @@
   <!-- ═══ Intro épica INATEC: se reproduce al iniciar sesión ═══ -->
   <div class="auth-intro" id="auth-intro" hidden aria-hidden="true">
     <div class="ai-watermark" aria-hidden="true"><img src="assets/emblema-blanco.png" alt=""></div>
+    <div class="ai-glow" aria-hidden="true"></div>
+    <div class="ai-orb ai-orb-pink" aria-hidden="true"></div>
+    <div class="ai-orb ai-orb-blue" aria-hidden="true"></div>
     <div class="ai-grain" aria-hidden="true"></div>
     <div class="ai-vignette" aria-hidden="true"></div>
     <div class="ai-core">
       <span class="ai-rule" aria-hidden="true"></span>
       <div class="ai-logo-wrap">
+        <span class="ai-logo-ring" aria-hidden="true"></span>
         <img class="ai-logo" src="assets/logo-inatec-blanco.png" alt="" height="104">
         <span class="ai-logo-edge" aria-hidden="true"></span>
       </div>
@@ -72,13 +76,12 @@
   </div>
 
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
-    <div class="auth-video-bg" aria-hidden="true">
-      <div class="auth-video-layer is-active" id="auth-video-a">
-        <div class="auth-video-host" id="auth-video-host-a"></div>
-      </div>
-      <div class="auth-video-layer" id="auth-video-b">
-        <div class="auth-video-host" id="auth-video-host-b"></div>
-      </div>
+    <div class="auth-carousel" id="auth-carousel">
+      <div class="auth-carousel-slide is-active" id="auth-carousel-a"><img alt=""></div>
+      <div class="auth-carousel-slide" id="auth-carousel-b"><img alt=""></div>
+      <div class="auth-carousel-bars" id="auth-carousel-bars"></div>
+      <button class="auth-carousel-arrow prev" type="button" data-carrusel="prev" aria-label="Imagen anterior"><i class="ri-arrow-left-line" aria-hidden="true"></i></button>
+      <button class="auth-carousel-arrow next" type="button" data-carrusel="next" aria-label="Imagen siguiente"><i class="ri-arrow-right-line" aria-hidden="true"></i></button>
     </div>
     <div class="auth-overlay" aria-hidden="true"></div>
     <form class="auth-card" id="auth-login-form" novalidate>
@@ -961,7 +964,7 @@
   <script defer src="js/14-secciones.js"></script>
   <script defer src="js/15-permisos.js"></script>
   <script defer src="js/16-mejoras.js"></script>
-  <script defer src="js/17-auth-videos.js"></script>
+  <script defer src="js/17-auth-carousel.js"></script>
   <script defer src="js/18-auth-intro.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>

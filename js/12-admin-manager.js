@@ -4,6 +4,8 @@ const AdminManager = {
   users: {},
   centers: {},
   staffProfiles: {},
+  userSessions: {},
+  _sesionBound: false,
   _workspaceBound: false,
 
   _requireAdmin() {
@@ -139,6 +141,16 @@ const AdminManager = {
                   <option value="otra">Otra área</option>
                 </select>
               </div>
+              <div class="form-group">
+                <label for="admin-new-password">Contraseña manual (opcional)</label>
+                <div class="admin-password-field">
+                  <input id="admin-new-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Déjala vacía para enviarla por correo">
+                  <button class="admin-password-toggle" type="button" data-admin-action="toggle-new-password" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                    <i class="ri-eye-line" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <small class="admin-field-help">Mínimo 8 caracteres sin espacios. Si la dejas vacía, se enviará un correo para que la persona la establezca; si la escribes, compártela directamente y no llegará correo.</small>
+              </div>
               <button class="btn-primary" type="submit" data-admin-submit>
                 <i class="ri-user-add-line" aria-hidden="true"></i> Crear cuenta y enviar acceso
               </button>
@@ -229,6 +241,45 @@ const AdminManager = {
             </form>
           </section>
         </div>
+        <div class="admin-profile-modal" id="admin-password-modal" hidden>
+          <section class="admin-panel admin-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-password-title">
+            <div class="admin-users-heading">
+              <h2 id="admin-password-title"><i class="ri-lock-password-line" aria-hidden="true"></i> Cambiar contraseña</h2>
+              <button class="btn-primary-soft" type="button" data-admin-action="close-password">Cerrar</button>
+            </div>
+            <p class="admin-panel-description" data-password-user></p>
+            <form class="admin-create-form" id="admin-change-password-form">
+              <input type="hidden" name="uid" id="admin-change-password-uid">
+              <div class="form-group">
+                <label for="admin-change-password-current">Contraseña actual de la cuenta</label>
+                <input id="admin-change-password-current" name="currentPassword" type="password" maxlength="128" autocomplete="current-password" required>
+                <small class="admin-field-help">Es la que diste al crear la cuenta o la que la persona ya tenía. El navegador necesita iniciar sesión con ella para poder cambiarla; no se guarda.</small>
+              </div>
+              <div class="form-group">
+                <label for="admin-change-password-new">Nueva contraseña</label>
+                <input id="admin-change-password-new" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+                <small class="admin-field-help">Mínimo 8 caracteres y sin espacios. Comunícala a la persona por un canal confiable; la usará para entrar en su próximo acceso.</small>
+              </div>
+              <div class="form-group">
+                <label for="admin-change-password-confirm">Repite la nueva contraseña</label>
+                <input id="admin-change-password-confirm" name="confirmPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+              </div>
+              <button class="btn-primary" type="submit" data-password-submit>
+                <i class="ri-lock-password-line" aria-hidden="true"></i> Guardar contraseña
+              </button>
+              <button class="btn-primary-soft" type="button" data-admin-action="reset-password" data-uid="">
+                <i class="ri-mail-send-line" aria-hidden="true"></i> No recuerdo la actual: enviar correo de recuperación
+              </button>
+            </form>
+            <p class="admin-field-help admin-console-help">
+              <i class="ri-external-link-line" aria-hidden="true"></i> ¿Nadie recuerda la contraseña y no hay tiempo? En la consola de Firebase se restablece en segundos, sin correo y gratis:
+              <a href="https://console.firebase.google.com/project/ina-tions/authentication/users" target="_blank" rel="noopener noreferrer">
+                Authentication → Usuarios
+              </a>
+              , busca a la persona y usa el menú ⋮ → «Restablecer contraseña» (fija una nueva) o «Eliminar usuario» (recrea la cuenta desde este panel con la misma contraseña).
+            </p>
+          </section>
+        </div>
       </section>`;
   },
 
@@ -246,6 +297,9 @@ const AdminManager = {
       } else if (event.target.id === 'admin-edit-profile-form') {
         event.preventDefault();
         this.saveStaffProfile(event.target);
+      } else if (event.target.id === 'admin-change-password-form') {
+        event.preventDefault();
+        this.changePassword(event.target);
       }
     });
     workspace.addEventListener('click', event => {
@@ -257,6 +311,9 @@ const AdminManager = {
       else if (action === 'switch-center') this.switchCenter();
       else if (action === 'close-profile') this.closeStaffProfile();
       else if (action === 'edit-profile') this.openStaffProfile(uid);
+      else if (action === 'change-password') this.openPasswordModal(uid);
+      else if (action === 'close-password') this.closePasswordModal();
+      else if (action === 'toggle-new-password') this._alternarVisibilidadCampo(button);
       else if (action === 'assign-center') {
         const centerId = button.closest('[data-user-row]')?.querySelector('[data-user-center]')?.value;
         this.assignCenter(uid, centerId);
@@ -283,6 +340,18 @@ const AdminManager = {
       else return;
       this._repintarCuentas();
     });
+    /* Escucha en vivo de sesiones: actualiza «En línea» y el último acceso sin
+       recargar la vista. */
+    if (!this._sesionBound) {
+      this._sesionBound = true;
+      const services = window.FirebaseServices || {};
+      if (services.database) {
+        services.database.ref('userSessions').on('value', snapshot => {
+          this.userSessions = snapshot.val() || {};
+          this._repintarCuentas();
+        });
+      }
+    }
     this._workspaceBound = true;
   },
 
@@ -309,10 +378,11 @@ const AdminManager = {
       this._requireAdmin();
       list.innerHTML = '<p class="admin-users-message">Cargando cuentas...</p>';
       const database = window.FirebaseServices.database;
-      const [usersSnapshot, centersSnapshot, staffProfilesSnapshot] = await Promise.all([
+      const [usersSnapshot, centersSnapshot, staffProfilesSnapshot, sessionsSnapshot] = await Promise.all([
         database.ref('users').once('value'),
         database.ref('centers').once('value'),
-        database.ref('staffProfiles').once('value')
+        database.ref('staffProfiles').once('value'),
+        database.ref('userSessions').once('value')
       ]);
       const centerRecords = centersSnapshot.val() || {};
       this.centers = Object.fromEntries(Object.entries(centerRecords)
@@ -320,6 +390,7 @@ const AdminManager = {
         .map(([id, record]) => [id, record.metadata]));
       this.users = usersSnapshot.val() || {};
       this.staffProfiles = staffProfilesSnapshot.val() || {};
+      this.userSessions = sessionsSnapshot.val() || {};
       if (AuthManager.user?.uid && this.users[AuthManager.user.uid]) {
         this.users[AuthManager.user.uid].email ||= AuthManager.user.email || '';
       }
@@ -437,6 +508,26 @@ const AdminManager = {
     }
   },
 
+  /* «En línea» y última vez que el usuario inició sesión. */
+  _ultimaSesionTexto(session) {
+    if (!session || !session.lastSignInAt) return 'Último acceso: sin registros todavía';
+    return `Último acceso: ${this._haceCuanto(Number(session.lastSignInAt))}`;
+  },
+
+  _haceCuanto(timestamp) {
+    const value = Number(timestamp);
+    if (!Number.isFinite(value)) return 'recientemente';
+    const diff = Date.now() - value;
+    if (diff < 0) return 'recientemente';
+    const minutos = Math.floor(diff / 60000);
+    if (minutos < 1) return 'ahora mismo';
+    if (minutos < 60) return `hace ${minutos} min`;
+    const horas = Math.floor(minutos / 60);
+    if (horas < 24) return `hace ${horas} h`;
+    const dias = Math.floor(horas / 24);
+    return `hace ${dias} día${dias === 1 ? '' : 's'}`;
+  },
+
   _renderUserRow(uid, profile, activeAdmins) {
     const safeUid = this._escape(uid);
     const role = profile.role === 'admin' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente');
@@ -446,6 +537,7 @@ const AdminManager = {
     const statusText = profile.active === true ? 'Activa' : 'Inactiva';
     const email = profile.email || 'Correo no registrado en el perfil';
     const staff = this.staffProfiles[uid] || {};
+    const session = this.userSessions[uid] || {};
     const staffName = [staff.firstName, staff.lastName].filter(Boolean).join(' ').trim();
     const name = staffName || profile.displayName || email || uid;
     const centerId = profile.centerId || '';
@@ -482,8 +574,10 @@ const AdminManager = {
           <div class="admin-badges">
             <span class="admin-user-status${profile.active === true ? '' : ' is-inactive'}">${statusText}</span>
             <span class="admin-area-chip">${this._escape(AuthManager.getAreaLabel(area))}</span>
+            <span class="admin-online-badge${session.online === true ? ' is-online' : ''}"><i class="ri-checkbox-circle-fill" aria-hidden="true"></i> ${session.online === true ? 'En línea' : 'Desconectado'}</span>
           </div>
           <span class="admin-role-hint" data-role-hint title="${this._escape(resumenRol)}">${this._escape(resumenRol)}</span>
+          <span class="admin-last-session" title="Último inicio de sesión">${this._escape(this._ultimaSesionTexto(session))}</span>
         </td>
         <td class="admin-cell-actions">
           <div class="admin-center-row">
@@ -495,6 +589,7 @@ const AdminManager = {
           <div class="admin-user-actions">
             <button class="btn-primary-soft" type="button" data-admin-action="edit-profile" data-uid="${safeUid}"><i class="ri-pencil-line" aria-hidden="true"></i> Editar datos</button>
             ${isCurrentUser || isOnlyActiveAdmin ? '' : `<button class="btn-primary-soft${profile.active === true ? ' is-danger' : ' is-success'}" type="button" data-admin-action="toggle-active" data-uid="${safeUid}">${profile.active === true ? '<i class="ri-user-unfollow-line" aria-hidden="true"></i> Desactivar' : '<i class="ri-user-follow-line" aria-hidden="true"></i> Activar'}</button>`}
+            <button class="btn-primary-soft" type="button" data-admin-action="change-password" data-uid="${safeUid}"><i class="ri-lock-password-line" aria-hidden="true"></i> Contraseña</button>
             <button class="btn-primary-soft" type="button" data-admin-action="reset-password" data-uid="${safeUid}"><i class="ri-mail-send-line" aria-hidden="true"></i> Recuperación</button>
           </div>
         </td>
@@ -620,6 +715,18 @@ const AdminManager = {
       UI.showToast('❌ Completa los datos, selecciona un área y asigna un centro activo.');
       return;
     }
+    /* Contraseña manual opcional: si el administrador la escribe, la cuenta
+       nace con esa contraseña y no se envía correo de acceso. */
+    const passwordManual = String(formData.get('password') || '');
+    let passwordCuenta = '';
+    try {
+      passwordCuenta = passwordManual
+        ? this._validarNuevaContrasena(passwordManual, passwordManual)
+        : '';
+    } catch (passwordError) {
+      UI.showToast(`❌ ${passwordError.message}`);
+      return;
+    }
 
     if (submitButton) submitButton.disabled = true;
     let secondaryAuth;
@@ -628,7 +735,10 @@ const AdminManager = {
     try {
       this._requireAdmin();
       secondaryAuth = await this._getSecondaryAuth();
-      const credential = await secondaryAuth.createUserWithEmailAndPassword(email, this._generateTemporaryPassword());
+      const credential = await secondaryAuth.createUserWithEmailAndPassword(
+        email,
+        passwordCuenta || this._generateTemporaryPassword()
+      );
       newUser = credential.user;
       await newUser.updateProfile({ displayName });
       await window.FirebaseServices.database.ref().update({
@@ -651,12 +761,16 @@ const AdminManager = {
       });
       profileSaved = true;
 
-      try {
-        await secondaryAuth.sendPasswordResetEmail(email);
-        UI.showToast(`✅ Cuenta creada para ${email} en ${this.centers[centerId].name}. Se envió un correo para establecer su contraseña.`);
-      } catch (emailError) {
-        console.error('Se creó la cuenta, pero no se pudo enviar el correo de acceso:', emailError);
-        UI.showToast(`⚠️ La cuenta se creó, pero no se pudo enviar el correo: ${emailError.message}. Usa «Enviar recuperación» para reintentarlo.`);
+      if (passwordCuenta) {
+        UI.showToast(`✅ Cuenta creada para ${email} en ${this.centers[centerId].name}. Contraseña manual: compártela con la persona por un canal confiable.`);
+      } else {
+        try {
+          await secondaryAuth.sendPasswordResetEmail(email);
+          UI.showToast(`✅ Cuenta creada para ${email} en ${this.centers[centerId].name}. Se envió un correo para establecer su contraseña.`);
+        } catch (emailError) {
+          console.error('Se creó la cuenta, pero no se pudo enviar el correo de acceso:', emailError);
+          UI.showToast(`⚠️ La cuenta se creó, pero no se pudo enviar el correo: ${emailError.message}. Usa «Enviar recuperación» para reintentarlo.`);
+        }
       }
       form.reset();
       if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
@@ -821,19 +935,26 @@ const AdminManager = {
     }
   },
 
+  /* Devuelve el correo de la cuenta; si no existe, pide escribirlo y lo
+     guarda en el perfil. Devuelve cadena vacía si se cancela. */
+  async _asegurarCorreo(uid, profile) {
+    let email = String(profile.email || (uid === AuthManager.user?.uid ? AuthManager.user.email : '') || '').trim();
+    if (email) return email;
+    email = String(window.prompt('Este perfil no tiene correo guardado. Escribe el correo de su cuenta Firebase:') || '').trim().toLowerCase();
+    if (!email) return '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('El correo escrito no tiene un formato válido.');
+    }
+    await window.FirebaseServices.database.ref(`users/${uid}`).update({ email });
+    profile.email = email;
+    return email;
+  },
+
   async sendPasswordReset(uid) {
     try {
       const profile = this._getTargetProfile(uid);
-      let email = String(profile.email || (uid === AuthManager.user?.uid ? AuthManager.user.email : '') || '').trim();
-      if (!email) {
-        email = String(window.prompt('Este perfil no tiene correo guardado. Escribe el correo de su cuenta Firebase:') || '').trim().toLowerCase();
-        if (!email) return;
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          throw new Error('El correo escrito no tiene un formato válido.');
-        }
-        await window.FirebaseServices.database.ref(`users/${uid}`).update({ email });
-        profile.email = email;
-      }
+      const email = await this._asegurarCorreo(uid, profile);
+      if (!email) return;
       const actionCodeSettings = { url: `${window.location.origin}/`, handleCodeInApp: false };
      try {
        await window.FirebaseServices.auth.sendPasswordResetEmail(email, actionCodeSettings);
@@ -844,6 +965,139 @@ const AdminManager = {
     } catch (error) {
       console.error('No se pudo enviar el correo de recuperación:', error);
       UI.showToast(`❌ No se pudo enviar el correo de recuperación: ${error.message}`);
+    }
+  },
+
+  /* Cambio manual de contraseña. El navegador no puede actualizar la
+     contraseña de otra cuenta directamente (Firebase solo permite cambiar la
+     propia), así que se abre una sesión secundaria temporal —con la
+     contraseña actual que conoce el administrador—, se actualiza y se cierra
+     sin tocar la sesión del panel. Todo ocurre en el navegador: no requiere
+     plan de pago ni funciones de servidor. */
+  openPasswordModal(uid) {
+    try {
+      this._requireAdmin();
+      const profile = this._getTargetProfile(uid);
+      const form = document.getElementById('admin-change-password-form');
+      if (!form) throw new Error('No se encontró el formulario para cambiar la contraseña.');
+      const destino = profile.displayName || profile.email || uid;
+      const etiqueta = document.querySelector?.('[data-password-user]');
+      if (etiqueta) {
+        etiqueta.textContent = `Escribe la contraseña actual de ${destino} (${profile.email || 'sin correo registrado'}) y después la nueva. Dejará de usar la anterior en su próximo inicio de sesión.`;
+      }
+      form.reset();
+      form.elements.namedItem('uid').value = uid;
+      const recuperacion = form.querySelector('[data-admin-action="reset-password"]');
+      if (recuperacion) recuperacion.dataset.uid = uid;
+      const modal = document.getElementById('admin-password-modal');
+      modal.hidden = false;
+      document.getElementById('admin-change-password-current')?.focus();
+    } catch (error) {
+      console.error('No se pudo abrir el cambio de contraseña:', error);
+      UI.showToast(`❌ No se pudo abrir el formulario: ${error.message}`);
+    }
+  },
+
+  closePasswordModal() {
+    const modal = document.getElementById('admin-password-modal');
+    if (modal) modal.hidden = true;
+    const form = document.getElementById('admin-change-password-form');
+    if (form) form.reset();
+  },
+
+  /* Política de contraseña: 8 a 128 caracteres sin espacios. */
+  _validarNuevaContrasena(password, confirmPassword) {
+    const value = String(password ?? '');
+    if (value.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.');
+    if (value.length > 128) throw new Error('La contraseña no puede superar los 128 caracteres.');
+    if (/\s/.test(value)) throw new Error('La contraseña no debe contener espacios.');
+    if (value !== String(confirmPassword ?? '')) throw new Error('Las contraseñas no coinciden.');
+    return value;
+  },
+
+  _alternarVisibilidadCampo(button) {
+    const input = button?.parentElement?.querySelector('input');
+    if (!input) return;
+    const visible = input.type === 'text';
+    input.type = visible ? 'password' : 'text';
+    const icono = button.querySelector('i');
+    if (icono) icono.className = visible ? 'ri-eye-line' : 'ri-eye-off-line';
+    button.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    button.title = button.getAttribute('aria-label');
+  },
+
+  _describirErrorCambioContrasena(error) {
+    const messages = {
+      'auth/wrong-password': 'La contraseña actual no coincide con la de esa cuenta.',
+      'auth/invalid-credential': 'La contraseña actual no coincide con la de esa cuenta.',
+      'auth/invalid-login-credentials': 'La contraseña actual no coincide con la de esa cuenta.',
+      'auth/user-not-found': 'No existe una cuenta de Firebase Authentication con ese correo.',
+      'auth/invalid-email': 'El correo de la cuenta no tiene un formato válido.',
+      'auth/user-disabled': 'La cuenta está deshabilitada en Firebase Authentication.',
+      'auth/too-many-requests': 'Se bloquearon temporalmente los intentos. Espera un momento y vuelve a intentarlo.',
+      'auth/network-request-failed': 'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.',
+      'auth/requires-recent-login': 'Firebase pidió verificar la sesión otra vez. Cierra el formulario e inténtalo de nuevo.',
+      'auth/operation-not-allowed': 'El administrador debe habilitar el acceso con correo y contraseña en Firebase Authentication.'
+    };
+    return messages[error?.code] || error?.message || 'No se pudo cambiar la contraseña.';
+  },
+
+  /* Abre una sesión temporal (persistencia NONE) como la cuenta destino,
+     actualiza la contraseña y cierra la sesión. La sesión del administrador
+     en el panel no se ve afectada. */
+  async _updatePasswordAsUser(email, currentPassword, newPassword) {
+    this._requireAdmin();
+    const services = window.FirebaseServices;
+    const appName = 'inatec-admin-password-change';
+    const app = firebase.apps.find(item => item.name === appName) ||
+      firebase.initializeApp(services.app.options, appName);
+    const auth = firebase.auth(app);
+    await auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    try {
+      const credential = await auth.signInWithEmailAndPassword(email, currentPassword);
+      await credential.user.updatePassword(newPassword);
+    } catch (error) {
+      console.error('No se pudo actualizar la contraseña con la sesión temporal:', error);
+      throw new Error(this._describirErrorCambioContrasena(error));
+    } finally {
+      await auth.signOut().catch(signOutError => {
+        console.error('No se pudo cerrar la sesión temporal de cambio de contraseña:', signOutError);
+      });
+    }
+  },
+
+  async changePassword(form) {
+    const submitButton = form.querySelector('[data-password-submit]');
+    if (submitButton?.disabled) return;
+    const values = new FormData(form);
+    const uid = String(values.get('uid') || '');
+    if (submitButton) submitButton.disabled = true;
+    try {
+      this._requireAdmin();
+      const profile = this._getTargetProfile(uid);
+      const actual = String(values.get('currentPassword') || '');
+      if (!actual) throw new Error('Escribe la contraseña actual de la cuenta para poder cambiarla.');
+      const password = this._validarNuevaContrasena(values.get('password'), values.get('confirmPassword'));
+      const email = await this._asegurarCorreo(uid, profile);
+      if (!email) throw new Error('La cuenta no tiene correo guardado; escribe uno para continuar.');
+      await this._updatePasswordAsUser(email, actual, password);
+      const destino = profile.displayName || profile.email || uid;
+      this.closePasswordModal();
+      UI.showToast(`✅ Contraseña actualizada para ${destino}. Avísale para que la use en su próximo acceso.`);
+      if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
+        Mejoras.registrarEvento({
+          tipo: 'cambio', titulo: 'Contraseña actualizada',
+          texto: `El administrador cambió manualmente la contraseña de ${destino}.`,
+          afectado: destino,
+          detalle: 'Debe usar la nueva contraseña en su próximo inicio de sesión.',
+          seccion: 'administracion', clave: `contrasena-${uid}`
+        });
+      }
+    } catch (error) {
+      console.error('No se pudo cambiar la contraseña:', error);
+      UI.showToast(`❌ No se pudo cambiar la contraseña: ${error.message}`);
+    } finally {
+      if (submitButton) submitButton.disabled = false;
     }
   }
 };

@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
-   18-auth-intro.js — Intro épica INATEC al iniciar sesión (v3)
-   Secuencia cinemática: regla fina → logo con barrido escáner →
-   banda tricolor → tipografía cinética enmascarada → subtitulo con
-   borrado lateral → progreso con cifras tabulares → log de
-   arranque → salida tipo obturador con línea de luz.
+   18-auth-intro.js — Intro épica al iniciar sesión (v4)
+   Secuencia cinemática: resplandor y orbes difuminados → regla fina →
+   logo con anillo giratorio y barrido escáner → banda tricolor →
+   tipografía cinética con blur («TIC Dashboard») → subtitulo con
+   borrado lateral → progreso con cifras tabulares → log de arranque
+   → salida tipo obturador con línea de luz.
    Se omite con ESC o clic. Duración total ≈ 4.2s.
    ═══════════════════════════════════════════════════════════════ */
 window.AuthIntro = (function () {
@@ -29,7 +30,7 @@ window.AuthIntro = (function () {
     var titulo = $('ai-title');
     if (titulo) {
       titulo.textContent = '';
-      'INATEC'.split('').forEach(function (ch, i) {
+      'TIC Dashboard'.split('').forEach(function (ch, i) {
         var span = document.createElement('span');
         span.className = 'ai-letter';
         span.style.setProperty('--i', i);
