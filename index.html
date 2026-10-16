@@ -39,8 +39,12 @@
 <body>
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
     <div class="auth-video-bg" aria-hidden="true">
-      <iframe src="https://www.youtube.com/embed/Qs61XTYrGeI?autoplay=1&mute=1&controls=0&loop=1&playlist=Qs61XTYrGeI&showinfo=0&modestbranding=1&playsinline=1&disablekb=1&rel=0"
-        frameborder="0" allow="autoplay; encrypted-media" tabindex="-1"></iframe>
+      <div class="auth-video-layer is-active" id="auth-video-a">
+        <div class="auth-video-host" id="auth-video-host-a"></div>
+      </div>
+      <div class="auth-video-layer" id="auth-video-b">
+        <div class="auth-video-host" id="auth-video-host-b"></div>
+      </div>
     </div>
     <div class="auth-overlay" aria-hidden="true"></div>
     <form class="auth-card" id="auth-login-form" novalidate>
@@ -57,7 +61,7 @@
             <span>Avances</span>
             <span>Reportes</span>
           </div>
-          <p class="auth-brand-credit">Docente TIC · Hanzell Mayorga</p>
+          <p class="auth-brand-credit">Desarrollado por Turtle Games Dev</p>
         </div>
       </aside>
       <!-- Formulario (derecha) -->
@@ -98,11 +102,23 @@
       </div>
     </form>
     <footer class="auth-page-footer">
-      <img class="auth-footer-emblem auth-logo-claro" src="assets/emblema.png" alt="" height="22">
-      <img class="auth-footer-emblem auth-logo-oscuro" src="assets/emblema-blanco.png" alt="" height="22">
-      <div class="auth-page-footer-text">
-        <strong>TIC Dashboard · Cuaderno Docente Digital</strong>
-        <span>Desarrollado por Docente TIC Hanzell Mayorga · Instituto Nacional Tecnológico © 2026</span>
+      <div class="apf-col apf-brand">
+        <img class="auth-footer-emblem auth-logo-claro" src="assets/emblema.png" alt="" height="30">
+        <img class="auth-footer-emblem auth-logo-oscuro" src="assets/emblema-blanco.png" alt="" height="30">
+        <div class="apf-brand-text">
+          <strong>TIC Dashboard</strong>
+          <span>Cuaderno Docente Digital · Sistema de gestión académica del Instituto Nacional Tecnológico</span>
+        </div>
+      </div>
+      <div class="apf-col apf-links">
+        <a href="https://www.tecnacional.edu.ni" target="_blank" rel="noopener">Portal INATEC</a>
+        <a href="https://serviciosenlinea.tecnacional.edu.ni" target="_blank" rel="noopener">Servicios en Línea</a>
+        <a href="https://campus.tecnacional.edu.ni" target="_blank" rel="noopener">Campus Virtual</a>
+      </div>
+      <div class="apf-col apf-legal">
+        <strong>© 2026 Turtle Games Dev</strong>
+        <span>Docente TIC Hanzell Mayorga · Managua, Nicaragua</span>
+        <span>Capacitación y Educación Técnica Gratuita y de Calidad</span>
       </div>
     </footer>
   </section>
@@ -279,7 +295,7 @@
       <div class="sidebar-footer">
         <div class="sidebar-footer-divider" aria-hidden="true"></div>
         <p class="sidebar-footer-text">Sistema de Gestión Académica<br>Cuaderno Docente Digital</p>
-        <p class="sidebar-footer-credit">Desarrollado por Docente TIC<br><strong>Hanzell Mayorga</strong> · INATEC</p>
+        <p class="sidebar-footer-credit">Desarrollado por <strong>Turtle Games Dev</strong><br>Docente TIC · Hanzell Mayorga · INATEC</p>
       </div>
     </aside>
     <!-- Fondo que cierra el menú al tocar fuera (móvil / tablet) -->
@@ -911,6 +927,7 @@
   <script defer src="js/14-secciones.js"></script>
   <script defer src="js/15-permisos.js"></script>
   <script defer src="js/16-mejoras.js"></script>
+  <script defer src="js/17-auth-videos.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>
 
