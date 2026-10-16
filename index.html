@@ -16,8 +16,8 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <!-- Tema guardado (claro/oscuro): se aplica antes del primer pintado -->
-  <script>try { var _t = localStorage.getItem('tic-theme'); if (_t) { document.documentElement.setAttribute('data-theme', _t); } } catch (e) { }</script>
+  <!-- Tema guardado (oscuro por defecto / claro): se aplica antes del primer pintado -->
+  <script>try { var _t = localStorage.getItem('tic-theme'); document.documentElement.setAttribute('data-theme', _t === 'light' ? 'light' : 'dark'); } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }</script>
   <!-- Movimiento: se aplica antes del CSS para que la primera pintura ya
       respete la elección (Opciones → Animaciones). -->
   <script>try { var _m = localStorage.getItem('tic-motion'); if (_m === 'on' || _m === 'off') { document.documentElement.setAttribute('data-motion', _m); } } catch (e) { }</script>
@@ -33,6 +33,7 @@
   <link rel="icon" type="image/png" href="assets/emblema.png">
   <link rel="apple-touch-icon" href="assets/emblema.png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="remodelacion.css">
   <!-- <base target="_blank"> eliminado: causaba que todo se abriera en pestaña nueva y bloqueaba inputs -->
 </head>
 

@@ -21,3 +21,6 @@ Desktop.ini
 .vscode/
 .idea/
 *.swp
+
+# Preview local de la remodelacion (no versionar)
+preview-remodel.html

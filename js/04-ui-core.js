@@ -251,11 +251,12 @@ const UI = {
   },
 
   /* ── Tema claro / oscuro (identidad INATEC) ──
-     El modo claro es el oficial; el oscuro es opcional y se guarda
-     en localStorage bajo la clave 'tic-theme'. */
+     Por defecto el sistema usa el tema OSCURO (estilo login: navy +
+     glass + tricolor). El modo clara es una variante opcional con
+     glass y la misma paleta; se guarda en localStorage 'tic-theme'. */
   getTheme() {
-    try { return localStorage.getItem('tic-theme') === 'dark' ? 'dark' : 'light'; }
-    catch (e) { return 'light'; }
+    try { return localStorage.getItem('tic-theme') === 'light' ? 'light' : 'dark'; }
+    catch (e) { return 'dark'; }
   },
 
   applyTheme(theme) {
