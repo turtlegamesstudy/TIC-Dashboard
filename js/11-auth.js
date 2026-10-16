@@ -186,6 +186,10 @@ const AuthManager = {
         console.error('No se pudieron migrar algunos adjuntos antiguos:', migrationError);
         UI.showToast(`⚠️ No se pudieron migrar algunos adjuntos antiguos a Storage: ${migrationError.message}`);
       }
+      // Espera a que la intro épica termine para revelar el panel listo.
+      if (this._intro) {
+        try { await this._intro; } finally { this._intro = null; }
+      }
     } catch (error) {
       console.error('No se pudo abrir la sesión del panel:', error);
       const message = error.code === 'PERMISSION_DENIED'
@@ -227,6 +231,8 @@ const AuthManager = {
     this.setMessage('');
     try {
       await window.FirebaseServices.auth.signInWithEmailAndPassword(email, password);
+      // Intro épica INATEC: se reproduce mientras el panel termina de cargar.
+      this._intro = (typeof AuthIntro !== 'undefined') ? AuthIntro.play() : null;
     } catch (error) {
       console.error('No se pudo iniciar sesión:', error);
       this.setMessage(this.describeError(error));
@@ -275,6 +281,9 @@ const AuthManager = {
     const appContainer = document.getElementById('app-container');
     const authScreen = document.getElementById('auth-screen');
     if (!appContainer || !authScreen) return;
+    // Si había una intro épica en curso (fallo de acceso), se descarta.
+    if (typeof AuthIntro !== 'undefined') AuthIntro.finish();
+    this._intro = null;
     appContainer.hidden = true;
     appContainer.inert = true;
     appContainer.setAttribute('aria-hidden', 'true');

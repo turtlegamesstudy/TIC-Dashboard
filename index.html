@@ -37,6 +37,26 @@
 </head>
 
 <body>
+  <!-- ═══ Intro épica INATEC: se reproduce al iniciar sesión ═══ -->
+  <div class="auth-intro" id="auth-intro" hidden aria-hidden="true">
+    <div class="ai-bg" aria-hidden="true">
+      <div class="ai-rays"></div>
+      <div class="ai-ring ai-ring--rosa"></div>
+      <div class="ai-ring ai-ring--azul"></div>
+      <div class="ai-ring ai-ring--verde"></div>
+      <div class="ai-particles" id="ai-particles"></div>
+    </div>
+    <div class="ai-core">
+      <img class="ai-logo" src="assets/logo-inatec-blanco.png" alt="" height="110">
+      <div class="ai-title" id="ai-title" aria-label="INATEC"></div>
+      <div class="ai-sub">Cuaderno Docente Digital</div>
+      <div class="ai-progress"><span id="ai-progress-fill"></span></div>
+      <div class="ai-status"><span id="ai-status-text">VERIFICANDO ACCESO</span> · <span id="ai-pct">0</span>%</div>
+    </div>
+    <div class="ai-skip">Pulsa ESC o haz clic para omitir</div>
+    <div class="ai-flash" aria-hidden="true"></div>
+  </div>
+
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title" hidden>
     <div class="auth-video-bg" aria-hidden="true">
       <div class="auth-video-layer is-active" id="auth-video-a">
@@ -928,6 +948,7 @@
   <script defer src="js/15-permisos.js"></script>
   <script defer src="js/16-mejoras.js"></script>
   <script defer src="js/17-auth-videos.js"></script>
+  <script defer src="js/18-auth-intro.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>
 
