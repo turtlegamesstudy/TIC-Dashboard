@@ -24,3 +24,8 @@ Desktop.ini
 
 # Preview local de la remodelacion (no versionar)
 preview-remodel.html
+
+# React/Vite (carpeta tic-react)
+tic-react/node_modules/
+tic-react/dist/
+tic-react/.vite/
