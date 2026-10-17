@@ -3075,6 +3075,44 @@ html[data-theme] .asi-fila {
   border-radius: 5px;
 }
 html[data-theme] .asi-fila:hover { background: var(--bg-card); }
+
+/* ══ 39 · LISTAS DESPLEGABLES — CONTRASTE DEL POPUP NATIVO ════════════ */
+/* El sistema anfitrión (Windows/macOS) dibuja la lista de opciones con
+   sus propios colores: dejamos claro el esquema para que siga el tema
+   y forzamos fondo/texto sólidos en cada opción. */
+html[data-theme] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+html[data-theme] select,
+html[data-theme] datalist { color-scheme: inherit; }
+html[data-theme] select option,
+html[data-theme] select optgroup,
+html[data-theme] datalist option,
+html[data-theme] .form-control option {
+  background-color: #ffffff;
+  color: #0a0a0a;
+  font-family: var(--font);
+  font-weight: 500;
+}
+html[data-theme="dark"] select option,
+html[data-theme="dark"] select optgroup,
+html[data-theme="dark"] datalist option,
+html[data-theme="dark"] .form-control option {
+  background-color: #141414;
+  color: #fafafa;
+}
+html[data-theme] select option:checked,
+html[data-theme] select optgroup option:checked {
+  background-color: var(--rosa-suave);
+  color: var(--text-primary);
+}
+html[data-theme] select option:disabled {
+  color: var(--text-disabled);
+}
+/* Multi-línea (size>1): mismas garantías dentro del control */
+html[data-theme] select[size]:not([size="1"]) option,
+html[data-theme] select[multiple] option {
+  padding: 6px 10px;
+}
 html[data-theme] .asi-fila.es-retirado .asi-nombre { color: var(--text-muted); }
 html[data-theme] .asi-fila.es-retirado .asi-nombre em { font-style: normal; font-size: 0.72rem; }
 html[data-theme] .asi-nombre { flex: 1 1 auto; min-width: 0; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
