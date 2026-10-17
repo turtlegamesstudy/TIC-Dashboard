@@ -1,19 +1,19 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   FLAT IOS PREMIUM â€” TIC Dashboard Â· Sistema de diseÃ±o final
+﻿/* ════════════════════════════════════════════════════════════════════════
+   FLAT IOS PREMIUM — TIC Dashboard · Sistema de diseño final
    Capa de estilos que define la identidad visual definitiva:
-     Â· Monocromo estricto: blanco / negro y sus transparencias
-     Â· Superficies planas con blur elegante y outline fino
-     Â· Radios discretos (3â€“8px), sin tarjetas exageradamente redondas
-     Â· Estados diferenciados por contraste y opacidad, no por color
-   NOTA: el cargador de inicio (cargador-*), la intro de sesiÃ³n (auth-intro
-   /ai-*) y el carrusel del login se conservan tal cual estÃ¡n: sus
+     · Monocromo estricto: blanco / negro y sus transparencias
+     · Superficies planas con blur elegante y outline fino
+     · Radios discretos (3–8px), sin tarjetas exageradamente redondas
+     · Estados diferenciados por contraste y opacidad, no por color
+   NOTA: el cargador de inicio (cargador-*), la intro de sesión (auth-intro
+   /ai-*) y el carrusel del login se conservan tal cual están: sus
    animaciones e ilustraciones no se tocan desde esta capa.
-   Turtle Games Dev Â· INATEC
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   Turtle Games Dev · INATEC
+   ════════════════════════════════════════════════════════════════════════ */
 
-/* â•â• 1 Â· TOKENS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 1 · TOKENS ═════════════════════════════════════════════════════════ */
 :root {
-  /* TipografÃ­a â€” sans-serif del sistema, estilo iOS */
+  /* Tipografía — sans-serif del sistema, estilo iOS */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable",
           "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font);
@@ -43,13 +43,13 @@
   --acento-suave:  rgba(0, 0, 0, 0.07);
   --acento-brillo: rgba(0, 0, 0, 0.2);
 
-  /* Rosa INATEC â€” acento secundario para lo importante y lo seleccionado */
+  /* Rosa INATEC — acento secundario para lo importante y lo seleccionado */
   --rosa:        #E6007E;
   --rosa-hover:  #c4006a;
   --rosa-suave:  rgba(230, 0, 126, 0.1);
   --rosa-borde:  rgba(230, 0, 126, 0.38);
 
-  /* Alias usados por capas heredadas â€” neutralizados */
+  /* Alias usados por capas heredadas — neutralizados */
   --brand-pink: #0a0a0a;
   --brand-blue: rgba(0, 0, 0, 0.55);
   --brand-green: rgba(0, 0, 0, 0.3);
@@ -98,7 +98,7 @@
   --green-50: rgba(0, 0, 0, 0.04); --green-100: rgba(0, 0, 0, 0.07);
   --secondary-blue: rgba(10, 10, 10, 0.55);
 
-  /* Glows â€” apagados */
+  /* Glows — apagados */
   --glow-blue: 0 1px 2px rgba(0, 0, 0, 0.05);
   --glow-cyan: 0 1px 2px rgba(0, 0, 0, 0.05);
   --glow-green: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -107,7 +107,7 @@
   --glow-brand2: 0 1px 2px rgba(0, 0, 0, 0.05);
   --glow-acento: 0 2px 8px rgba(0, 0, 0, 0.14);
 
-  /* Sombras â€” negras, suaves y discretas */
+  /* Sombras — negras, suaves y discretas */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
@@ -117,14 +117,14 @@
   --shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow: var(--shadow-sm);
 
-  /* Radios discretos â€” lÃ­mite duro de 5px en todo el panel */
+  /* Radios discretos — límite duro de 5px en todo el panel */
   --r-sm: 3px;  --r-md: 5px;  --r-lg: 5px;  --r-xl: 5px;  --r-2xl: 5px;
   --r-full: 5px;
   --button-radius: var(--r-md);
   --button-height: 38px;
 }
 
-/* Oscuro â€” inverso exacto: negro con transparencias de blanco */
+/* Oscuro — inverso exacto: negro con transparencias de blanco */
 :root[data-theme="dark"] {
   --bg-body: #050505;
   --bg-surface:  rgba(15, 15, 15, 0.72);
@@ -147,7 +147,7 @@
   --acento-suave:  rgba(255, 255, 255, 0.09);
   --acento-brillo: rgba(255, 255, 255, 0.22);
 
-  /* Rosa INATEC â€” acento secundario */
+  /* Rosa INATEC — acento secundario */
   --rosa:        #ff2f94;
   --rosa-hover:  #E6007E;
   --rosa-suave:  rgba(255, 47, 148, 0.12);
@@ -216,7 +216,7 @@
   --shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
-/* Niveles de blur por jerarquÃ­a */
+/* Niveles de blur por jerarquía */
 :root,
 :root[data-theme="dark"] {
   --blur-low:  blur(8px);
@@ -230,7 +230,7 @@
   --t-slow: 260ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* â•â• 2 Â· BASE GLOBAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 2 · BASE GLOBAL ═══════════════════════════════════════════════════ */
 html[data-theme] body {
   background: var(--bg-body);
   background-attachment: scroll;
@@ -262,7 +262,7 @@ html[data-theme] :focus-visible {
   border-radius: 3px;
 }
 
-/* TipografÃ­a global */
+/* Tipografía global */
 html[data-theme] h1, html[data-theme] h2, html[data-theme] h3,
 html[data-theme] h4, html[data-theme] h5, html[data-theme] h6 {
   font-family: var(--font);
@@ -271,7 +271,7 @@ html[data-theme] h4, html[data-theme] h5, html[data-theme] h6 {
 }
 html[data-theme] small { font-size: 0.78rem; }
 
-/* â•â• 3 Â· ESTRUCTURA (app / workspace) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 3 · ESTRUCTURA (app / workspace) ══════════════════════════════════ */
 html[data-theme] .workspace {
   color: var(--text-primary);
 }
@@ -285,7 +285,7 @@ html[data-theme] .view-header {
 }
 html[data-theme] .view-header::before,
 html[data-theme] .view-header::after { display: none; }
-/* LÃ­nea de acento monocroma bajo el tÃ­tulo */
+/* Línea de acento monocroma bajo el título */
 html[data-theme] .view-header h1::after {
   width: 40px;
   height: 3px;
@@ -302,8 +302,8 @@ html[data-theme] .view-eyebrow {
   text-transform: uppercase;
 }
 
-/* â•â• 4 Â· NAVEGACIÃ“N â€” panel central con blur (sin sidebar lateral) â•â•â•â• */
-/* El sidebar se transforma: no ocupa cajÃ³n lateral; se muestra como
+/* ══ 4 · NAVEGACIÓN — panel central con blur (sin sidebar lateral) ════ */
+/* El sidebar se transforma: no ocupa cajón lateral; se muestra como
    ventana centrada en el viewport con todas las opciones en rejilla. */
 html[data-theme] .main-wrapper,
 html[data-theme] .sidebar.collapsed ~ .main-wrapper {
@@ -338,7 +338,7 @@ html[data-theme] .sidebar.open {
   pointer-events: auto !important;
   transform: none;
 }
-/* Residuos del modo cajÃ³n/Ã­conos heredado: anularlos por completo */
+/* Residuos del modo cajón/íconos heredado: anularlos por completo */
 html[data-theme] .sidebar.collapsed,
 html[data-theme] .sidebar.expanded {
   width: min(680px, 94vw) !important;
@@ -388,7 +388,7 @@ html[data-theme] .sidebar:not(.expanded) .user-card {
   gap: 10px;
   padding-inline: revert;
 }
-/* Fuerza clara sobre el menÃº legacy: iconos sin chip de color,
+/* Fuerza clara sobre el menú legacy: iconos sin chip de color,
    texto siempre visible, activo invertido por contraste. */
 html[data-theme] .sidebar .sidebar-nav .nav-section,
 html[data-theme] .sidebar .sidebar-nav .nav-grupo {
@@ -453,7 +453,7 @@ html[data-theme] .sidebar-header {
   align-items: center;
   border-bottom: 1px solid var(--border-subtle);
 }
-/* Cabecera del panel: tÃ­tulo limpio, sin logo ni marca */
+/* Cabecera del panel: título limpio, sin logo ni marca */
 html[data-theme] .sidebar-header .sidebar-header-bg,
 html[data-theme] .sidebar-header .logo-box,
 html[data-theme] .sidebar-header .brand-info {
@@ -536,7 +536,7 @@ html[data-theme] .nav-section.nav-grupo {
   border: none;
   cursor: pointer;
 }
-/* LÃ­nea fina de progreso al lado del tÃ­tulo de grupo */
+/* Línea fina de progreso al lado del título de grupo */
 html[data-theme] .nav-section.nav-grupo > span:first-child::after {
   content: "";
   display: inline-block;
@@ -631,7 +631,7 @@ html[data-theme] .sidebar-footer .user-card {
   box-shadow: none;
 }
 
-/* â•â• 5 Â· TOPBAR â€” franja de vidrio con blur medio â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 5 · TOPBAR — franja de vidrio con blur medio ═════════════════════ */
 html[data-theme] .topbar {
   background: var(--bg-surface);
   -webkit-backdrop-filter: var(--blur-sat);
@@ -654,7 +654,7 @@ html[data-theme] .toolbar-group-label {
   text-transform: uppercase;
 }
 
-/* BÃºsqueda */
+/* Búsqueda */
 html[data-theme] .search-box {
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
@@ -702,7 +702,7 @@ html[data-theme] .topbar-account-meta { color: var(--text-muted); }
 html[data-theme] .topbar-signout { color: var(--text-muted); }
 html[data-theme] .topbar-signout:hover { color: var(--text-primary); background: var(--bg-hover); border-radius: var(--r-md); }
 
-/* â•â• 6 Â· BOTONES â€” flat, outline fino, radio 5px â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 6 · BOTONES — flat, outline fino, radio 5px ══════════════════════ */
 html[data-theme] .btn-primary,
 html[data-theme] .btn-primary-soft,
 html[data-theme] .btn-secondary,
@@ -721,7 +721,7 @@ html[data-theme] .btn-warning {
 }
 html[data-theme] .btn-primary::before { display: none; }
 
-/* Primario: negro sÃ³lido (blanco en oscuro) */
+/* Primario: negro sólido (blanco en oscuro) */
 html[data-theme] .btn-primary,
 html[data-theme] .btn-success {
   background: var(--text-primary);
@@ -785,7 +785,7 @@ html[data-theme] .btn-success:disabled {
   cursor: not-allowed;
 }
 
-/* â•â• 7 Â· CARDS / KPIs â€” superficie plana, outline fino â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 7 · CARDS / KPIs — superficie plana, outline fino ════════════════ */
 html[data-theme] .kpi-card,
 html[data-theme] .group-header-card,
 html[data-theme] .chart-box,
@@ -865,7 +865,7 @@ html[data-theme] .widget-icon {
 html[data-theme] .card-widget:hover .widget-icon { transform: none; }
 html[data-theme] .card-widget strong { color: var(--text-primary); }
 
-/* â•â• 8 Â· TABLAS â€” lÃ­neas finas, sin zebra de color â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 8 · TABLAS — líneas finas, sin zebra de color ════════════════════ */
 html[data-theme] .table-container {
   background: var(--bg-card);
   -webkit-backdrop-filter: var(--blur-low);
@@ -917,7 +917,7 @@ html[data-theme] .custom-table .btn-icon:hover {
 }
 html[data-theme] .custom-table tr.fila-excluida { opacity: 0.5; }
 
-/* Badges â€” solo opacidad y outline */
+/* Badges — solo opacidad y outline */
 html[data-theme] .badge-status,
 html[data-theme] .badge-modulo {
   background: var(--acento-suave);
@@ -936,7 +936,7 @@ html[data-theme] .badge-status.pendiente { opacity: 0.72; }
 html[data-theme] .badge-modulo { opacity: 0.85; }
 html[data-theme] .badge-modulo:hover { opacity: 1; }
 
-/* â•â• 9 Â· FORMULARIOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 9 · FORMULARIOS ══════════════════════════════════════════════════ */
 html[data-theme] .form-control,
 html[data-theme] .group-header-card .form-control,
 html[data-theme] .form-group input,
@@ -980,7 +980,7 @@ html[data-theme] .panel input[type="color"] {
   border-radius: var(--r-md);
 }
 
-/* â•â• 10 Â· MODALES â€” vidrio alto, borde fino â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 10 · MODALES — vidrio alto, borde fino ══════════════════════════ */
 html[data-theme] .modal-overlay,
 html[data-theme] .modal-backdrop {
   background: rgba(0, 0, 0, 0.44);
@@ -1050,7 +1050,7 @@ html[data-theme] .section-settings-sidebar {
   box-shadow: var(--shadow-lg);
 }
 
-/* â•â• 11 Â· ESTADOS VACÃOS Y CARGA DEL PANEL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 11 · ESTADOS VACÍOS Y CARGA DEL PANEL ════════════════════════════ */
 html[data-theme] .empty-state {
   background: var(--bg-card);
   border: 1px dashed var(--border-default);
@@ -1061,7 +1061,7 @@ html[data-theme] .empty-state i { color: var(--text-disabled) !important; }
 html[data-theme] .empty-state h3 { color: var(--text-primary); font-family: var(--font); }
 html[data-theme] .empty-state p { color: var(--text-muted); }
 
-/* â•â• 12 Â· LÃNEAS DE CHART/INJECT MONOCROMAS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 12 · LÍNEAS DE CHART/INJECT MONOCROMAS ═══════════════════════════ */
 html[data-theme] .bar-h-fill { background: var(--text-secondary) !important; }
 html[data-theme] .rank-1,
 html[data-theme] .rank-2,
@@ -1073,14 +1073,14 @@ html[data-theme] .rank-3 {
 html[data-theme] .rank-2 { opacity: 0.62; }
 html[data-theme] .rank-3 { opacity: 0.42; }
 
-/* Burbujas del mÃ³dulo de mensajes (WhatsApp] â€” monocromo */
+/* Burbujas del módulo de mensajes (WhatsApp] — monocromo */
 html[data-theme] .wa-burbuja-entrante,
 html[data-theme] [class*="wa-"],
 html[data-theme] [class*="chat-"] {
   text-shadow: none;
 }
 
-/* â•â• 13 Â· UTILIDADES â€” neutralizar residuos â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 13 · UTILIDADES — neutralizar residuos ══════════════════════════ */
 html[data-theme] .glow-acento,
 html[data-theme] .glow-blue,
 html[data-theme] .glow-cyan,
@@ -1091,9 +1091,9 @@ html[data-theme] .glow-red { box-shadow: none; }
 /* Toggle de tema coherente */
 html[data-theme] #btn-toggle-theme i { transition: transform var(--t-base); }
 
-/* â•â• 14 Â· EXCLUSIONES â€” pantallas de carga y login SIN tocar â•â•â•â•â•â•â•â•â• */
-/* El cargador, la intro Ã©pica y el carrusel del login mantienen sus
-   grÃ¡ficos, colores y animaciones originales. Esta secciÃ³n explicita
+/* ══ 14 · EXCLUSIONES — pantallas de carga y login SIN tocar ═════════ */
+/* El cargador, la intro épica y el carrusel del login mantienen sus
+   gráficos, colores y animaciones originales. Esta sección explicita
    que ninguna regla anterior debe afectarles. */
 .cargador,
 .cargador *,
@@ -1105,14 +1105,14 @@ html[data-theme] #btn-toggle-theme i { transition: transform var(--t-base); }
   filter: none;
 }
 
-/* â•â• 15 Â· RESPONSIVE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 15 · RESPONSIVE ══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   html[data-theme] .custom-table th,
   html[data-theme] .custom-table td { white-space: normal; }
 }
 
-/* â•â• 16 Â· LÃMITE DURO DE REDONDEO (â‰¤5px en todo) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-/* Nada en el panel supera 5px: gana sobre pÃ­ldoras legacy incluso con !important */
+/* ══ 16 · LÍMITE DURO DE REDONDEO (≤5px en todo) ══════════════════════ */
+/* Nada en el panel supera 5px: gana sobre píldoras legacy incluso con !important */
 html[data-theme] .af-chip,
 html[data-theme] .af-pill,
 html[data-theme] .pie-version,
@@ -1135,7 +1135,7 @@ html[data-theme] .af-chip {
   border-radius: var(--button-radius) !important;
 }
 
-/* â•â• 17 Â· SIDEBAR â€” jerarquÃ­a icono + texto, encabezado y pie â•â•â•â•â•â•â•â•â• */
+/* ══ 17 · SIDEBAR — jerarquía icono + texto, encabezado y pie ═════════ */
 html[data-theme] .sidebar {
   border-radius: 5px;
 }
@@ -1172,7 +1172,7 @@ html[data-theme] .sidebar-footer-credit {
   letter-spacing: 0.02em;
 }
 
-/* â•â• 18 Â· ENCABEZADOS â€” mÃ¡s postura, menos volumen â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 18 · ENCABEZADOS — más postura, menos volumen ═══════════════════ */
 html[data-theme] .view-header h1 {
   font-size: 1.45rem;
   font-weight: 650;
@@ -1193,7 +1193,7 @@ html[data-theme] section h4.panel-titulo {
   color: var(--text-secondary);
 }
 
-/* â•â• 19 Â· AUTH PANEL â€” semitransparente con blur plano â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 19 · AUTH PANEL — semitransparente con blur plano ═══════════════ */
 html[data-theme] .auth-card {
   background: var(--bg-surface) !important;
   -webkit-backdrop-filter: blur(20px) saturate(120%);
@@ -1256,7 +1256,7 @@ html[data-theme] .auth-page-footer {
 html[data-theme] .auth-page-footer a { color: var(--text-secondary); }
 html[data-theme] .auth-page-footer a:hover { color: var(--text-primary); }
 
-/* â•â• 20 Â· CIRCULARES FUNCIONALES â†’ 5px (avatares incluidos) â•â•â•â•â•â•â•â•â•â• */
+/* ══ 20 · CIRCULARES FUNCIONALES → 5px (avatares incluidos) ══════════ */
 html[data-theme] .avatar,
 html[data-theme] .topbar-account .avatar,
 html[data-theme] .avatar::before,
@@ -1267,8 +1267,8 @@ html[data-theme] [class*="avatar"] {
 html[data-theme] .ai-orb,
 html[data-theme] .ai-watermark img { border-radius: 0; }
 
-/* â•â• 21 Â· PULIDO GENERAL â€” ritmo, jerarquÃ­a y microdetalle â•â•â•â•â•â•â•â•â•â•â•â• */
-/* Superficies: por defecto sin blur en cards del workspace (mÃ¡s nÃ­tido),
+/* ══ 21 · PULIDO GENERAL — ritmo, jerarquía y microdetalle ════════════ */
+/* Superficies: por defecto sin blur en cards del workspace (más nítido),
    el blur queda para superficies flotantes (topbar, modales, panel). */
 html[data-theme] .kpi-card,
 html[data-theme] .group-header-card,
@@ -1300,7 +1300,7 @@ html[data-theme] .view-header h1::after {
   opacity: 0.85;
 }
 html[data-theme] .view-header h2 { font-weight: 650; }
-/* Botones: tipografÃ­a ajustada, sin sobresaltos */
+/* Botones: tipografía ajustada, sin sobresaltos */
 html[data-theme] .btn-primary,
 html[data-theme] .btn-primary-soft,
 html[data-theme] .btn-secondary,
@@ -1334,7 +1334,7 @@ html[data-theme] select.form-control {
   background-repeat: no-repeat;
   padding-right: 30px;
 }
-/* Barra de desplazamiento aÃºn mÃ¡s discreta */
+/* Barra de desplazamiento aún más discreta */
 html[data-theme] *::-webkit-scrollbar { width: 6px; height: 6px; }
 html[data-theme] *::-webkit-scrollbar-thumb { border-radius: 3px; opacity: 0.6; }
 /* Avatar cuadrado plano con iniciales legibles */
@@ -1345,11 +1345,11 @@ html[data-theme] .avatar {
   letter-spacing: 0.02em;
 }
 
-/* â•â• 22 Â· FONDO ANIMADO â€” GIF blurred tras todo el panel â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 22 · FONDO ANIMADO — GIF blurred tras todo el panel ══════════════ */
 /* El sistema GIF ya viene de style.css (fondo-claro / fondo-profundo,
-   body y contenedores transparentes, fallback estÃ¡tico sin motion).
-   AquÃ­ solo lo afinamos a la estÃ©tica flat: blur mÃ¡s profundo, menos
-   saturaciÃ³n y contraste bajo el panel. */
+   body y contenedores transparentes, fallback estático sin motion).
+   Aquí solo lo afinamos a la estética flat: blur más profundo, menos
+   saturación y contraste bajo el panel. */
 html[data-theme] body::before {
   filter: blur(38px) saturate(62%);
   opacity: 0.72;
@@ -1361,7 +1361,7 @@ html[data-theme="dark"] body::before {
 html[data-theme="light"] body::before {
   opacity: 0.6;
 }
-/* El video estÃ¡tico (sin animaciones) conserva el mismo tratamiento */
+/* El video estático (sin animaciones) conserva el mismo tratamiento */
 html[data-motion="off"] body::before,
 html[data-theme="dark"][data-motion="off"] body::before {
   filter: blur(24px) saturate(60%);
@@ -1382,10 +1382,10 @@ html[data-theme] .auth-brand-glass {
   backdrop-filter: none !important;
 }
 
-/* â•â• 23 Â· PANTALLAS DE CARGA â€” recarga flat premium â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 23 · PANTALLAS DE CARGA — recarga flat premium ═══════════════════ */
 /* La estructura y las animaciones del cargador se conservan; se cambia
-   la piel: lienzo translÃºcido sobre el GIF, aura neutra, marco con
-   arco y satÃ©lite monocromos, tipografÃ­a editorial y rejilla fina. */
+   la piel: lienzo translúcido sobre el GIF, aura neutra, marco con
+   arco y satélite monocromos, tipografía editorial y rejilla fina. */
 html[data-theme] .app-loading {
   background:
     radial-gradient(120% 90% at 50% 8%, rgba(0, 0, 0, 0.18), transparent 60%),
@@ -1401,7 +1401,7 @@ html[data-theme="light"] .app-loading {
   color: #0a0a0a;
 }
 
-/* Rejilla de cuaderno neutra + guÃ­as finas */
+/* Rejilla de cuaderno neutra + guías finas */
 html[data-theme] .cargador-fondo {
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
@@ -1432,7 +1432,7 @@ html[data-theme="light"] .cargador-aura {
   background: radial-gradient(circle at 50% 44%, rgba(0, 0, 0, 0.12), transparent 66%);
 }
 
-/* Marco orbital: pista fina, arco luminoso, satÃ©lite monocromo */
+/* Marco orbital: pista fina, arco luminoso, satélite monocromo */
 html[data-theme] .cargador-pista { stroke: rgba(255, 255, 255, 0.28) !important; }
 html[data-theme="light"] .cargador-pista { stroke: rgba(0, 0, 0, 0.3) !important; }
 html[data-theme] .cargador-arco { stroke: var(--carg-tinta) !important; }
@@ -1446,7 +1446,7 @@ html[data-theme="light"] .app-loading {
 html[data-theme="light"] .cargador-arco { stroke: #0a0a0a !important; }
 html[data-theme="light"] .cargador-punto { fill: #0a0a0a !important; }
 
-/* IlustraciÃ³n: recoloreada a monocromo con los mismos trazados */
+/* Ilustración: recoloreada a monocromo con los mismos trazados */
 html[data-theme] .cargador-ilustracion [fill="url(#grad-in)"] { fill: var(--carg-tinta) !important; }
 html[data-theme] .cargador-ilustracion [stroke="url(#grad-in)"] { stroke: var(--carg-tinta) !important; }
 html[data-theme] .cargador-ilustracion [fill="#ffffff"] { fill: rgba(255, 255, 255, 0.94) !important; }
@@ -1472,7 +1472,7 @@ html[data-theme="light"] .cargador-ilustracion [stroke="#ffffff"] { stroke: #fff
 html[data-theme="light"] .cargador-ilustracion [fill="#01a5e0"] { fill: rgba(0, 0, 0, 0.9) !important; }
 html[data-theme="light"] .cargador-ilustracion [fill="#e10b7b"] { fill: rgba(0, 0, 0, 0.5) !important; }
 
-/* TipografÃ­a editorial: etiqueta muda, titular grande y fino */
+/* Tipografía editorial: etiqueta muda, titular grande y fino */
 html[data-theme] .cargador-marca .cargador-logo img {
   height: 40px;
   width: auto;
@@ -1506,10 +1506,10 @@ html[data-theme] .cargador-nota {
 }
 html[data-theme="light"] .cargador-nota { color: rgba(0, 0, 0, 0.55) !important; }
 
-/* â•â• 24 Â· ADMINISTRACIÃ“N â€” secciÃ³n rediselaÃ±a flat â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 24 · ADMINISTRACIÓN — sección rediselaña flat ════════════════════ */
 html[data-theme] .admin-users-page { margin-top: 4px; }
 
-/* Cabecera: tÃ­tulo editorial + chips de resumen con outline */
+/* Cabecera: título editorial + chips de resumen con outline */
 html[data-theme] .view-header .admin-header-copy h1 {
   display: flex;
   align-items: center;
@@ -1555,7 +1555,7 @@ html[data-theme] .admin-stat b {
   font-variant-numeric: tabular-nums;
 }
 
-/* Barra de centro operativo: fila Ãºnica limpia */
+/* Barra de centro operativo: fila única limpia */
 html[data-theme] .admin-center-bar {
   display: flex;
   flex-wrap: wrap;
@@ -1685,7 +1685,7 @@ html[data-theme] .admin-field-help {
   opacity: 1 !important;
 }
 
-/* Toolbar de bÃºsqueda y filtros */
+/* Toolbar de búsqueda y filtros */
 html[data-theme] .admin-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1905,7 +1905,7 @@ html[data-theme] .admin-user-actions {
   gap: 6px;
 }
 
-/* Estados vacÃ­os */
+/* Estados vacíos */
 html[data-theme] .admin-empty,
 html[data-theme] .admin-sin-resultados,
 html[data-theme] .admin-users-message {
@@ -1919,7 +1919,7 @@ html[data-theme] .admin-sin-resultados i {
   font-size: 1.6rem;
 }
 
-/* DiÃ¡logos de ediciÃ³n: centrados, vidrio alto */
+/* Diálogos de edición: centrados, vidrio alto */
 html[data-theme] .admin-profile-modal {
   position: fixed;
   inset: 0;
@@ -1949,8 +1949,8 @@ html[data-theme] .admin-console-help a {
   text-underline-offset: 2px;
 }
 
-/* Refuerzo: los botones legacy de administraciÃ³n tenÃ­an degradados
-   azules por especificidad; neutralizados en todo el mÃ³dulo. */
+/* Refuerzo: los botones legacy de administración tenían degradados
+   azules por especificidad; neutralizados en todo el módulo. */
 html[data-theme] .admin-users-page .btn-primary,
 html[data-theme] .admin-users-page .btn-primary-soft,
 html[data-theme] .admin-users-page .btn-secondary,
@@ -2048,12 +2048,12 @@ html[data-theme] .admin-users-page .admin-user-status.is-inactive {
   box-shadow: none !important;
 }
 
-/* â•â• 25 Â· ROSA INATEC â€” acento para lo importante y lo seleccionado â•â•â•â• */
+/* ══ 25 · ROSA INATEC — acento para lo importante y lo seleccionado ════ */
 /* Un solo color con sentido: acciones primarias, foco de formulario,
-   filas/secciones activas y elementos marcados. Todo lo demÃ¡s sigue
+   filas/secciones activas y elementos marcados. Todo lo demás sigue
    estrictamente monocromo. */
 
-/* BotÃ³n primario sÃ³lido rosa */
+/* Botón primario sólido rosa */
 html[data-theme] .btn-primary {
   background: var(--rosa) !important;
   border-color: var(--rosa) !important;
@@ -2073,7 +2073,7 @@ html[data-theme] .auth-submit {
 }
 html[data-theme] .auth-submit:hover { background: var(--rosa-hover) !important; opacity: 1; }
 
-/* NavegaciÃ³n: opciÃ³n activa en rosa; buscador con foco rosa */
+/* Navegación: opción activa en rosa; buscador con foco rosa */
 html[data-theme] .sidebar .sidebar-nav .nav-item.active,
 html[data-theme] .sidebar .sidebar-nav .nav-item.active:hover {
   background: var(--rosa) !important;
@@ -2117,8 +2117,8 @@ html[data-theme] .admin-users-page .admin-online-badge.is-online {
 /* Barra de acento de los titulares de vista */
 html[data-theme] .view-header h1::after { background: var(--rosa) !important; }
 
-/* Acciones destacadas del dashboard y botones de Ã©xito usados como
-   acciÃ³n principal quedan en rosa (lo importante resalta; el resto gris) */
+/* Acciones destacadas del dashboard y botones de éxito usados como
+   acción principal quedan en rosa (lo importante resalta; el resto gris) */
 html[data-theme] .dash-accion.primaria {
   border-color: var(--rosa) !important;
   color: var(--rosa) !important;
@@ -2130,7 +2130,7 @@ html[data-theme] .btn-success {
   color: #ffffff !important;
 }
 
-/* â•â• 26 Â· PANEL DE NAVEGACIÃ“N â€” buscador y recientes â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 26 · PANEL DE NAVEGACIÓN — buscador y recientes ═════════════════ */
 html[data-theme] .sidebar-header {
   gap: 8px;
 }
@@ -2179,8 +2179,8 @@ html[data-theme] .nav-recientes-items .nav-item:hover {
   border-color: var(--rosa-borde) !important;
 }
 
-/* â•â• 27 Â· NAV â€” jerarquÃ­a correcta: chevron junto al enlace y los hijos
-   fluyen debajo de la tarjeta, sin pisar a los vecinos â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══ 27 · NAV — jerarquía correcta: chevron junto al enlace y los hijos
+   fluyen debajo de la tarjeta, sin pisar a los vecinos ═══════════════ */
 html[data-theme] .sidebar .nav-grupo-items,
 html[data-theme] .sidebar-nav [data-nav-grupos-items] {
   grid-auto-rows: max-content;
@@ -2262,7 +2262,7 @@ html[data-theme] .sidebar .nav-hijos .nav-item.nav-hijo.active {
 html[data-theme] .sidebar .nav-hijos .nav-item.nav-hijo.active i {
   color: var(--rosa) !important;
 }
-/* -- 28 ï¿½ CENTRO DE AVISOS ï¿½ cajon lateral completo -------------------
+/* -- 28 � CENTRO DE AVISOS � cajon lateral completo -------------------
    Se anula el popover (440px flotante) y pasa a drawer full-height. */
 html[data-theme] .centro-avisos {
   top: 0 !important;
@@ -2286,8 +2286,8 @@ html[data-theme] .centro-avisos {
   animation: avisos-drawer-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
 }
 html[data-theme] .centro-avisos::before { display: none !important; }
-/* El atributo hidden manda: sin esto el cajÃ³n queda siempre visible
-   bloqueando el topbar (y el botÃ³n del menÃº "se quedaba en X"). */
+/* El atributo hidden manda: sin esto el cajón queda siempre visible
+   bloqueando el topbar (y el botón del menú "se quedaba en X"). */
 html[data-theme] .centro-avisos[hidden] { display: none !important; }
 @keyframes avisos-drawer-in {
   from { transform: translateX(24px); opacity: 0; }
@@ -2520,8 +2520,8 @@ html[data-theme] .centro-avisos .pie-nuevo {
   border-radius: 5px !important;
 }
 
-/* -- 29 ï¿½ ESTADï¿½STICAS ï¿½ KPI planos + comparaciï¿½n con la ï¿½ltima
-   actualizaciï¿½n (deltachips por contraste, sin semï¿½foro de color) -- */
+/* -- 29 � ESTAD�STICAS � KPI planos + comparaci�n con la �ltima
+   actualizaci�n (deltachips por contraste, sin sem�foro de color) -- */
 html[data-theme] .estadisticas .kpi-card,
 html[data-theme] .kpi-card {
   display: flex;
@@ -2593,7 +2593,7 @@ html[data-theme] .kpi-delta.igual {
   color: var(--text-muted) !important;
 }
 
-/* Franja de cambios vs ï¿½ltima actualizaciï¿½n */
+/* Franja de cambios vs �ltima actualizaci�n */
 html[data-theme] .cambios-bloque { margin-top: var(--s-4, 14px); }
 html[data-theme] .cambios-rejilla {
   display: flex;
@@ -2621,7 +2621,7 @@ html[data-theme] .cambio-chip.cambio-baja strong { color: var(--text-primary); }
 html[data-theme] .cambio-chip.cambio-igual { border-style: dashed; color: var(--text-muted); }
 html[data-theme] .cambio-chip.cambio-igual strong { font-weight: 550; color: var(--text-muted); }
 
-/* Grï¿½ficas: cajas planas, barras monï¿½tonas finas */
+/* Gr�ficas: cajas planas, barras mon�tonas finas */
 html[data-theme] .chart-box {
   background: var(--bg-card) !important;
   border: 1px solid var(--border-default) !important;
@@ -2643,9 +2643,9 @@ html[data-theme] .chart-box h3 i { color: var(--text-muted) !important; }
 html[data-theme] .grafico-barra .grafico-valor { font-variant-numeric: tabular-nums; }
 html[data-theme] .rejilla-graficas { gap: 12px; }
 
-/* -- 30 ï¿½ Antï¿½dotos de estado: el atributo hidden SIEMPRE manda en el
-   panel de navegaciï¿½n (filtro del buscador, plegado de hijos y grupos)
-   y en el cajï¿½n de avisos. Sin esto el display autorial los mantiene
+/* -- 30 � Ant�dotos de estado: el atributo hidden SIEMPRE manda en el
+   panel de navegaci�n (filtro del buscador, plegado de hijos y grupos)
+   y en el caj�n de avisos. Sin esto el display autorial los mantiene
    visibles y el buscador "no filtra". -- */
 html[data-theme] .sidebar .sidebar-nav .nav-item[hidden],
 html[data-theme] .sidebar .nav-con-hijos[hidden],
@@ -2661,7 +2661,7 @@ html[data-theme] .sidebar .sidebar-nav .nav-section[style*="display:none"] {
   display: none !important;
 }
 
-/* -- 31 ï¿½ GRï¿½FICA SUAVE (ï¿½rea/lï¿½nea estilo Google Charts) ----------- */
+/* -- 31 � GR�FICA SUAVE (�rea/l�nea estilo Google Charts) ----------- */
 html[data-theme] .grafica-suave { width: 100%; }
 html[data-theme] .gv-svg { width: 100%; height: auto; display: block; overflow: visible; }
 html[data-theme] .gv-grid { stroke: var(--border-subtle); stroke-width: 1; }
@@ -2741,10 +2741,10 @@ html[data-theme] .kpi-delta {
   text-overflow: ellipsis;
 }
 
-/* -- 32 ï¿½ INTRO ï¿½AGUJERO NEGRO DEL CONOCIMIENTOï¿½ ---------------------
-   El logo INATEC funciona como un agujero negro: discos de acreciï¿½n
-   girando en 3D, ï¿½conos del saber flotando y cayendo en espiral, y una
-   absorciï¿½n con latido + onda de choque. Retemporiza la etapas textuales. */
+/* -- 32 � INTRO �AGUJERO NEGRO DEL CONOCIMIENTO� ---------------------
+   El logo INATEC funciona como un agujero negro: discos de acreci�n
+   girando en 3D, �conos del saber flotando y cayendo en espiral, y una
+   absorci�n con latido + onda de choque. Retemporiza la etapas textuales. */
 html[data-theme] .auth-intro { background: radial-gradient(ellipse at 50% 40%, #120a18 0%, #0a0710 52%, #030306 100%); }
 html[data-theme] .auth-intro .ai-orb,
 html[data-theme] .auth-intro .ai-glow { display: none !important; }
@@ -2778,7 +2778,7 @@ html[data-theme] .ai-ag-horizonte {
   50% { box-shadow: 0 0 40px 10px rgba(230,0,126,0.6), 0 0 110px 30px rgba(120,40,90,0.42), inset 0 0 26px 10px #000; }
 }
 
-/* Disco de acreciï¿½n: anillos cï¿½nicos inclinados en 3D */
+/* Disco de acreci�n: anillos c�nicos inclinados en 3D */
 html[data-theme] .ai-ag-tilt {
   position: absolute;
   left: 50%; top: 50%;
@@ -2832,7 +2832,7 @@ html[data-theme] .ai-ag-logo {
   100% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 18px rgba(230, 0, 126, 0.6)); }
 }
 
-/* Onda de choque al terminar la absorciï¿½n */
+/* Onda de choque al terminar la absorci�n */
 html[data-theme] .ai-ag-onda {
   position: absolute;
   left: 50%; top: 50%;
@@ -2849,7 +2849,7 @@ html[data-theme] .ai-ag-onda {
   100% { transform: translate(-50%, -50%) scale(4.2); opacity: 0; border-color: rgba(255,255,255,0.5); }
 }
 
-/* -- ï¿½conos del saber: nacen flotando y caen al horizonte -- */
+/* -- �conos del saber: nacen flotando y caen al horizonte -- */
 html[data-theme] .auth-intro .ai-icos { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 html[data-theme] .ai-ico {
   position: absolute;
@@ -2874,7 +2874,7 @@ html[data-theme] .ai-ico {
   100% { transform: translate(-50%, -50%) rotate(360deg) scale(0); filter: blur(6px); opacity: 0; }
 }
 
-/* -- Retemporizar la parte textual: tras la absorciï¿½n -- */
+/* -- Retemporizar la parte textual: tras la absorci�n -- */
 html[data-theme] .auth-intro.is-playing .ai-letter {
   animation-delay: calc(3.0s + var(--i, 0) * 0.055s);
 }

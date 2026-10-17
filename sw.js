@@ -1,15 +1,15 @@
 ﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    sw.js â€” PWA del TIC Dashboard
-   Objetivo: que un docente con mala seÃ±al pueda REABRIR el panel
-   y seguir viendo su base (los datos de la sesiÃ³n se guardan en
+   Objetivo: que un docente con mala señal pueda REABRIR el panel
+   y seguir viendo su base (los datos de la sesión se guardan en
    localStorage; la cola de escrituras la gestiona el SDK de
-   Firebase mientras la pestaÃ±a siga abierta).
+   Firebase mientras la pestaña siga abierta).
 
    Estrategia:
-   Â· NavegaciÃ³n (HTML)      â†’ red primero, cae a cachÃ© si no hay red.
-   Â· CSS/JS/imagenes/CDN    â†’ cachÃ© primero, se refresca de fondo.
+   · Navegación (HTML)      â†’ red primero, cae a caché si no hay red.
+   · CSS/JS/imagenes/CDN    â†’ caché primero, se refresca de fondo.
    Esto evita dos males: pantalla en blanco sin red, y quedarse
-   clavados en una versiÃ³n vieja cuando sÃ­ hay red.
+   clavados en una versión vieja cuando sí hay red.
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 'use strict';
 
@@ -51,7 +51,7 @@ self.addEventListener('activate', function (evento) {
 });
 
 self.addEventListener('message', function (evento) {
-  /* La pÃ¡gina pide actualizarse apenas se carga una versiÃ³n nueva. */
+  /* La página pide actualizarse apenas se carga una versión nueva. */
   if (evento.data === 'tic-actualizar') {
     self.skipWaiting().then(function () {
       self.clients.matchAll({ type: 'window' }).then(function (clientes) {
@@ -73,7 +73,7 @@ self.addEventListener('fetch', function (evento) {
     (peticion.destination === 'document' && url.origin === location.origin);
 
   if (esNavegacion) {
-    /* HTML: primero la red (asÃ­ la app se actualiza sola); si no hay
+    /* HTML: primero la red (así la app se actualiza sola); si no hay
        red se sirve la copia â€” el docente reabre el panel igual. */
     evento.respondWith(
       fetch(peticion).then(function (respuesta) {
@@ -90,7 +90,7 @@ self.addEventListener('fetch', function (evento) {
     return;
   }
 
-  /* Resto de assets (locales y CDN): cachÃ© primero y refresco de fondo. */
+  /* Resto de assets (locales y CDN): caché primero y refresco de fondo. */
   evento.respondWith(
     caches.match(peticion, { ignoreVary: true }).then(function (hit) {
       var red = fetch(peticion).then(function (respuesta) {
