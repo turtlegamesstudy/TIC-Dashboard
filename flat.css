@@ -2643,9 +2643,9 @@ html[data-theme] .chart-box h3 i { color: var(--text-muted) !important; }
 html[data-theme] .grafico-barra .grafico-valor { font-variant-numeric: tabular-nums; }
 html[data-theme] .rejilla-graficas { gap: 12px; }
 
-/* -- 30 · Antídotos de estado: el atributo hidden SIEMPRE manda en el
-   panel de navegación (filtro del buscador, plegado de hijos y grupos)
-   y en el cajón de avisos. Sin esto el display autorial los mantiene
+/* -- 30 ï¿½ Antï¿½dotos de estado: el atributo hidden SIEMPRE manda en el
+   panel de navegaciï¿½n (filtro del buscador, plegado de hijos y grupos)
+   y en el cajï¿½n de avisos. Sin esto el display autorial los mantiene
    visibles y el buscador "no filtra". -- */
 html[data-theme] .sidebar .sidebar-nav .nav-item[hidden],
 html[data-theme] .sidebar .nav-con-hijos[hidden],
@@ -2659,4 +2659,234 @@ html[data-theme] .nav-recientes-items[hidden] {
 html[data-theme] .sidebar .sidebar-nav .nav-section[style*="display: none"],
 html[data-theme] .sidebar .sidebar-nav .nav-section[style*="display:none"] {
   display: none !important;
+}
+
+/* -- 31 ï¿½ GRï¿½FICA SUAVE (ï¿½rea/lï¿½nea estilo Google Charts) ----------- */
+html[data-theme] .grafica-suave { width: 100%; }
+html[data-theme] .gv-svg { width: 100%; height: auto; display: block; overflow: visible; }
+html[data-theme] .gv-grid { stroke: var(--border-subtle); stroke-width: 1; }
+html[data-theme] .gv-guia { stroke: var(--rosa); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.6; }
+html[data-theme] .gv-eje-y, html[data-theme] .gv-eje-x {
+  font-family: var(--font);
+  font-size: 10px;
+  fill: var(--text-muted);
+}
+html[data-theme] .gv-eje-x { font-size: 9.5px; }
+html[data-theme] .gv-area { transition: opacity var(--t-fast); }
+html[data-theme] .gv-area.gv-mono { }
+html[data-theme] .gv-linea { fill: none; stroke-width: 2.2; stroke-linecap: round; }
+html[data-theme] .gv-linea.gv-mono { stroke: var(--text-primary); }
+html[data-theme] .gv-linea.gv-rosa { stroke: var(--rosa); }
+html[data-theme] .gv-linea.gv-mono2 { stroke: var(--text-muted); }
+html[data-theme] .gv-punto {
+  fill: var(--bg-elevated);
+  stroke-width: 2.2;
+  cursor: pointer;
+  transition: r 120ms ease;
+}
+html[data-theme] .gv-punto.gv-mono { stroke: var(--text-primary); }
+html[data-theme] .gv-punto.gv-rosa { stroke: var(--rosa); fill: #ffffff; }
+html[data-theme] .gv-punto.gv-mono2 { stroke: var(--text-muted); }
+html[data-theme] .gv-punto:hover { r: 6; }
+html[data-theme] .gv-leyendas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 8px 2px 0;
+}
+html[data-theme] .gv-leyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+html[data-theme] .gv-muestra {
+  width: 14px; height: 8px;
+  border-radius: 5px;
+  display: inline-block;
+}
+html[data-theme] .gv-muestra.gv-mono { background: var(--text-primary); opacity: 0.35; }
+html[data-theme] .gv-muestra.gv-rosa { background: var(--rosa); opacity: 0.55; }
+html[data-theme] .gv-muestra.gv-mono2 { background: var(--text-muted); opacity: 0.35; }
+
+/* Degradados de relleno: planos, de color a transparente */
+html[data-theme] .gv-grad.gv-grad-rosa stop:first-child { stop-color: var(--rosa); stop-opacity: 0.42; }
+html[data-theme] .gv-grad.gv-grad-rosa stop:last-child { stop-color: var(--rosa); stop-opacity: 0.04; }
+html[data-theme] .gv-grad.gv-grad-mono stop:first-child { stop-color: var(--text-primary); stop-opacity: 0.30; }
+html[data-theme] .gv-grad.gv-grad-mono stop:last-child { stop-color: var(--text-primary); stop-opacity: 0.02; }
+html[data-theme] .gv-grad.gv-grad-mono2 stop:first-child { stop-color: var(--text-muted); stop-opacity: 0.22; }
+html[data-theme] .gv-grad.gv-grad-mono2 stop:last-child { stop-color: var(--text-muted); stop-opacity: 0.02; }
+
+/* Chips de cambios: cada chip mide lo suyo, sin solapes */
+html[data-theme] .cambios-rejilla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+html[data-theme] .cambio-chip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-theme] .cambio-chip strong {
+  font-variant-numeric: tabular-nums;
+}
+html[data-theme] .kpi-delta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -- 32 ï¿½ INTRO ï¿½AGUJERO NEGRO DEL CONOCIMIENTOï¿½ ---------------------
+   El logo INATEC funciona como un agujero negro: discos de acreciï¿½n
+   girando en 3D, ï¿½conos del saber flotando y cayendo en espiral, y una
+   absorciï¿½n con latido + onda de choque. Retemporiza la etapas textuales. */
+html[data-theme] .auth-intro { background: radial-gradient(ellipse at 50% 40%, #120a18 0%, #0a0710 52%, #030306 100%); }
+html[data-theme] .auth-intro .ai-orb,
+html[data-theme] .auth-intro .ai-glow { display: none !important; }
+
+/* El logo/etapa previa se sustituye por la escena del agujero */
+html[data-theme] .auth-intro .ai-logo-wrap,
+html[data-theme] .auth-intro .ai-watermark { display: none !important; }
+
+html[data-theme] .ai-ag-wrap {
+  position: relative;
+  width: 230px;
+  height: 200px;
+  margin-top: 18px;
+  display: block;
+}
+html[data-theme] .ai-ag-horizonte {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 78px; height: 78px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, rgba(0,0,0,0.9) 0%, #000 62%);
+  box-shadow:
+    0 0 26px 6px rgba(230, 0, 126, 0.38),
+    0 0 70px 18px rgba(120, 40, 90, 0.30),
+    inset 0 0 22px 8px #000;
+  animation: ai-ag-horizonte-pulso 2.4s ease-in-out infinite;
+}
+@keyframes ai-ag-horizonte-pulso {
+  0%, 100% { box-shadow: 0 0 26px 6px rgba(230,0,126,0.36), 0 0 70px 18px rgba(120,40,90,0.28), inset 0 0 22px 8px #000; }
+  50% { box-shadow: 0 0 40px 10px rgba(230,0,126,0.6), 0 0 110px 30px rgba(120,40,90,0.42), inset 0 0 26px 10px #000; }
+}
+
+/* Disco de acreciï¿½n: anillos cï¿½nicos inclinados en 3D */
+html[data-theme] .ai-ag-tilt {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotateX(68deg);
+  transform-style: flat;
+}
+html[data-theme] .ai-ag-tilt1 { width: 220px; height: 220px; }
+html[data-theme] .ai-ag-tilt2 { width: 300px; height: 300px; }
+html[data-theme] .ai-ag-tilt3 { width: 150px; height: 150px; }
+html[data-theme] .ai-ag-disco {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    transparent 0deg,
+    rgba(230, 0, 126, 0) 30deg,
+    rgba(230, 0, 126, 0.85) 100deg,
+    rgba(255, 255, 255, 0.95) 160deg,
+    rgba(230, 0, 126, 0.65) 220deg,
+    rgba(120, 20, 70, 0.4) 300deg,
+    transparent 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 10px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 calc(100% - 10px));
+  filter: blur(2.5px);
+}
+html[data-theme] .ai-ag-d1 { animation: ai-ag-giro 2.4s linear infinite; }
+html[data-theme] .ai-ag-d2 {
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 3px));
+  opacity: 0.55;
+  animation: ai-ag-giro-rev 5s linear infinite;
+}
+html[data-theme] .ai-ag-d3 { filter: blur(1px); opacity: 0.9; animation: ai-ag-giro 1.6s linear infinite; }
+@keyframes ai-ag-giro { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes ai-ag-giro-rev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+/* Logo en el horizonte: absorbe y destella */
+html[data-theme] .ai-ag-logo {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  height: 44px;
+  width: auto;
+  z-index: 3;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+  animation: ai-ag-ultra 1.1s ease 2.55s forwards;
+}
+@keyframes ai-ag-ultra {
+  0% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+  55% { transform: translate(-50%, -50%) scale(1.18); filter: drop-shadow(0 0 34px rgba(255,255,255,0.95)) brightness(1.6); }
+  100% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 18px rgba(230, 0, 126, 0.6)); }
+}
+
+/* Onda de choque al terminar la absorciï¿½n */
+html[data-theme] .ai-ag-onda {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 90px; height: 90px;
+  transform: translate(-50%, -50%) scale(0.3);
+  border-radius: 50%;
+  border: 1.5px solid rgba(230, 0, 126, 0.85);
+  opacity: 0;
+  animation: ai-ag-onda 1.05s cubic-bezier(0.16, 1, 0.3, 1) 3.05s forwards;
+  pointer-events: none;
+}
+@keyframes ai-ag-onda {
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.95; border-color: rgba(230,0,126,0.9); }
+  100% { transform: translate(-50%, -50%) scale(4.2); opacity: 0; border-color: rgba(255,255,255,0.5); }
+}
+
+/* -- ï¿½conos del saber: nacen flotando y caen al horizonte -- */
+html[data-theme] .auth-intro .ai-icos { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+html[data-theme] .ai-ico {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  color: #ffffff;
+  opacity: 0;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+  animation:
+    ai-ico-flotar 0.75s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0s) both,
+    ai-ico-absorber 0.95s cubic-bezier(0.5, 0, 0.85, 0.35) calc(1.75s + var(--d, 0s) * 0.7) forwards !important;
+}
+@keyframes ai-ico-flotar {
+  0% { transform: translate(calc(var(--sx,0) - 50%), calc(var(--sy,0) - 50%)) scale(0); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translate(calc(var(--sx,0) - 50%), calc(var(--sy,0) - 50%)) scale(1); opacity: 1; }
+}
+@keyframes ai-ico-absorber {
+  0% { transform: translate(calc(var(--sx,0) - 50%), calc(var(--sy,0) - 50%)) scale(1); }
+  40% { transform: translate(calc(var(--sx,0) * 0.48 - 50%), calc(var(--sy,0) * 0.48 - 50%)) rotate(150deg) scale(0.7); filter: blur(1px); opacity: 1; }
+  85% { transform: translate(-50%, -50%) rotate(320deg) scale(0.12); filter: blur(3px); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) rotate(360deg) scale(0); filter: blur(6px); opacity: 0; }
+}
+
+/* -- Retemporizar la parte textual: tras la absorciï¿½n -- */
+html[data-theme] .auth-intro.is-playing .ai-letter {
+  animation-delay: calc(3.0s + var(--i, 0) * 0.055s);
+}
+html[data-theme] .auth-intro.is-playing .ai-title::after { animation-delay: 4.15s; }
+html[data-theme] .auth-intro.is-playing .ai-sub { animation-delay: 3.75s; }
+html[data-theme] .auth-intro.is-playing .ai-progress { animation-delay: 3.55s; }
+html[data-theme] .auth-intro.is-playing .ai-log li:nth-child(1) { animation-delay: 3.9s; }
+html[data-theme] .auth-intro.is-playing .ai-log li:nth-child(2) { animation-delay: 4.35s; }
+html[data-theme] .auth-intro.is-playing .ai-log li:nth-child(3) { animation-delay: 4.8s; }
+html[data-theme] .auth-intro.is-playing .ai-tricolor { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] .auth-intro .ai-ico,
+  html[data-theme] .auth-intro .ai-ag-disco,
+  html[data-theme] .auth-intro .ai-ag-onda { animation: none !important; }
 }

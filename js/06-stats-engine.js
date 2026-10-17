@@ -151,6 +151,93 @@ const StatsEngine = {
     `;
   },
 
+  /* ══ Gráfica suave (línea / área apilada estilo Google Charts) ══
+     Curvas catmull-rom → bezier, rejilla fina, puntos que llevan el
+     tooltip global (data-grafico-tip) y relleno con degradado plano
+     coloreado desde flat.css (vars --gt-*), así funciona en claro y oscuro. */
+  _graficaSVG(series, etiquetasX, max, alto, sufixo = '', guia = null) {
+    const esc = UI.escaparTexto;
+    const W = 680, P = { t: 16, r: 18, b: 34, l: 42 };
+    const iw = W - P.l - P.r, ih = alto - P.t - P.b;
+    const maxV = Math.max(max, ...series.flatMap(s => s.data), 1);
+    const n = Math.max(etiquetasX.length, 1);
+    const xAt = i => P.l + (n === 1 ? iw / 2 : (i * iw) / (n - 1));
+    const yAt = v => P.t + ih - (Math.min(v, maxV) / maxV) * ih;
+
+    const suave = pts => {
+      if (pts.length < 3) return pts.map(p => p.join(' ')).join(' L');
+      let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+      }
+      return d;
+    };
+
+    // Series apiladas: acumulan del eje hacia arriba en su orden dado
+    const apiladas = series.some(s => s.apilada);
+    if (apiladas) {
+      const base = new Array(n).fill(0);
+      series.forEach(s => {
+        const inferior = base.slice();
+        s.data.forEach((v, i) => { base[i] += (typeof v === 'number' ? v : 0); });
+        s._low = inferior.map(yAt);
+        s._top = base.map(yAt);
+      });
+    }
+
+    const rejilla = [0, 0.25, 0.5, 0.75, 1].map(f => {
+      const y = P.t + ih - f * ih;
+      const val = Math.round(maxV * f);
+      return `<line x1="${P.l}" y1="${y.toFixed(1)}" x2="${P.l + iw}" y2="${y.toFixed(1)}" class="gv-grid"/>` +
+        `<text x="${P.l - 7}" y="${(y + 3).toFixed(1)}" class="gv-eje-y" text-anchor="end">${val}${sufixo}</text>`;
+    }).join('');
+
+    const guiaLinea = guia ? `<line x1="${P.l}" y1="${yAt(guia.valor).toFixed(1)}" x2="${P.l + iw}" y2="${yAt(guia.valor).toFixed(1)}" class="gv-guia"/>` +
+      `<text x="${P.l + iw + 2}" y="${(yAt(guia.valor) - 4).toFixed(1)}" class="gv-eje-y">${esc(guia.etiqueta)}</text>` : '';
+
+    const xLabels = etiquetasX.map((t, i) =>
+      `<text x="${xAt(i).toFixed(1)}" y="${alto - 10}" class="gv-eje-x ${i % 2 ? 'gv-impares' : ''}" text-anchor="middle">${esc(String(t).length > 12 ? String(t).slice(0, 11) + '…' : t)}</text>`).join('');
+
+    const capas = series.map((s, idx) => {
+      const coords = apiladas ? s._top.map((y, i) => [xAt(i), y]) : s.data.map((v, i) => [xAt(i), yAt(typeof v === 'number' ? v : 0)]);
+      const linea = suave(coords);
+      const tono = s.tono === 'rosa' ? 'rosa' : 'mono';
+      const abajo = apiladas ? s._low.slice().reverse() : coords.slice().reverse().map(c => [c[0], yAt(0)]);
+      const relleno = linea + ' L ' + abajo.map(c => c.join(' ')).join(' L ') + ' Z';
+      return `<path d="${relleno}" class="gv-area gv-${tono}" fill="url(#grad-${tono}-${Math.min(idx, 2)})" data-grad="grad-${tono}-${Math.min(idx, 2)}"/>` +
+        `<path d="${linea}" class="gv-linea gv-${tono}"/>`;
+    }).join('');
+
+    // Puntos interactivos encima de las áreas
+    const puntos = series.map((s, idx) => {
+      const coords = apiladas ? s._top.map((y, i) => [xAt(i), y]) : s.data.map((v, i) => [xAt(i), yAt(typeof v === 'number' ? v : 0)]);
+      return coords.map((c, i) => {
+        const v = s.data[i];
+        const tip = `${etiquetasX[i]} · ${s.nombre}: ${typeof v === 'number' ? Math.round(v * 100) / 100 : '—'}${sufixo}${s.tipExtra ? ' · ' + s.tipExtra(i) : ''}`;
+        return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="4.5" class="gv-punto gv-${s.tono === 'rosa' ? 'rosa' : 'mono'}" data-grafico-tip="${esc(tip).replace(/"/g, '&quot;')}"${s.filtroPor ? ` data-grafico-filtro="${esc(JSON.stringify(s.filtroPor(i))).replace(/"/g, '&quot;')}"` : ''} tabindex="0"/>`;
+      }).join('');
+    }).join('');
+
+    const leyenda = series.map(s =>
+      `<span class="gv-leyenda"><i class="gv-muestra gv-${s.tono === 'rosa' ? 'rosa' : 'mono'}"></i> ${esc(s.nombre)}</span>`).join('');
+
+    return `
+      <div class="grafica-suave">
+        <svg viewBox="0 0 ${W} ${alto}" class="gv-svg" role="img" aria-label="${esc(series.map(s => s.nombre).join(', '))} por ${esc(etiquetasX.length ? 'categoria' : '')}">
+          <defs>
+            <linearGradient id="grad-rosa-0" x1="0" y1="0" x2="0" y2="1" class="gv-grad gv-grad-rosa"><stop offset="0"/><stop offset="1"/></linearGradient>
+            <linearGradient id="grad-mono-1" x1="0" y1="0" x2="0" y2="1" class="gv-grad gv-grad-mono"><stop offset="0"/><stop offset="1"/></linearGradient>
+            <linearGradient id="grad-mono-2" x1="0" y1="0" x2="0" y2="1" class="gv-grad gv-grad-mono2"><stop offset="0"/><stop offset="1"/></linearGradient>
+          </defs>
+          ${rejilla}${guiaLinea}${capas}${xLabels}${puntos}
+        </svg>
+        <div class="gv-leyendas">${leyenda}</div>
+      </div>`;
+  },
+
   doughnutSVG(valor, total, color, label, sublabel, extra) {
     const ex = extra || {};
     const pct = total > 0 ? (valor / total) * 100 : 0;
@@ -511,7 +598,7 @@ const StatsEngine = {
     const riesgo = enLista.filter(e => e.promedio > 0 && e.promedio < 60).slice(0, 5);
     const sinNotasList = enLista.filter(e => e.promedio === 0).slice(0, 5);
 
-    const comparar = (actual, clave) => base ? { valor: base[clave], etiqueta: etiquetaBase } : null;
+    const comparar = (actual, clave) => base ? { valor: base[clave], etiqueta: comparacion ? etiquetaBase : 'últ. actualización' } : null;
 
     // ── 1 · KPIs esenciales ──
     const kpis = `
@@ -542,18 +629,14 @@ const StatsEngine = {
         </div>
         <div class="rejilla-graficas">
           <div class="chart-box">
-            <h3><i class="ri-book-read-line" style="color: var(--p-400);"></i> Promedio por Módulo ${UI.ayudaHTML('promedioModulo')}</h3>
-            ${d.porModulo.map(m => {
-              const pct = maxProm > 0 ? (m.promedioGeneral / 100) * 100 : 0;
-              const color = m.promedioGeneral >= 60 ? '--neon-green' : m.promedioGeneral >= 40 ? '--neon-amber' : '--neon-red';
-              const recorte = m.nombre.length > 35 ? m.nombre.substring(0,35)+'...' : m.nombre;
-              return this.barraCSS(pct, color, recorte, {
-                valor: `${Math.round(m.promedioGeneral)}/100`,
-                tip: `${m.nombre} — promedio ${Math.round(m.promedioGeneral)}/100 · ${m.conNotas} con notas, ${m.sinNotas} sin notas${m.convalidados ? `, ${m.convalidados} conval.` : ''} · clic para filtrar`,
-                filtro: { clave: 'modulo', valor: m.nombre }
-              });
-            }).join('')}
-            ${d.porModulo.every(m=>m.cuentaPromedios===0) ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">No hay calificaciones importadas aún.</div>' : ''}
+            <h3><i class="ri-line-chart-line"></i> Promedio por Módulo ${UI.ayudaHTML('promedioModulo')}</h3>
+            ${d.porModulo.some(m=>m.cuentaPromedios>0)
+              ? this._graficaSVG(
+                  [{ nombre: 'Promedio', tono: 'rosa', data: d.porModulo.map(m => m.promedioGeneral) }],
+                  d.porModulo.map(m => m.nombre.split(/\s+/).slice(0, 2).join(' ')),
+                  100, 230, '/100', { valor: 60, etiqueta: 'aprobado' })
+              : '<div style="text-align:center;color:var(--text-muted);padding:20px;">No hay calificaciones importadas aún.</div>'}
+            ${d.porModulo.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:16px;">Sin módulos.</div>' : ''}
           </div>
 
           <div class="chart-box">
@@ -584,29 +667,18 @@ const StatsEngine = {
           </div>
 
           <div class="chart-box">
-            <h3><i class="ri-stack-line" style="color: var(--neon-amber);"></i> Estado por Módulo ${UI.ayudaHTML('cobertura')}</h3>
-            <div style="overflow-x: auto;">
-              <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
-                <thead>
-                  <tr style="color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--border-default);">
-                    <th style="padding: 8px;">Módulo</th>
-                    <th style="padding: 8px; text-align: center;">✅ Con Notas</th>
-                    <th style="padding: 8px; text-align: center;">⏳ Sin Notas</th>
-                    <th style="padding: 8px; text-align: center;">🏆 Conval.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${d.porModulo.map(m => `
-                    <tr style="border-bottom: 1px solid var(--border-subtle);">
-                      <td style="padding: 8px; color: var(--text-secondary); font-weight: 500;">${m.nombre.length > 30 ? m.nombre.substring(0,30)+'...' : m.nombre}</td>
-                      <td style="padding: 8px; text-align: center; color: var(--neon-green); font-weight: 700;">${m.conNotas}</td>
-                      <td style="padding: 8px; text-align: center; color: var(--neon-amber); font-weight: 700;">${m.sinNotas}</td>
-                      <td style="padding: 8px; text-align: center; color: var(--p-400); font-weight: 700;">${m.convalidados}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
+            <h3><i class="ri-stacked-area-chart-line"></i> Estado por Módulo ${UI.ayudaHTML('cobertura')}</h3>
+            ${this._graficaSVG([
+                { nombre: 'Con notas', tono: 'rosa', apilada: true, data: d.porModulo.map(m => m.conNotas),
+                  filtroPor: i => ({ clave: 'modulo', valor: d.porModulo[i].nombre }) },
+                { nombre: 'Sin notas', tono: 'mono', apilada: true, data: d.porModulo.map(m => m.sinNotas),
+                  filtroPor: i => ({ clave: 'modulo', valor: d.porModulo[i].nombre }) },
+                { nombre: 'Convalidados', tono: 'mono2', apilada: true, data: d.porModulo.map(m => m.convalidados),
+                  filtroPor: i => ({ clave: 'modulo', valor: d.porModulo[i].nombre }) }
+              ],
+              d.porModulo.map(m => m.nombre.split(/\s+/).slice(0, 2).join(' ')),
+              Math.max(...d.porModulo.map(m => m.conNotas + m.sinNotas + m.convalidados), 4),
+              230, '', null)}
           </div>
 
           <div class="chart-box">

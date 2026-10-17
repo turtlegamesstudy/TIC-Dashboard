@@ -8,13 +8,23 @@
   'use strict';
 
   var IMAGENES = [
-    { src: 'assets/inatec-lanzamiento-01.jpg', alt: 'Lanzamiento de matrículas del Tecnológico Nacional' },
-    { src: 'assets/inatec-lanzamiento-02.jpg', alt: 'Lanzamiento de matrículas del Tecnológico Nacional, segundo semestre' },
-    { src: 'assets/inatec-lanzamiento-08.jpg', alt: 'Oferta académica del Tecnológico Nacional' },
+    { src: 'assets/carousel/inatec-graduacion-2k.jpg', alt: 'Graduación INATEC · entrega de diplomas' },
+    { src: 'assets/carousel/inatec-clase-2k.jpg', alt: 'Aula del Tecnológico Nacional' },
+    { src: 'assets/carousel/inatec-certificados-2k.jpg', alt: 'Estudiantes egresados certificados por INATEC' },
+    { src: 'assets/carousel/inatec-docentes-ia-2k.jpg', alt: 'Docentes INATEC en formación en inteligencia artificial' },
+    { src: 'assets/carousel/inatec-tecnicas-2k.jpg', alt: 'Nuevas técnicas para la capacitación de docentes INATEC' },
+    { src: 'assets/carousel/inatec-taller-2k.jpg', alt: 'Estudiantes en taller técnico del Tecnológico Nacional' },
+    { src: 'assets/carousel/inatec-jinotega-2k.jpg', alt: 'Centro Tecnológico Marcos Ramírez, Jinotega' },
+    { src: 'assets/carousel/inatec-campus-2k.jpg', alt: 'Campus del Tecnológico Nacional' },
+    { src: 'assets/carousel/inatec-acto-2025.jpg', alt: 'Acto cultural INATEC 2025' },
+    { src: 'assets/carousel/inatec-acto-2k.jpg', alt: 'Acto de graduación INATEC' },
+    { src: 'assets/carousel/inatec-inaugura-2k.jpg', alt: 'Inauguración INATEC · label de flores' },
+    { src: 'assets/carousel/inatec-campus-banner.jpg', alt: 'Campus Virtual · SoyTecNicaragua' },
     { src: 'assets/tn8-2-107.jpg', alt: 'Estudiantes del Tecnológico Nacional' },
-    { src: 'assets/inatec-bootcamp-pedagogico.jpg', alt: 'Bootcamp pedagógico INATEC' },
-    { src: 'assets/el19-inatec5.webp', alt: 'INATEC en El 19 Digital' },
-    { src: 'assets/canal2-bootcamp.png', alt: 'Bootcamp INATEC en Canal 2' }
+    { src: 'assets/canal2-bootcamp.png', alt: 'Bootcamp pedagógico INATEC' },
+    { src: 'assets/inatec-lanzamiento-01.jpg', alt: 'Lanzamiento de matrículas del Tecnológico Nacional' },
+    { src: 'assets/inatec-lanzamiento-08.jpg', alt: 'Oferta académica del Tecnológico Nacional' },
+    { src: 'assets/el19-inatec5.webp', alt: 'INATEC en El 19 Digital' }
   ];
 
   var carrusel = document.getElementById('auth-carousel');
@@ -27,7 +37,7 @@
   var activaCapa = 0;   // 0 = capa A, 1 = capa B
   var indice = 0;
   var temporizador = null;
-  var TIEMPO = 6000;
+  var TIEMPO = 3600;
 
   function capa(i) {
     return i === 0 ? capaA : capaB;

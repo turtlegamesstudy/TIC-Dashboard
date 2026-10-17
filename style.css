@@ -6746,7 +6746,7 @@ html[data-theme="dark"] .group-accordion summary {
 
 /* ── Carrusel de imágenes INATEC de fondo (dos capas con crossfade) ── */
 .auth-carousel {
-  --carrusel-tiempo: 6s;
+  --carrusel-tiempo: 3.6s;
   position: fixed;
   inset: 0;
   overflow: hidden;

@@ -1,11 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════
-   18-auth-intro.js — Intro épica al iniciar sesión (v4)
-   Secuencia cinemática: resplandor y orbes difuminados → regla fina →
-   logo con anillo giratorio y barrido escáner → banda tricolor →
-   tipografía cinética con blur («TIC Dashboard») → subtitulo con
-   borrado lateral → progreso con cifras tabulares → log de arranque
-   → salida tipo obturador con línea de luz.
-   Se omite con ESC o clic. Duración total ≈ 4.2s.
+   18-auth-intro.js — Intro «El Agujero Negro del Conocimiento» (v5)
+   Fase 1 · Íconos del saber flotan alrededor del centro (deriva ligera).
+   Fase 2 · El logo INATEC se comporta como un agujero negro: disco de
+            acreción girando, y cada ícono cae en espiral hacia el
+            horizonte, encogiéndose y desdibujándose mientras el logo
+            «absorbe» su luz (latido + onda de choque).
+   Fase 3 · Título, subtítulo, progreso y log de arranque (etapa previa,
+            retemporizada para que arranque tras la absorción).
+   Se omite con ESC o clic. Duración total ≈ 5.6s.
    ═══════════════════════════════════════════════════════════════ */
 window.AuthIntro = (function () {
   'use strict';
@@ -18,9 +20,16 @@ window.AuthIntro = (function () {
   var cierreTimer = null;
   var escuchasActivas = false;
 
-  var RETRASO_PROGRESO = 1600;
-  var DURACION = 4200;
-  var SEGURIDAD = 9000;
+  var RETRASO_PROGRESO = 3200;
+  var DURACION = 5600;
+  var SEGURIDAD = 11000;
+
+  var ICONOS = [
+    'ri-book-open-line', 'ri-bar-chart-box-line', 'ri-flask-line',
+    'ri-calculator-line', 'ri-global-line', 'ri-laptop-line',
+    'ri-graduation-cap-line', 'ri-lightbulb-flash-line',
+    'ri-pencil-line', 'ri-compass-3-line', 'ri-microscope-line'
+  ];
 
   var reducido = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -44,7 +53,47 @@ window.AuthIntro = (function () {
     var pct = $('ai-pct');
     if (pct) pct.textContent = '00';
     var estado = $('ai-status-text');
-    if (estado) estado.textContent = 'VERIFICANDO ACCESO';
+    if (estado) estado.textContent = 'ABSORBIENDO CONOCIMIENTO';
+
+    montarAgujero();
+  }
+
+  /* Construye una sola vez la escena del agujero negro: discos de
+     acreción + horizonte + logo + 11 íconos del saber en órbitas
+     aleatorias (ángulo/radio/desfase distintos en cada reproducción). */
+  function montarAgujero() {
+    var core = document.querySelector('.ai-core');
+    if (!core || core.querySelector('.ai-ag-wrap')) return;
+
+    var wrap = document.createElement('span');
+    wrap.className = 'ai-ag-wrap';
+    wrap.setAttribute('aria-hidden', 'true');
+    wrap.innerHTML =
+      '<span class="ai-ag-tilt ai-ag-tilt1"><span class="ai-ag-disco ai-ag-d1"></span></span>' +
+      '<span class="ai-ag-tilt ai-ag-tilt2"><span class="ai-ag-disco ai-ag-d2"></span></span>' +
+      '<span class="ai-ag-tilt ai-ag-tilt3"><span class="ai-ag-disco ai-ag-d3"></span></span>' +
+      '<span class="ai-ag-horizonte"></span>' +
+      '<img class="ai-ag-logo" src="assets/logo-inatec-blanco.png" alt="">' +
+      '<span class="ai-ag-onda"></span>';
+    core.insertBefore(wrap, core.firstChild);
+
+    var capa = document.createElement('div');
+    capa.className = 'ai-icos';
+    capa.setAttribute('aria-hidden', 'true');
+    ICONOS.forEach(function (clase, i) {
+      var ico = document.createElement('i');
+      ico.className = 'ai-ico ' + clase;
+      var angulo = (i * 2.399963 + 0.7) % (Math.PI * 2);   // espiral áurea
+      var radio = 30 + (i % 4) * 13 + Math.random() * 9;  // vmin
+      var sx = Math.cos(angulo) * radio;
+      var sy = Math.sin(angulo) * radio * 0.72;           // elipse
+      ico.style.setProperty('--sx', sx.toFixed(1) + 'vmin');
+      ico.style.setProperty('--sy', sy.toFixed(1) + 'vmin');
+      ico.style.setProperty('--d', (Math.random() * 0.55).toFixed(2) + 's');
+      ico.style.fontSize = (1.15 + Math.random() * 0.75).toFixed(2) + 'rem';
+      capa.appendChild(ico);
+    });
+    overlay.appendChild(capa);
   }
 
   function correrProgreso() {
@@ -59,9 +108,9 @@ window.AuthIntro = (function () {
       if (relleno) relleno.style.width = p + '%';
       if (pctEl) pctEl.textContent = String(p).padStart(2, '0');
       if (estado) {
-        estado.textContent = p < 25 ? 'VERIFICANDO ACCESO'
-          : p < 55 ? 'CARGANDO DATOS'
-          : p < 85 ? 'PREPARANDO PANEL'
+        estado.textContent = p < 35 ? 'CONOCIENDO TU CAMPUS'
+          : p < 65 ? 'SINCRONIZANDO NOTAS'
+          : p < 85 ? 'PREPARANDO EL PANEL'
           : p < 100 ? 'FINALIZANDO'
           : 'BIENVENIDO';
       }
