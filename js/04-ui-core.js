@@ -1021,6 +1021,7 @@ const UI = {
     html += `</tbody></table></div>`;
     contenedor.innerHTML = html;
     this.vincularHojaNotas(contenedor, moduloFiltro);
+    if (typeof Plantillas !== 'undefined') Plantillas.botoneria(contenedor, moduloFiltro);
   },
 
   /* ═══ Hoja de cálculo de notas: edición masiva con teclado ═══

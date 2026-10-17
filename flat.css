@@ -2988,3 +2988,64 @@ html[data-theme] .papelera-item > i { flex: 0 0 auto; color: var(--text-muted); 
 html[data-theme] .papelera-texto { min-width: 0; flex: 1 1 auto; }
 html[data-theme] .papelera-texto strong { display: block; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html[data-theme] .papelera-texto small { color: var(--text-muted); font-size: 0.72rem; }
+
+/* -- 36 · PLANTILLAS DE EVALUACIONES ---------------------------------- */
+html[data-theme] .plantillas-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 2px 2px;
+}
+html[data-theme] .plantillas-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+html[data-theme] .plantillas-modal[data-abierto="si"] { opacity: 1; visibility: visible; }
+html[data-theme] .plantillas-modal-caja {
+  width: min(520px, 92vw);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+}
+html[data-theme] .plantillas-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+html[data-theme] .plantillas-nota { margin: 0 0 14px; font-size: 0.84rem; color: var(--text-secondary); }
+html[data-theme] .plantillas-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+html[data-theme] .plantillas-acciones .form-control { margin-top: 10px; }
+html[data-theme] .plantilla-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  margin-bottom: 8px;
+}
+html[data-theme] .plantilla-texto { min-width: 0; flex: 1 1 auto; }
+html[data-theme] .plantilla-texto strong { display: block; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-theme] .plantilla-texto small { color: var(--text-muted); font-size: 0.72rem; }
+html[data-theme] .plantilla-item .btn-icon { flex: 0 0 auto; }
