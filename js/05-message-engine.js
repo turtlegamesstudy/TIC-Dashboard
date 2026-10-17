@@ -423,13 +423,13 @@ const MessageEngine = {
             <div class="table-container" style="flex: 1; display: flex; flex-direction: column;">
               <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-default); font-weight: 600; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center;">
                 <span style="display:flex; flex-direction:column; line-height:1.3;">
-                  <span><i class="ri-whatsapp-line" style="color: #25D366;"></i> Vista Previa</span>
+                  <span><i class="ri-whatsapp-line" style="color: #0a0a0a;"></i> Vista Previa</span>
                   <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">${MessageEngine.centroTitulo()} · ${MessageEngine.nombreDocente()}</span>
                 </span>
                 <span id="msg-preview-estado" style="font-size: 0.75rem; color: var(--text-muted);">Selecciona un estudiante</span>
               </div>
               <div style="flex: 1; padding: 16px; background: #0b141a; border-radius: 0 0 var(--r-xl) var(--r-xl); position: relative;">
-                <div id="msg-bubble-preview" style="background: #005c4b; color: #e9edef; padding: 12px 14px; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; max-width: 90%; white-space: pre-wrap; font-family: inherit; display: none;">
+                <div id="msg-bubble-preview" style="background: #2a2a2a; color: #e5e5e5; padding: 12px 14px; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; max-width: 90%; white-space: pre-wrap; font-family: inherit; display: none;">
                 </div>
                 <div id="msg-bubble-empty" style="text-align: center; color: var(--text-muted); padding-top: 40px;">
                   <i class="ri-chat-smile-2-line" style="font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
@@ -443,7 +443,7 @@ const MessageEngine = {
               <span id="msg-cola-info" style="font-size: 0.75rem; color: var(--text-muted); margin-right: auto;"><i class="ri-list-check-2"></i> Selecciona una plantilla para armar la cola</span>
               <button class="btn-secondary" onclick="MessageEngine.copiarMensaje()"><i class="ri-file-copy-line"></i> Copiar Texto</button>
               <button class="btn-secondary" id="btn-enviar-wa" onclick="MessageEngine.abrirWhatsApp()" disabled><i class="ri-whatsapp-fill"></i> Abrir WhatsApp (todos)</button>
-              <button class="btn-primary" id="btn-siguientes-5" onclick="MessageEngine.abrirSiguientesCinco()" disabled style="background: linear-gradient(135deg, #25D366, #128C7E);">
+              <button class="btn-primary" id="btn-siguientes-5" onclick="MessageEngine.abrirSiguientesCinco()" disabled style="background: linear-gradient(135deg, #0a0a0a, #404040);">
                 <i class="ri-skip-forward-line"></i> Ir con próximos 5
               </button>
             </div>
@@ -463,13 +463,13 @@ const MessageEngine = {
         }
         .btn-plantilla:hover {
           border-color: var(--p-500);
-          background: linear-gradient(135deg, rgba(20,87,139,0.1), rgba(225,11,123,0.05));
+          background: linear-gradient(135deg, rgba(10,10,10,0.06), rgba(10,10,10,0.03));
           transform: translateY(-1px);
         }
         .btn-plantilla.active {
           border-color: var(--p-500);
-          background: linear-gradient(135deg, rgba(20,87,139,0.15), rgba(225,11,123,0.1));
-          box-shadow: 0 0 15px rgba(20,87,139,0.15);
+          background: linear-gradient(135deg, rgba(10,10,10,0.1), rgba(10,10,10,0.08));
+          box-shadow: 0 0 15px rgba(10,10,10,0.1);
         }
         .btn-plantilla i { font-size: 1.3rem; color: var(--p-400); }
         .msg-estudiante-item {
@@ -480,8 +480,8 @@ const MessageEngine = {
         }
         .msg-estudiante-item:hover { background: var(--bg-hover); }
         .msg-estudiante-item.selected {
-          background: linear-gradient(90deg, rgba(20,87,139,0.12), rgba(225,11,123,0.06));
-          border-color: rgba(20,87,139,0.3);
+          background: var(--bg-active);
+          border-color: rgba(10,10,10,0.3);
         }
         .msg-estudiante-item input[type="checkbox"] {
           width: 18px; height: 18px; accent-color: var(--p-500);
@@ -496,9 +496,9 @@ const MessageEngine = {
         .msg-est-nombre { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .msg-est-meta { font-size: 0.72rem; color: var(--text-muted); }
         .msg-est-telefono { font-size: 0.72rem; color: var(--neon-green); font-family: var(--font-mono); }
-        .msg-check-enviado { color: #25D366; font-size: 1.05rem; flex-shrink: 0; display: flex; align-items: center; }
-        .msg-estudiante-item.enviado { opacity: 0.72; border-color: rgba(37,211,102,0.35); background: rgba(37,211,102,0.07); }
-        .msg-estudiante-item.enviado .msg-est-telefono { color: #25D366; }
+        .msg-check-enviado { color: #0a0a0a; font-size: 1.05rem; flex-shrink: 0; display: flex; align-items: center; }
+        .msg-estudiante-item.enviado { opacity: 0.72; border-color: rgba(10,10,10,0.25); background: rgba(10,10,10,0.05); }
+        .msg-estudiante-item.enviado .msg-est-telefono { color: #0a0a0a; }
         #btn-siguientes-5:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
       </style>
     `;
@@ -686,7 +686,7 @@ const MessageEngine = {
         ? `<i class="ri-mail-star-line"></i> Elige un tipo de mensaje para armar la cola`
         : pendientes.length === 0
           ? (this.enviados.size > 0
-              ? `<i class="ri-checkbox-circle-fill" style="color:#25D366;"></i> Cola terminada · ${this.enviados.size} mensaje(s) abiertos`
+              ? `<i class="ri-checkbox-circle-fill" style="color:#0a0a0a;"></i> Cola terminada · ${this.enviados.size} mensaje(s) abiertos`
               : `<i class="ri-list-check-2"></i> Sin mensajes pendientes`)
           : `<i class="ri-list-check-2"></i> Quedan ${pendientes.length} por enviar${haySeleccion ? ' en tu selección' : ' en la lista visible'}${this.enviados.size ? ` · ${this.enviados.size} ya abiertos` : ''}`;
     }

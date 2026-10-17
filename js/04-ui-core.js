@@ -382,7 +382,7 @@ const UI = {
           subtitulo: `${g.carrera} • ${g.turno}`,
           id: g.id,
           icono: 'ri-team-line',
-          color: 'var(--primary-blue, #14578b)'
+          color: 'var(--text-secondary, rgba(10,10,10,0.62))'
         });
         if (resultados.length >= limite) return resultados;
       }
@@ -402,7 +402,7 @@ const UI = {
             id: est.id,
             grupoId: g.id,
             icono: est.estado === 'Retirado' ? 'ri-user-unfollow-line' : 'ri-user-line',
-            color: est.estado === 'Retirado' ? '#ef4444' : '#10b981'
+            color: est.estado === 'Retirado' ? 'rgba(10, 10, 10, 0.45)' : 'var(--text-primary, #0a0a0a)'
           });
           if (resultados.length >= limite) return resultados;
         }
@@ -425,7 +425,7 @@ const UI = {
           subtitulo: `${eq.categoria} • ${eq.nombreProyecto}`,
           id: eq.id,
           icono: 'ri-trophy-line',
-          color: eq.categoria === 'Hackathon' ? 'var(--neon-purple, #e10b7b)' : 'var(--neon-cyan, #01a5e4)'
+          color: 'var(--acento, #0a0a0a)'
         });
         if (resultados.length >= limite) return resultados;
       }
@@ -491,7 +491,7 @@ const UI = {
     // excepción no controlada dentro del listener de "input" y el
     // buscador dejaba de responder para el resto de la sesión.
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return texto.replace(regex, '<mark style="background: rgba(20,87,139,0.2); color: inherit; border-radius: 2px; padding: 0 2px;">$1</mark>');
+    return texto.replace(regex, '<mark style="background: rgba(10,10,10,0.14); color: inherit; border-radius: 2px; padding: 0 2px;">$1</mark>');
   },
 
   navegarDesdeBusqueda(tipo, id, grupoId) {
@@ -518,7 +518,7 @@ const UI = {
       setTimeout(() => {
         const fila = document.querySelector(`tr[data-est-id="${id}"]`);
         if (fila) {
-          fila.style.background = 'rgba(20,87,139,0.18)';
+          fila.style.background = 'rgba(10,10,10,0.14)';
           fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => fila.style.background = '', 2000);
         }
@@ -933,7 +933,7 @@ const UI = {
       return;
     }
 
-    let html = `<div class="table-container" style="overflow-x: auto;"><table class="custom-table"><thead><tr><th style="width: 40px;">No.</th><th style="min-width: 200px;">Estudiante</th>${columnasOrdenadas.map(col => `<th style="${col.esTotal ? 'background-color: var(--primary-soft, #f0fdf4); font-weight: bold;' : 'font-size: 0.78rem;'}"><span style="display:flex; align-items:center; justify-content:center; gap:6px;"><span>${col.nombreDisplay.length > 28 ? col.nombreDisplay.substring(0, 28) + '...' : col.nombreDisplay}</span><i class="ri-close-circle-line" title="Eliminar esta columna" style="cursor:pointer; color:#dc2626; flex-shrink:0;" onclick="DataEngine.eliminarColumnaModulo('${moduloFiltro.replace(/'/g, "\\'")}', '${col.nombreDisplay.replace(/'/g, "\\'")}')"></i></span></th>`).join('')}</tr></thead><tbody>`;
+    let html = `<div class="table-container" style="overflow-x: auto;"><table class="custom-table"><thead><tr><th style="width: 40px;">No.</th><th style="min-width: 200px;">Estudiante</th>${columnasOrdenadas.map(col => `<th style="${col.esTotal ? 'background-color: var(--primary-soft, #f0fdf4); font-weight: bold;' : 'font-size: 0.78rem;'}"><span style="display:flex; align-items:center; justify-content:center; gap:6px;"><span>${col.nombreDisplay.length > 28 ? col.nombreDisplay.substring(0, 28) + '...' : col.nombreDisplay}</span><i class="ri-close-circle-line" title="Eliminar esta columna" style="cursor:pointer; color:rgba(10,10,10,0.5); flex-shrink:0;" onclick="DataEngine.eliminarColumnaModulo('${moduloFiltro.replace(/'/g, "\\'")}', '${col.nombreDisplay.replace(/'/g, "\\'")}')"></i></span></th>`).join('')}</tr></thead><tbody>`;
     estudiantes.forEach((e, idx) => {
       html += `<tr><td>${idx + 1}</td><td><strong>${e.nombres} ${e.apellidos}</strong></td>`;
       columnasOrdenadas.forEach(col => {
@@ -1397,8 +1397,8 @@ const UI = {
                 <h3><i class="ri-donut-chart-line" aria-hidden="true"></i> Distribución de la matrícula ${this.ayudaHTML('activos')}</h3>
                 <p class="chart-nota">Cómo se reparte el total registrado entre activos y retirados.</p>
                 <div class="dash-donuts">
-                  ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#10b981', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`, { filtro: { clave: 'estado', valor: 'Activo' } })}
-                  ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, '#ef4444', 'Retirados', `${totalRetirados} bajas registradas`, { filtro: { clave: 'estado', valor: 'Retirado' } })}
+                  ${StatsEngine.doughnutSVG(totalActivos, totalEstudiantes, '#0a0a0a', 'Activos', `${totalActivos} de ${totalEstudiantes} alumnos`, { filtro: { clave: 'estado', valor: 'Activo' } })}
+                  ${StatsEngine.doughnutSVG(totalRetirados, totalEstudiantes, 'rgba(10,10,10,0.45)', 'Retirados', `${totalRetirados} bajas registradas`, { filtro: { clave: 'estado', valor: 'Retirado' } })}
                 </div>
               </div>
               <div class="chart-box">
@@ -1492,8 +1492,8 @@ const UI = {
       ...g,
       estudiantes: UI.listaEstudiantes(g.estudiantes)
     }));
-    const filaEstudiante = (s, g) => `<tr data-est-id="${s.id}"><td><strong>${s.nombres}</strong></td><td>${s.apellidos}</td><td>${s.correo}</td><td>${s.telefono}</td><td>${UI.renderBadgeEstado(s)}</td><td data-permiso="editarRegistros" style="text-align: center; display: flex; justify-content: center; gap: 6px;"><button class="btn-icon" title="Editar Estudiante" onclick="UI.openEditStudentModal('${g.id}', '${s.id}')"><i class="ri-pencil-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Eliminar Estudiante" onclick="UI.deleteStudent('${g.id}', '${s.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></td></tr>`;
-    return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><div><h1>Gestión de Grupos de Clase</h1><p>Carga el listado oficial del grupo en Excel o CSV: el formato del archivo se detecta automáticamente para extraer alumnos y actualizar la base compartida.</p></div><div style="display:flex;gap:8px;"><button class="btn-primary-soft" onclick="UI.exportarGruposExcel()" title="Exportar todos los grupos a un archivo Excel con una hoja por grupo"><i class="ri-file-excel-2-line"></i> Exportar Grupos (.xlsx)</button><button class="btn-primary" onclick="document.getElementById('excel-upload-input').click()"><i class="ri-file-excel-line"></i> Cargar Lista de Grupo (.xlsx o .csv)</button><input type="file" id="excel-upload-input" accept=".xlsx, .xls, .csv, .txt" style="display: none;" onchange="UI.handleExcelImport(event)"></div></div>${grupos.length === 0 ? `<div style="background: var(--white); padding: 40px; text-align: center; border-radius: var(--radius-md); border: 1px solid var(--border-color);"><i class="ri-folder-add-line" style="font-size: 3rem; color: var(--text-muted);"></i><h3 style="margin-top: 10px;">No hay grupos cargados</h3><p style="color: var(--text-muted); font-size: 0.85rem;">Haz clic en "Cargar Lista de Grupo" para procesar el listado oficial de INATEC.</p></div>` : grupos.map((g, index) => `<details class="group-accordion" data-grupo-id="${g.id}" ${index === 0 ? 'open' : ''}><summary><div style="display: flex; align-items: center; gap: 12px;"><i class="ri-arrow-right-s-line accordion-icon" style="font-size: 1.2rem; color: var(--primary-blue);"></i><div><h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;"><i class="ri-group-line" style="color: var(--primary-blue);"></i> ${g.nombre}</h3><p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">${g.carrera} | Turno: ${g.turno}</p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i> Docente Guía: <strong>${g.docenteGuia ? g.docenteGuia : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-computer-line" style="color: var(--primary-blue);"></i> TIC Responsable: <strong>${g.ticResponsable ? g.ticResponsable : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p></div></div><div style="display: flex; align-items: center; gap: 12px;"><span class="badge-status activo"><i class="ri-user-line"></i> ${g.estudiantes.length} Estudiantes</span><button class="btn-icon" title="Asignar Docente Guía" onclick="event.stopPropagation(); UI.abrirModalDocenteGuia('${g.id}')"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Asignar TIC Responsable" onclick="event.stopPropagation(); UI.abrirModalTicResponsable('${g.id}')"><i class="ri-computer-line" style="color: var(--primary-blue);"></i></button><button class="btn-icon btn-delete" title="Eliminar Grupo" onclick="event.stopPropagation(); UI.deleteGroup('${g.id}')"><i class="ri-delete-bin-line" style="color: #dc2626;"></i></button></div></summary><div class="table-container" style="border-top: 1px solid var(--border-color); border-radius: 0;"><table class="custom-table"><thead><tr><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acciones</th></tr></thead><tbody>${g.estudiantes.map(s => filaEstudiante(s, g)).join('')}</tbody></table></div></details>`).join('')}</div>`;
+    const filaEstudiante = (s, g) => `<tr data-est-id="${s.id}"><td><strong>${s.nombres}</strong></td><td>${s.apellidos}</td><td>${s.correo}</td><td>${s.telefono}</td><td>${UI.renderBadgeEstado(s)}</td><td data-permiso="editarRegistros" style="text-align: center; display: flex; justify-content: center; gap: 6px;"><button class="btn-icon" title="Editar Estudiante" onclick="UI.openEditStudentModal('${g.id}', '${s.id}')"><i class="ri-pencil-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Eliminar Estudiante" onclick="UI.deleteStudent('${g.id}', '${s.id}')"><i class="ri-delete-bin-line" style="color: rgba(10,10,10,0.5);"></i></button></td></tr>`;
+    return `<div class="module-fade-enter"><div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><div><h1>Gestión de Grupos de Clase</h1><p>Carga el listado oficial del grupo en Excel o CSV: el formato del archivo se detecta automáticamente para extraer alumnos y actualizar la base compartida.</p></div><div style="display:flex;gap:8px;"><button class="btn-primary-soft" onclick="UI.exportarGruposExcel()" title="Exportar todos los grupos a un archivo Excel con una hoja por grupo"><i class="ri-file-excel-2-line"></i> Exportar Grupos (.xlsx)</button><button class="btn-primary" onclick="document.getElementById('excel-upload-input').click()"><i class="ri-file-excel-line"></i> Cargar Lista de Grupo (.xlsx o .csv)</button><input type="file" id="excel-upload-input" accept=".xlsx, .xls, .csv, .txt" style="display: none;" onchange="UI.handleExcelImport(event)"></div></div>${grupos.length === 0 ? `<div style="background: var(--white); padding: 40px; text-align: center; border-radius: var(--radius-md); border: 1px solid var(--border-color);"><i class="ri-folder-add-line" style="font-size: 3rem; color: var(--text-muted);"></i><h3 style="margin-top: 10px;">No hay grupos cargados</h3><p style="color: var(--text-muted); font-size: 0.85rem;">Haz clic en "Cargar Lista de Grupo" para procesar el listado oficial de INATEC.</p></div>` : grupos.map((g, index) => `<details class="group-accordion" data-grupo-id="${g.id}" ${index === 0 ? 'open' : ''}><summary><div style="display: flex; align-items: center; gap: 12px;"><i class="ri-arrow-right-s-line accordion-icon" style="font-size: 1.2rem; color: var(--primary-blue);"></i><div><h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;"><i class="ri-group-line" style="color: var(--primary-blue);"></i> ${g.nombre}</h3><p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">${g.carrera} | Turno: ${g.turno}</p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i> Docente Guía: <strong>${g.docenteGuia ? g.docenteGuia : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p><p style="margin: 2px 0 0 0; font-size: 0.8rem;"><i class="ri-computer-line" style="color: var(--primary-blue);"></i> TIC Responsable: <strong>${g.ticResponsable ? g.ticResponsable : '<span style=\"color: var(--text-muted); font-weight: 400;\">Sin asignar</span>'}</strong></p></div></div><div style="display: flex; align-items: center; gap: 12px;"><span class="badge-status activo"><i class="ri-user-line"></i> ${g.estudiantes.length} Estudiantes</span><button class="btn-icon" title="Asignar Docente Guía" onclick="event.stopPropagation(); UI.abrirModalDocenteGuia('${g.id}')"><i class="ri-user-star-line" style="color: var(--secondary-blue);"></i></button><button class="btn-icon" title="Asignar TIC Responsable" onclick="event.stopPropagation(); UI.abrirModalTicResponsable('${g.id}')"><i class="ri-computer-line" style="color: var(--primary-blue);"></i></button><button class="btn-icon btn-delete" title="Eliminar Grupo" onclick="event.stopPropagation(); UI.deleteGroup('${g.id}')"><i class="ri-delete-bin-line" style="color: rgba(10,10,10,0.5);"></i></button></div></summary><div class="table-container" style="border-top: 1px solid var(--border-color); border-radius: 0;"><table class="custom-table"><thead><tr><th>Nombres</th><th>Apellidos</th><th>Correo</th><th>Teléfono</th><th>Estado</th><th style="text-align: center;">Acciones</th></tr></thead><tbody>${g.estudiantes.map(s => filaEstudiante(s, g)).join('')}</tbody></table></div></details>`).join('')}</div>`;
   },
 
   // [FIX] Convierte cualquier forma guardada de una lista de estudiantes

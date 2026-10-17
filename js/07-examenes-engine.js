@@ -167,12 +167,12 @@ const ExamenesEngine = {
     
     let html = '';
     if(registrados > 0){
-      html += `<div style="background:rgba(16,185,129,0.1);border:1px solid var(--neon-green);padding:16px;border-radius:12px;color:var(--neon-green);margin-bottom:12px;">
+      html += `<div style="background:rgba(10,10,10,0.06);border:1px solid var(--neon-green);padding:16px;border-radius:12px;color:var(--neon-green);margin-bottom:12px;">
         <strong>✅ ${registrados} nota(s) registrada(s) correctamente.</strong>
       </div>`;
     }
     if(noEncontrados.length > 0){
-      html += `<div style="background:rgba(239,68,68,0.1);border:1px solid var(--neon-red);padding:16px;border-radius:12px;color:var(--neon-red);">
+      html += `<div style="background:rgba(10,10,10,0.06);border:1px solid var(--neon-red);padding:16px;border-radius:12px;color:var(--neon-red);">
         <strong>❌ No encontrados (${noEncontrados.length}):</strong><br>
         <span style="font-size:0.8rem;">${noEncontrados.join(', ')}</span>
       </div>`;
@@ -285,11 +285,11 @@ const ExamenesEngine = {
                     </td>
                     <td style="text-align:center;">
                       <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
-                        <button class="btn-icon" title="${yaTiene?'Editar':'Registrar'} Nota" onclick="ExamenesEngine.mostrarInputNota('${e.id}','${r.grupo.id}','${r.modulo.replace(/'/g,"\\'")}',${r.notaExamen??'null'},'${(e.nombres+' '+e.apellidos).replace(/'/g,"\\'")}')" style="width:34px;height:34px;font-size:1rem;background:rgba(20,87,139,0.1);">
+                        <button class="btn-icon" title="${yaTiene?'Editar':'Registrar'} Nota" onclick="ExamenesEngine.mostrarInputNota('${e.id}','${r.grupo.id}','${r.modulo.replace(/'/g,"\\'")}',${r.notaExamen??'null'},'${(e.nombres+' '+e.apellidos).replace(/'/g,"\\'")}')" style="width:34px;height:34px;font-size:1rem;background:rgba(10,10,10,0.06);">
                           <i class="ri-pencil-line" style="color:var(--p-400);"></i>
                         </button>
                         <button class="btn-icon" title="WhatsApp" onclick="ExamenesEngine.enviarWhatsAppExamen({nombres:'${e.nombres.replace(/'/g,"\\'")}',apellidos:'${e.apellidos.replace(/'/g,"\\'")}',telefono:'${e.telefono}'},'${r.modulo.replace(/'/g,"\\'")}')" style="width:34px;height:34px;font-size:1rem;background:rgba(37,211,102,0.1);">
-                          <i class="ri-whatsapp-line" style="color:#25D366;"></i>
+                          <i class="ri-whatsapp-line" style="color:rgba(10,10,10,0.55);"></i>
                         </button>
                       </div>
                     </td>
@@ -303,7 +303,7 @@ const ExamenesEngine = {
         <!-- Importador Google Forms / Texto -->
         <div style="background:linear-gradient(145deg,var(--bg-card),var(--bg-elevated));border:1px solid var(--border-default);border-radius:var(--r-xl);padding:24px;">
           <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
-            <i class="ri-google-fill" style="color:#ea4335;"></i> Importar desde Google Forms / Excel / Texto
+            <i class="ri-google-fill" style="color:rgba(10,10,10,0.35);"></i> Importar desde Google Forms / Excel / Texto
           </h3>
           <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">
             Pega aquí las respuestas. Formato: <code style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;">Nombre del estudiante, Nota</code> (una por línea). El sistema buscará el estudiante y asignará la nota al módulo donde esté en riesgo.

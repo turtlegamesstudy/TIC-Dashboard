@@ -145,7 +145,7 @@ const StatsEngine = {
           <span class="grafico-valor" style="font-size: 0.82rem; color: var(${colorVar}); font-weight: 700;">${texto}</span>
         </div>
         <div style="height: 10px; background: var(--bg-input); border-radius: var(--r-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);">
-          <div style="width: ${ancho}; transform-origin: left center; height: 100%; background: linear-gradient(90deg, var(${colorVar}), var(--neon-purple)); border-radius: var(--r-full); animation: growBar 1s cubic-bezier(0.16,1,0.3,1) 0.2s both; box-shadow: 0 0 12px rgba(20,87,139,0.25);"></div>
+          <div style="width: ${ancho}; transform-origin: left center; height: 100%; background: linear-gradient(90deg, var(${colorVar}), var(--neon-purple)); border-radius: var(--r-full); animation: growBar 1s cubic-bezier(0.16,1,0.3,1) 0.2s both; box-shadow: 0 0 12px rgba(10,10,10,0.15);"></div>
         </div>
       </div>
     `;
@@ -456,9 +456,9 @@ const StatsEngine = {
           <div class="chart-box">
             <h3><i class="ri-pie-chart-line" style="color: var(--neon-purple);"></i> Distribución General ${UI.ayudaHTML('estudiantes')}</h3>
             <div style="display: flex; flex-direction: column; gap: var(--s-6); margin-top: var(--s-2);">
-              ${this.doughnutSVG(d.activos, d.totalEst, '#10b981', 'Estudiantes Activos', `${d.activos} de ${d.totalEst} matriculados`, { filtro: { clave: 'estado', valor: 'Activo' } })}
-              ${this.doughnutSVG(d.retirados, d.totalEst, '#ef4444', 'Estudiantes Retirados', `${d.retirados} bajas registradas`, { filtro: { clave: 'estado', valor: 'Retirado' } })}
-              ${this.doughnutSVG(d.convalidaciones, Math.max(d.totalEst * 5, 1), '#e10b7b', 'Convalidaciones', `${d.convalidaciones} módulos convalidados`)}
+              ${this.doughnutSVG(d.activos, d.totalEst, '#0a0a0a', 'Estudiantes Activos', `${d.activos} de ${d.totalEst} matriculados`, { filtro: { clave: 'estado', valor: 'Activo' } })}
+              ${this.doughnutSVG(d.retirados, d.totalEst, 'rgba(10,10,10,0.45)', 'Estudiantes Retirados', `${d.retirados} bajas registradas`, { filtro: { clave: 'estado', valor: 'Retirado' } })}
+              ${this.doughnutSVG(d.convalidaciones, Math.max(d.totalEst * 5, 1), 'rgba(10,10,10,0.3)', 'Convalidaciones', `${d.convalidaciones} módulos convalidados`)}
             </div>
           </div>
 
@@ -507,7 +507,7 @@ const StatsEngine = {
           </div>
 
           <div class="chart-box">
-            <h3><i class="ri-trophy-line" style="color: #fbbf24;"></i> Top 5 — Mejores Promedios ${UI.ayudaHTML('rendimiento')}</h3>
+            <h3><i class="ri-trophy-line" style="color: #0a0a0a;"></i> Top 5 — Mejores Promedios ${UI.ayudaHTML('rendimiento')}</h3>
             ${top5.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px;">Sin datos de calificaciones.</div>' : top5.map((e,i) => `
               <div class="rank-row">
                 <div class="rank-num rank-${i+1}">${i+1}</div>
@@ -602,7 +602,7 @@ const StatsEngine = {
           .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
           .rank-row:last-child { border-bottom: none; }
           .rank-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
-          .rank-1 { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; box-shadow: 0 0 10px rgba(251,191,36,0.3); }
+          .rank-1 { background: linear-gradient(135deg, #0a0a0a, #d97706); color: #000; box-shadow: 0 0 10px rgba(251,191,36,0.3); }
           .rank-2 { background: linear-gradient(135deg, #94a3b8, #64748b); color: #fff; }
           .rank-3 { background: linear-gradient(135deg, #b45309, #92400e); color: #fff; }
           .rank-n { background: var(--bg-hover); color: var(--text-muted); }
