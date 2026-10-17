@@ -2262,7 +2262,7 @@ html[data-theme] .sidebar .nav-hijos .nav-item.nav-hijo.active {
 html[data-theme] .sidebar .nav-hijos .nav-item.nav-hijo.active i {
   color: var(--rosa) !important;
 }
-/* -- 28 · CENTRO DE AVISOS — cajon lateral completo -------------------
+/* -- 28 ï¿½ CENTRO DE AVISOS ï¿½ cajon lateral completo -------------------
    Se anula el popover (440px flotante) y pasa a drawer full-height. */
 html[data-theme] .centro-avisos {
   top: 0 !important;
@@ -2286,6 +2286,9 @@ html[data-theme] .centro-avisos {
   animation: avisos-drawer-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
 }
 html[data-theme] .centro-avisos::before { display: none !important; }
+/* El atributo hidden manda: sin esto el cajÃ³n queda siempre visible
+   bloqueando el topbar (y el botÃ³n del menÃº "se quedaba en X"). */
+html[data-theme] .centro-avisos[hidden] { display: none !important; }
 @keyframes avisos-drawer-in {
   from { transform: translateX(24px); opacity: 0; }
   to { transform: none; opacity: 1; }
@@ -2517,8 +2520,8 @@ html[data-theme] .centro-avisos .pie-nuevo {
   border-radius: 5px !important;
 }
 
-/* -- 29 · ESTADÍSTICAS — KPI planos + comparación con la última
-   actualización (deltachips por contraste, sin semáforo de color) -- */
+/* -- 29 ï¿½ ESTADï¿½STICAS ï¿½ KPI planos + comparaciï¿½n con la ï¿½ltima
+   actualizaciï¿½n (deltachips por contraste, sin semï¿½foro de color) -- */
 html[data-theme] .estadisticas .kpi-card,
 html[data-theme] .kpi-card {
   display: flex;
@@ -2590,7 +2593,7 @@ html[data-theme] .kpi-delta.igual {
   color: var(--text-muted) !important;
 }
 
-/* Franja de cambios vs última actualización */
+/* Franja de cambios vs ï¿½ltima actualizaciï¿½n */
 html[data-theme] .cambios-bloque { margin-top: var(--s-4, 14px); }
 html[data-theme] .cambios-rejilla {
   display: flex;
@@ -2618,7 +2621,7 @@ html[data-theme] .cambio-chip.cambio-baja strong { color: var(--text-primary); }
 html[data-theme] .cambio-chip.cambio-igual { border-style: dashed; color: var(--text-muted); }
 html[data-theme] .cambio-chip.cambio-igual strong { font-weight: 550; color: var(--text-muted); }
 
-/* Gráficas: cajas planas, barras monótonas finas */
+/* Grï¿½ficas: cajas planas, barras monï¿½tonas finas */
 html[data-theme] .chart-box {
   background: var(--bg-card) !important;
   border: 1px solid var(--border-default) !important;
@@ -2639,3 +2642,21 @@ html[data-theme] .chart-box h3 {
 html[data-theme] .chart-box h3 i { color: var(--text-muted) !important; }
 html[data-theme] .grafico-barra .grafico-valor { font-variant-numeric: tabular-nums; }
 html[data-theme] .rejilla-graficas { gap: 12px; }
+
+/* -- 30 · Antídotos de estado: el atributo hidden SIEMPRE manda en el
+   panel de navegación (filtro del buscador, plegado de hijos y grupos)
+   y en el cajón de avisos. Sin esto el display autorial los mantiene
+   visibles y el buscador "no filtra". -- */
+html[data-theme] .sidebar .sidebar-nav .nav-item[hidden],
+html[data-theme] .sidebar .nav-con-hijos[hidden],
+html[data-theme] .sidebar .nav-hijos[hidden],
+html[data-theme] .nav-grupo-items[hidden],
+html[data-theme] .sidebar-nav [data-nav-grupos-items][hidden],
+html[data-theme] .nav-recientes-items[hidden] {
+  display: none !important;
+}
+/* Encabezados de grupo ocultados por inline style desde filtrarNavegacion */
+html[data-theme] .sidebar .sidebar-nav .nav-section[style*="display: none"],
+html[data-theme] .sidebar .sidebar-nav .nav-section[style*="display:none"] {
+  display: none !important;
+}
