@@ -1,0 +1,15 @@
+{
+  "name": "TIC Dashboard — Cuaderno Docente Digital INATEC",
+  "short_name": "TIC Dashboard",
+  "description": "Gestión académica institucional: cuaderno docente, grupos, exámenes y estadísticas del Tecnológico Nacional.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0710",
+  "theme_color": "#E6007E",
+  "icons": [
+    { "src": "assets/logo-inatec.png", "sizes": "300x176", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo-inatec-blanco.png", "sizes": "251x133", "type": "image/png", "purpose": "maskable" }
+  ]
+}

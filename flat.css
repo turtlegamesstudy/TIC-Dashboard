@@ -2890,3 +2890,42 @@ html[data-theme] .auth-intro.is-playing .ai-tricolor { display: none !important;
   html[data-theme] .auth-intro .ai-ag-disco,
   html[data-theme] .auth-intro .ai-ag-onda { animation: none !important; }
 }
+
+/* -- 33 · ACCESIBILIDAD INSTITUCIONAL (WCAG 2.1 AA) -------------------
+   Foco visible SIEMPRE para teclado: el que navega con teclado o
+   lupa del sistema debe saber dónde está, en claro y oscuro. */
+html[data-theme] :focus-visible {
+  outline: 2px solid var(--rosa) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+html[data-theme] .kpi-card:focus-within,
+html[data-theme] .nav-item:focus-visible { outline-offset: -2px; }
+html[data-theme] ::selection { background: rgba(230, 0, 126, 0.35); color: inherit; }
+
+/* Respeto estricto a «menos movimiento»: quién dejó el sistema en
+   modo reducido no recibe animaciones de ninguna capa del panel. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] *,
+  html[data-theme] *::before,
+  html[data-theme] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Texto ajustable: el zoom del navegador escala el panel entero sin
+   romper rejillas (los contenedores usan rem en la capa plana). */
+html[data-theme] { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Contraste del acento en texto pequeño: el rosa puro #E6007E da 4.0:1
+   sobre blanco (justo solo para letra grande). En enlaces y textos
+   pequeños de fondo claro se usa un rosa más profundo (5.3:1). */
+html[data-theme="light"] .btn-label,
+html[data-theme="light"] a:not(.btn-primary-soft):not(.btn-ghost) {
+  color: #B00060;
+}
+html[data-theme="light"] .cambio-sube { color: #0f7b3a; }
+html[data-theme="light"] .cambio-baja { color: #b3261e; }

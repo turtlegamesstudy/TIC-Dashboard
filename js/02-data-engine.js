@@ -82,8 +82,24 @@
         const reference = this._centerDataReference(database);
         const profile = AuthManager && AuthManager.profile ? AuthManager.profile : {};
         const canWrite = profile.role === 'admin' || profile.role === 'docente';
-        const snapshot = await reference.once('value');
-        const remoteData = snapshot.val();
+        let remoteData = null;
+        try {
+          const snapshot = await reference.once('value');
+          remoteData = snapshot.val();
+        } catch (errorInicial) {
+          /* [OFFLINE] Sin red: se intenta con la última copia conocida. */
+          const cache = this._leerCacheLocal();
+          if (cache) {
+            this.db = this._deserializeDatabase(cache.db);
+            this._migrarEsquema();
+            this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
+            this._keyEncodingVersion = Number(cache.encoding) || 1;
+            this._sinRedAlAbrir = true;
+            this._migrationNotice = `Sin conexión con la base compartida (${errorInicial.message || 'error de red'}). Se muestra la última copia guardada en este equipo; al volver la señal pulsa «Recargar base».`;
+            return;
+          }
+          throw errorInicial;
+        }
         if (!remoteData) {
           // [ACCESO] Una base vacía no tiene nada que pisar, así que
           // cualquier cuenta del centro puede crearla y empezar a trabajar
@@ -153,11 +169,40 @@
           this._keyEncodingVersion = 1;
         }
 
+        this._guardarCacheLocal();
         this._subscribeToChanges(database);
       },
 
       _clone(value) {
         return JSON.parse(JSON.stringify(value));
+      },
+
+      /* ═══ [OFFLINE] Copia local de la última base conocida ═══
+         En instituciones donde la señal falla, lo peor es abrir el panel
+         sin internet y quedarse sin acceso a las notas. Cada guardado
+         deja una copia en este navegador; si al abrir no hay red, esa
+         copia se muestra (solo lectura garantizada: guardar fallará con
+         aviso, no en silencio — nada se pierde). */
+      _claveCacheLocal: 'tic-carga-ultima',
+
+      _guardarCacheLocal() {
+        try {
+          localStorage.setItem(this._claveCacheLocal, JSON.stringify({
+            ts: new Date().toISOString(),
+            encoding: this._keyEncodingVersion,
+            db: this._serializeDatabase(this.db)
+          }));
+        } catch (_) { /* navegador sin almacenamiento: se sigue igual */ }
+      },
+
+      _leerCacheLocal() {
+        try {
+          const crudo = localStorage.getItem(this._claveCacheLocal);
+          if (!crudo) return null;
+          const paquete = JSON.parse(crudo);
+          if (!paquete || !paquete.db) return null;
+          return paquete;
+        } catch (_) { return null; }
       },
 
       _encodeFirebaseKeys(value) {
@@ -434,6 +479,7 @@
           ModulosAcademicos.sincronizar(this.db);
         }
         this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
+        this._guardarCacheLocal();
         this._notificarCambio('manual', { recargado: true });
         const numero = Array.isArray(this.db.grupos) ? this.db.grupos.length : Object.keys(this.db.grupos || {}).length;
         if (typeof UI !== 'undefined' && UI.showToast) {
@@ -723,6 +769,7 @@
           };
           await reference.update(metadata);
           this._syncSnapshot = this._clone(next);
+          this._guardarCacheLocal();
           this._emitirSync('local', { coleccion: 'guardado', nombre: 'Cambios guardados' });
           return true;
         } catch (error) {
