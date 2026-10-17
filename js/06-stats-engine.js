@@ -205,7 +205,12 @@ const StatsEngine = {
       const coords = apiladas ? s._top.map((y, i) => [xAt(i), y]) : s.data.map((v, i) => [xAt(i), yAt(typeof v === 'number' ? v : 0)]);
       const linea = suave(coords);
       const tono = s.tono === 'rosa' ? 'rosa' : 'mono';
-      const abajo = apiladas ? s._low.slice().reverse() : coords.slice().reverse().map(c => [c[0], yAt(0)]);
+      /* El borde inferior recorre de derecha a izquierda: en las series
+         apiladas hay que emparejar de nuevo cada y con su x (vienen como
+         números sueltos); en las simples solo baja al eje 0. */
+      const abajo = apiladas
+        ? s._low.slice().reverse().map((y, j) => [coords[coords.length - 1 - j][0], y])
+        : coords.slice().reverse().map(c => [c[0], yAt(0)]);
       const relleno = linea + ' L ' + abajo.map(c => c.join(' ')).join(' L ') + ' Z';
       return `<path d="${relleno}" class="gv-area gv-${tono}" fill="url(#grad-${tono}-${Math.min(idx, 2)})" data-grad="grad-${tono}-${Math.min(idx, 2)}"/>` +
         `<path d="${linea}" class="gv-linea gv-${tono}"/>`;

@@ -366,6 +366,7 @@
             <button class="btn-primary-soft" type="button" onclick="DataEngine.exportDBJSON()" title="Descargar DB.json"
               aria-label="Descargar DB.json"><i class="ri-download-cloud-2-line" aria-hidden="true"></i><span
                 class="btn-label">Descargar DB.json</span></button>
+            <button class="btn-primary-soft" type="button" onclick="DataEngine.recargarBase().catch(error => UI.showToast(error.message || 'No se pudo recargar la base.', 'error'))" title="Descarga la última versión de la base compartida (sin pantalla en vivo: nadie te pisa los datos mientras trabajas)" aria-label="Recargar base de datos"><i class="ri-refresh-line" aria-hidden="true"></i><span class="btn-label">Recargar base</span></button>
             <button class="btn-primary-soft" id="admin-import-trigger" data-permiso="cargarBase" type="button"
               onclick="document.getElementById('db-file-input').click()" title="Cargar DB.json (solo administradores)"
               aria-label="Cargar DB.json"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i><span

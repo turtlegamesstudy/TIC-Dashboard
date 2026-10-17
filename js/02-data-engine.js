@@ -383,36 +383,14 @@
         }
       },
 
+      /* [PULL] La base ya NO escucha en vivo: los cambios de otros
+         equipos solo entran cuando esta persona recarga la base (botón
+         de la barra superior) o al reabrir la página. Así nadie pisa el
+         trabajo de nadie; cada escritura propia sigue saliendo a Firebase
+         en normal. Solo se conserva el estado de la conexión. */
       _subscribeToChanges(database) {
         this._listeners.forEach(({ reference, event, callback }) => reference.off(event, callback));
         this._listeners = [];
-        ['grupos', 'equipos'].forEach(collection => {
-          const reference = this._centerDataReference(database).child(collection);
-          const events = {
-            child_added: snapshot => this._applyRemoteRecord(collection, snapshot, false),
-            child_changed: snapshot => this._applyRemoteRecord(collection, snapshot, false),
-            child_removed: snapshot => this._applyRemoteRecord(collection, snapshot, true)
-          };
-          Object.entries(events).forEach(([event, callback]) => {
-            reference.on(event, callback);
-            this._listeners.push({ reference, event, callback });
-          });
-        });
-        ['gruposOrden', 'equiposOrden'].forEach(orderKey => {
-          const reference = this._centerDataReference(database).child(orderKey);
-          const callback = snapshot => this._applyRemoteOrder(
-            orderKey === 'gruposOrden' ? 'grupos' : 'equipos',
-            snapshot.val()
-          );
-          reference.on('value', callback);
-          this._listeners.push({ reference, event: 'value', callback });
-        });
-        ['informe', 'cuadernoConfig', 'modulosAcademicos'].forEach(key => {
-          const reference = this._centerDataReference(database).child(key);
-          const settingsChanged = snapshot => this._applyRemoteSettings(key, snapshot.val());
-          reference.on('value', settingsChanged);
-          this._listeners.push({ reference, event: 'value', callback: settingsChanged });
-        });
         // Estado de la conexión: el indicador de la barra superior lo
         // refleja y, si se corta, se avisa antes de que falle un guardado.
         try {
@@ -429,6 +407,39 @@
         } catch (error) {
           /* Sin estado de conexión el resto de la sincronización sigue igual. */
         }
+      },
+
+      /* [PULL] Descarga a mano la última versión de la base compartida.
+         Convierte los cambios que hicieron otros equipos en algo que
+         solo entra cuando esta persona lo pide, de modo que no se le
+         reinicia la pantalla mientras trabaja. */
+      async recargarBase() {
+        const { database } = window.FirebaseServices || {};
+        if (!database) throw new Error('La conexión con Firebase no está disponible.');
+        if (!(AuthManager && AuthManager.user)) throw new Error('La sesión no está activa.');
+        const snapshot = await this._centerDataReference(database).once('value');
+        const remoteData = snapshot.val();
+        if (!remoteData) {
+          if (typeof UI !== 'undefined' && UI.showToast) UI.showToast('La base remota está vacía; no se cargó nada.', 'info');
+          return 0;
+        }
+        const cambiando = this._serializeDatabase(this.db);
+        if (!this._iguales(cambiando, this._syncSnapshot) &&
+            !window.confirm('Tienes cambios sin guardar. Recargar la base ahora los descartaría.\n\n¿Recargar de todas formas?')) {
+          return 0;
+        }
+        this.db = this._deserializeDatabase(remoteData);
+        this._migrarEsquema();
+        if (this.db.modulosAcademicos && typeof ModulosAcademicos !== 'undefined') {
+          ModulosAcademicos.sincronizar(this.db);
+        }
+        this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
+        this._notificarCambio('manual', { recargado: true });
+        const numero = Array.isArray(this.db.grupos) ? this.db.grupos.length : Object.keys(this.db.grupos || {}).length;
+        if (typeof UI !== 'undefined' && UI.showToast) {
+          UI.showToast(`✔ Base recargada: ${numero} grupo(s).`, 'success');
+        }
+        return numero;
       },
 
       _applyRemoteSettings(key, value) {
