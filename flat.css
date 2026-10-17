@@ -3102,3 +3102,98 @@ html[data-theme] .plantillas-nota .asi-A { color: #b3261e; font-weight: 600; }
 html[data-theme="light"] .asi-chip.asi-P { color: #0d6b31; }
 html[data-theme="light"] .asi-chip.asi-T { color: #8f5c00; }
 html[data-theme="light"] .asi-chip.asi-A { color: #a0201a; }
+
+/* ══ 38 · TUTORIAL DE PRIMERA VEZ + ROL GLOBAL ═══════════════════════ */
+html[data-theme] .tutorial-tarjeta {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 950;
+  width: min(400px, calc(100vw - 40px));
+  padding: 16px 18px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+html[data-theme] .tutorial-tarjeta[data-abierto="si"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+html[data-theme] .tutorial-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+html[data-theme] .tutorial-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  background: var(--rosa);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 5px;
+}
+html[data-theme] .tutorial-pasos { color: var(--text-muted); font-size: 0.74rem; }
+html[data-theme] .tutorial-titulo { margin: 4px 0 6px; font-size: 1rem; font-weight: 700; }
+html[data-theme] .tutorial-texto { margin: 0; font-size: 0.85rem; line-height: 1.55; color: var(--text-secondary); white-space: pre-line; }
+html[data-theme] .tutorial-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+html[data-theme] .tutorial-espacio { flex: 1 1 auto; }
+html[data-theme] .tutorial-cerrar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+html[data-theme] .tutorial-cerrar:hover { background: var(--bg-card); color: var(--text-primary); }
+
+/* Distinción del Administrador Global en la lista de cuentas */
+html[data-theme] .admin-rol-badge.es-global {
+  background: var(--rosa);
+  border-color: var(--rosa);
+  color: #fff;
+  font-weight: 700;
+}
+html[data-theme] .admin-rol-badge.es-global::before { content: '★ '; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] .tutorial-tarjeta { transition: none; transform: none; }
+}
+html[data-theme] .admin-aviso-global {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: rgba(230, 0, 126, 0.08);
+  border: 1px solid rgba(230, 0, 126, 0.35);
+  border-radius: 5px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+html[data-theme] .admin-aviso-global i { color: var(--rosa); font-size: 1.15rem; flex: 0 0 auto; }

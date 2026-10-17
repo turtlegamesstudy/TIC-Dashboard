@@ -70,6 +70,7 @@ const UI = {
     this.currentModule = seccion.id;
     this.actualizarNavActivo(seccion.id);
     this.renderCurrentModule();
+    if (typeof Tutorial !== 'undefined' && Tutorial) Tutorial.ver(seccion.id);
     return true;
   },
 

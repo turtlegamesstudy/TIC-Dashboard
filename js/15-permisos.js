@@ -23,25 +23,29 @@ const Permisos = {
   /* Cada acción declara los roles que pueden realizarla. Una acción que
      no aparece en la tabla está permitida para todos. */
   ACCIONES: {
-    gestionarUsuarios:    { roles: ['admin'], etiqueta: 'gestionar usuarios y roles' },
-    cargarBase:           { roles: ['admin'], etiqueta: 'cargar una DB.json sobre la base compartida' },
-    migrarAdjuntos:       { roles: ['admin'], etiqueta: 'migrar adjuntos antiguos' },
-    cambiarCentro:        { roles: ['admin'], etiqueta: 'cambiar de centro tecnológico' },
-    configurarMateria:    { roles: ['admin'], etiqueta: 'ampliar o recortar el catálogo de módulos del centro' },
-    configurarInstitucion:{ roles: ['admin'], etiqueta: 'fijar responsables institucionales' },
+    /* Exclusivas del Administrador Global: control total del sistema,
+       nadie más (ni el admin del centro) puede tocarlas. */
+    gestionarUsuarios:    { roles: ['global'], etiqueta: 'gestionar usuarios y roles' },
+    configurarGlobal:     { roles: ['global'], etiqueta: 'configurar plataforma a nivel institucional' },
+    /* Administrador del centro: gestión académica, sin gestión de cuentas. */
+    cargarBase:           { roles: ['admin', 'global'], etiqueta: 'cargar una DB.json sobre la base compartida' },
+    migrarAdjuntos:       { roles: ['admin', 'global'], etiqueta: 'migrar adjuntos antiguos' },
+    cambiarCentro:        { roles: ['admin', 'global'], etiqueta: 'cambiar de centro tecnológico' },
+    configurarMateria:    { roles: ['admin', 'global'], etiqueta: 'ampliar o recortar el catálogo de módulos del centro' },
+    configurarInstitucion:{ roles: ['admin', 'global'], etiqueta: 'fijar responsables institucionales' },
     /* Permitidas a ambos roles: el trabajo diario del aula. */
-    importarListado:      { roles: ['admin', 'docente'], etiqueta: 'importar listados y notas desde Excel' },
-    editarRegistros:      { roles: ['admin', 'docente'], etiqueta: 'editar estudiantes y registros' },
-    eliminarRegistros:    { roles: ['admin', 'docente'], etiqueta: 'eliminar estudiantes y registros' },
-    exportarDocumentos:   { roles: ['admin', 'docente'], etiqueta: 'exportar e imprimir documentos' },
-    descargarBase:        { roles: ['admin', 'docente'], etiqueta: 'descargar una copia de la base' },
+    importarListado:      { roles: ['admin', 'global', 'docente'], etiqueta: 'importar listados y notas desde Excel' },
+    editarRegistros:      { roles: ['admin', 'global', 'docente'], etiqueta: 'editar estudiantes y registros' },
+    eliminarRegistros:    { roles: ['admin', 'global', 'docente'], etiqueta: 'eliminar estudiantes y registros' },
+    exportarDocumentos:   { roles: ['admin', 'global', 'docente'], etiqueta: 'exportar e imprimir documentos' },
+    descargarBase:        { roles: ['admin', 'global', 'docente'], etiqueta: 'descargar una copia de la base' },
     /* El invitado solo puede consultar y exportar el formato de Avances. */
-    exportarAvance:       { roles: ['admin', 'docente', 'invitado'], etiqueta: 'exportar el formato de Avances' },
-    exportarInformeAvance:{ roles: ['admin', 'docente', 'invitado'], etiqueta: 'exportar el informe de avance' },
-    exportarFormatoAvance:{ roles: ['admin', 'docente', 'invitado'], etiqueta: 'exportar el formato de avances' },
-    descargarInformeAvance:{ roles: ['admin', 'docente', 'invitado'], etiqueta: 'descargar el informe de avance' },
-    configurarInforme:    { roles: ['admin', 'docente'], etiqueta: 'configurar el informe de avance' },
-    editarInforme:        { roles: ['admin', 'docente'], etiqueta: 'editar el informe de avance' }
+    exportarAvance:       { roles: ['admin', 'global', 'docente', 'invitado'], etiqueta: 'exportar el formato de Avances' },
+    exportarInformeAvance:{ roles: ['admin', 'global', 'docente', 'invitado'], etiqueta: 'exportar el informe de avance' },
+    exportarFormatoAvance:{ roles: ['admin', 'global', 'docente', 'invitado'], etiqueta: 'exportar el formato de avances' },
+    descargarInformeAvance:{ roles: ['admin', 'global', 'docente', 'invitado'], etiqueta: 'descargar el informe de avance' },
+    configurarInforme:    { roles: ['admin', 'global', 'docente'], etiqueta: 'configurar el informe de avance' },
+    editarInforme:        { roles: ['admin', 'global', 'docente'], etiqueta: 'editar el informe de avance' }
   },
 
   rolesDe(accion) {
@@ -80,10 +84,11 @@ const Permisos = {
   motivoDenegacion(accion) {
     const accion_ = this.ACCIONES[accion];
     if (!accion_) return '🔒 Tu rol no puede realizar esta acción.';
+    const soloGlobal = accion_.roles.length === 1 && accion_.roles[0] === 'global';
     const soloAdmin = accion_.roles.length === 1 && accion_.roles[0] === 'admin';
-    return soloAdmin
-      ? '🔒 Solo un administrador puede ' + accion_.etiqueta + '.'
-      : '🔒 Tu rol no puede ' + accion_.etiqueta + '.';
+    if (soloGlobal) return '🔒 Solo el Administrador Global puede ' + accion_.etiqueta + '.';
+    if (soloAdmin) return '🔒 Solo un administrador puede ' + accion_.etiqueta + '.';
+    return '🔒 Tu rol no puede ' + accion_.etiqueta + '.';
   },
 
   /* Resumen legible de un rol (se muestra en Administración y en el
@@ -92,7 +97,8 @@ const Permisos = {
     const permitidas = Object.entries(this.ACCIONES)
       .filter(([, def]) => Array.isArray(def.roles) && def.roles.includes(rol))
       .map(([, def]) => def.etiqueta);
-    const rol_ = rol === 'admin' ? 'Administrador' : (rol === 'invitado' ? 'Invitado' : 'Docente');
+    const rol_ = rol === 'global' ? 'Administrador Global'
+      : (rol === 'admin' ? 'Administrador' : (rol === 'invitado' ? 'Invitado' : 'Docente'));
     return permitidas.length
       ? `${rol_}: ${permitidas.join('; ')}.`
       : `${rol_}: sin permisos registrados.`;

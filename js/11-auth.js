@@ -87,7 +87,7 @@ const AuthManager = {
         this.showLogin(this._notice);
         return;
       }
-      if (!['admin', 'docente', 'invitado'].includes(profile.role)) {
+      if (!['global', 'admin', 'docente', 'invitado'].includes(profile.role)) {
         this._notice = `El rol de la cuenta no está habilitado (rol actual: "${profile.role || 'sin rol'}"). Solicita acceso al administrador.`;
         await services.auth.signOut();
         this.showLogin(this._notice);
@@ -135,7 +135,7 @@ const AuthManager = {
       document.getElementById('current-user-name').textContent = displayName;
       const rolElement = document.getElementById('current-user-role');
       if (rolElement) {
-        const esAdmin = profile.role === 'admin';
+        const esAdmin = profile.role === 'admin' || profile.role === 'global';
         const esInvitado = profile.role === 'invitado';
         rolElement.textContent = esAdmin
           ? 'Administrador global'

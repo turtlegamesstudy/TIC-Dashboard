@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
     const DataEngine = {
       db: { version: "1.0", lastUpdated: new Date().toISOString(), grupos: [], equipos: [] },
       _syncSnapshot: null,
@@ -29,8 +29,8 @@
           profile.centerName = center.name;
           return profile;
         }
-        if (profile.role !== 'admin') {
-          throw new Error('Tu cuenta todavía no tiene un centro tecnológico asignado. Contacta al administrador.');
+        if (profile.role !== 'admin' && profile.role !== 'global') {
+          throw new Error('Tu cuenta todavía no tiene un centro tecnológico asignado. Contacta al Administrador Global.');
         }
 
         const centerId = 'ct-ariel-darce';
@@ -81,7 +81,7 @@
 
         const reference = this._centerDataReference(database);
         const profile = AuthManager && AuthManager.profile ? AuthManager.profile : {};
-        const canWrite = profile.role === 'admin' || profile.role === 'docente';
+        const canWrite = profile.role === 'admin' || profile.role === 'global' || profile.role === 'docente';
         let remoteData = null;
         try {
           const snapshot = await reference.once('value');
@@ -931,7 +931,7 @@
         const file = event.target.files?.[0];
         if (!file) return;
         event.target.value = '';
-        if (AuthManager.profile?.role !== 'admin') {
+        if (AuthManager.profile?.role !== 'admin' && AuthManager.profile?.role !== 'global') {
           UI.showToast('❌ Solo un administrador puede reemplazar la base compartida.');
           return;
         }
@@ -1031,7 +1031,7 @@
       },
 
       async migrateLegacyAttachments() {
-        if (AuthManager.profile?.role !== 'admin') return;
+        if (AuthManager.profile?.role !== 'admin' && AuthManager.profile?.role !== 'global') return;
         for (const team of this.db.equipos || []) {
           const migrated = [];
           let databaseSaveStarted = false;

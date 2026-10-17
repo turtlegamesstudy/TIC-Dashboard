@@ -416,7 +416,7 @@ Secciones.registrarVarias([
     icono: 'ri-shield-user-line',
     grupo: 'Administración',
     orden: 110,
-    roles: ['admin'],
+    roles: ['admin', 'global'],
     render: Secciones.desdeHTML(() => AdminManager.renderVista()),
     alMostrar: () => {
       AdminManager.cargarUsuarios();
@@ -426,7 +426,7 @@ Secciones.registrarVarias([
       }
     },
     hijos: [
-      { id: 'usuarios', etiqueta: 'Usuarios y roles', icono: 'ri-group-line', roles: ['admin'] },
+      { id: 'usuarios', etiqueta: 'Usuarios y roles', icono: 'ri-group-line', roles: ['admin', 'global'] },
       { id: 'descargar', etiqueta: 'Descargar DB.json', icono: 'ri-download-cloud-2-line',
         roles: ['admin'],
         accion: () => {

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const AdminManager = {
   users: {},
@@ -9,7 +9,7 @@ const AdminManager = {
   _workspaceBound: false,
 
   _requireAdmin() {
-    if (AuthManager.profile?.role !== 'admin' || !AuthManager.user) {
+    if (!['admin', 'global'].includes(AuthManager.profile?.role) || !AuthManager.user) {
       throw new Error('Esta función solo está disponible para administradores activos.');
     }
   },
@@ -439,7 +439,7 @@ const AdminManager = {
     const { texto, rol, estado } = this._filtros;
     const busqueda = String(texto || '').trim().toLowerCase();
     return entries.filter(([uid, profile]) => {
-      if (rol !== 'todos' && (profile.role === 'admin' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente')) !== rol) return false;
+      if (rol !== 'todos' && (profile.role === 'admin' || profile.role === 'global' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente')) !== rol) return false;
       if (estado === 'activas' && profile.active !== true) return false;
       if (estado === 'inactivas' && profile.active === true) return false;
       if (!busqueda) return true;
@@ -481,8 +481,15 @@ const AdminManager = {
       return;
     }
 
-    const activeAdmins = entries.filter(([, profile]) => profile.active === true && profile.role === 'admin').length;
+    const activeAdmins = entries.filter(([, profile]) => profile.active === true && (profile.role === 'admin' || profile.role === 'global')).length;
+    /* Aviso de arranque: sin ningún Global activo, el admin del centro
+       puede conceder el rol Global una vez (desde el selector). */
+    const hayGlobal = entries.some(([, profile]) => profile && profile.role === 'global' && profile.active === true);
+    const aviso = !hayGlobal
+      ? `<div class="admin-aviso-global"><i class="ri-key-2-line" aria-hidden="true"></i> Aún no existe un <strong>Administrador Global</strong>. Como administrador del centro, elige a la persona correcta en la columna «Rol» y selecciona <strong>Administrador Global</strong> para designarla. Este permiso de designación se cerrará en cuanto exista un Global activo.</div>`
+      : '';
     container.innerHTML = `
+      ${aviso}
       <div class="admin-users-table-wrap">
         <table class="admin-users-table">
           <thead><tr><th>Usuario</th><th>Rol y permisos</th><th>Centro y acciones</th></tr></thead>
@@ -498,8 +505,8 @@ const AdminManager = {
     const lista = Array.isArray(entries) ? entries : [];
     const cuentas = lista.length;
     const activas = lista.filter(([, profile]) => profile && profile.active === true).length;
-    const docentes = lista.filter(([, profile]) => profile && profile.role !== 'admin').length;
-    const admins = lista.filter(([, profile]) => profile && profile.role === 'admin').length;
+    const docentes = lista.filter(([, profile]) => profile && profile.role !== 'admin' && profile.role !== 'global').length;
+    const admins = lista.filter(([, profile]) => profile && (profile.role === 'admin' || profile.role === 'global')).length;
     const centros = Object.values(this.centers || {})
       .filter(center => center && center.active !== false).length;
     const poner = (clave, valor) => {
@@ -547,9 +554,10 @@ const AdminManager = {
 
   _renderUserRow(uid, profile, activeAdmins) {
     const safeUid = this._escape(uid);
-    const role = profile.role === 'admin' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente');
+    const role = profile.role || 'docente'; /* global | admin | docente | invitado */
+    const isAdminish = role === 'admin' || role === 'global';
     const isCurrentUser = uid === AuthManager.user?.uid;
-    const isOnlyActiveAdmin = role === 'admin' && profile.active === true && activeAdmins <= 1;
+    const isOnlyActiveAdmin = isAdminish && profile.active === true && activeAdmins <= 1;
     const roleDisabled = isCurrentUser || isOnlyActiveAdmin;
     const statusText = profile.active === true ? 'Activa' : 'Inactiva';
     const email = profile.email || 'Correo no registrado en el perfil';
@@ -570,11 +578,11 @@ const AdminManager = {
       <tr data-user-row data-uid="${safeUid}">
         <td class="admin-cell-user">
           <div class="admin-user-cell">
-            <span class="admin-avatar ${role === 'admin' ? 'admin' : (role === 'invitado' ? 'invitado' : 'docente')}" aria-hidden="true">${this._escape(iniciales)}</span>
+            <span class="admin-avatar ${isAdminish ? 'admin' : (role === 'invitado' ? 'invitado' : 'docente')}" aria-hidden="true">${this._escape(iniciales)}</span>
             <span class="admin-user-copy">
               <span class="admin-user-name">${this._escape(name)}${isCurrentUser ? '<span class="admin-you">tú</span>' : ''}</span>
               <span class="admin-user-email">${this._escape(email)}</span>
-              <span class="admin-rol-badge${role === 'admin' ? ' es-admin' : ''}">${role === 'admin' ? 'Administrador' : (role === 'invitado' ? 'Invitado' : 'Docente')}</span>
+              <span class="admin-rol-badge${role === 'global' ? ' es-global' : (isAdminish ? ' es-admin' : '')}">${role === 'global' ? 'Administrador Global' : (role === 'admin' ? 'Administrador' : (role === 'invitado' ? 'Invitado' : 'Docente'))}</span>
               <span class="admin-user-uid" title="Identificador de la cuenta: ${safeUid}">UID: ${safeUid}</span>
             </span>
           </div>
@@ -584,7 +592,8 @@ const AdminManager = {
             <select aria-label="Rol de ${this._escape(name)}" data-user-role ${roleDisabled ? 'disabled' : ''} onchange="AdminManager.actualizarPistaRol(this)">
               <option value="docente"${role === 'docente' ? ' selected' : ''}>Docente</option>
               <option value="invitado"${role === 'invitado' ? ' selected' : ''}>Invitado (solo lectura)</option>
-<option value="admin"${role === 'admin' ? ' selected' : ''}>Administrador</option>
+              <option value="admin"${role === 'admin' ? ' selected' : ''}>Administrador</option>
+              <option value="global"${role === 'global' ? ' selected' : ''}>Administrador Global</option>
             </select>
             ${roleDisabled ? '' : `<button class="btn-primary-soft" type="button" data-admin-action="save-role" data-uid="${safeUid}"><i class="ri-check-line" aria-hidden="true"></i> Guardar</button>`}
           </div>
@@ -894,13 +903,15 @@ const AdminManager = {
   },
 
   _preventLockout(uid, profile, nextActive, nextRole) {
-    if (uid === AuthManager.user?.uid && (nextActive === false || nextRole && nextRole !== 'admin')) {
-      throw new Error('No puedes desactivar tu propia cuenta ni retirar tu rol de administrador.');
+    if (uid === AuthManager.user?.uid && (nextActive === false || nextRole && nextRole !== AuthManager.profile?.role)) {
+      throw new Error('No puedes desactivar tu propia cuenta ni modificarte tu propio rol.');
     }
-    const removesActiveAdmin = profile.active === true && profile.role === 'admin' &&
-      (nextActive === false || nextRole && nextRole !== 'admin');
+    const roleActual = profile.role || '';
+    const esAdminish = roleActual === 'admin' || roleActual === 'global';
+    const removesActiveAdmin = esAdminish && profile.active === true &&
+      (nextActive === false || nextRole && nextRole !== roleActual);
     const activeAdminCount = Object.values(this.users)
-      .filter(user => user?.active === true && user.role === 'admin').length;
+      .filter(user => user?.active === true && (user.role === 'admin' || user.role === 'global')).length;
     if (removesActiveAdmin && activeAdminCount <= 1) {
       throw new Error('No puedes desactivar ni cambiar el rol del último administrador activo.');
     }
@@ -909,14 +920,25 @@ const AdminManager = {
   async updateRole(uid, role) {
     try {
       const profile = this._getTargetProfile(uid);
-      if (!['admin', 'docente', 'invitado'].includes(role)) throw new Error('El rol seleccionado no es válido.');
+      /* ARRANQUE: mientras no exista ningún Administrador Global activo,
+         el admin del centro puede conceder ese rol una vez (el primer
+         Global). Después, solo el Global gestiona cuentas. */
+      const hayGlobal = Object.values(this.users || {})
+        .some(user => user && user.role === 'global' && user.active === true);
+      if (!hayGlobal && AuthManager.profile?.role === 'admin') {
+        if (role !== 'global') throw new Error('Sin Administrador Global activo: el único cambio permitido es conceder ese rol.');
+      } else if (typeof Permisos !== 'undefined' && !Permisos.exigir('gestionarUsuarios')) {
+        throw new Error('Solo el Administrador Global gestiona cuentas.');
+      }
+      if (role === 'global' && AuthManager.profile?.role !== 'global' && hayGlobal) throw new Error('Solo el Administrador Global puede conceder ese rol.');
+      if (!['global', 'admin', 'docente', 'invitado'].includes(role)) throw new Error('El rol seleccionado no es válido.');
       this._preventLockout(uid, profile, undefined, role);
       await window.FirebaseServices.database.ref(`users/${uid}`).update({ role });
       UI.showToast('✅ Rol actualizado.');
       if (typeof Mejoras !== 'undefined' && Mejoras.registrarEvento) {
         Mejoras.registrarEvento({
           tipo: 'cambio', titulo: 'Rol de cuenta actualizado',
-          texto: `${profile.displayName || profile.email || uid}: ahora es ${role === 'admin' ? 'administrador' : 'docente'}.`,
+          texto: `${profile.displayName || profile.email || uid}: ahora es ${role === 'global' ? 'administrador global' : (role === 'admin' ? 'administrador' : (role === 'invitado' ? 'invitado' : 'docente'))}.`,
           afectado: profile.displayName || profile.email || uid,
           detalle: `Rol anterior: ${profile.role || 'sin rol'}`,
           seccion: 'administracion', clave: `rol-${uid}`
