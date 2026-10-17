@@ -302,6 +302,104 @@ const StatsEngine = {
       </details>`;
   },
 
+  /* ══ Historial de instantáneas ══
+     Cada vez que los datos globales cambian (firma distinta) se guarda
+     una copia de los KPI en localStorage. Al renderizar, el punto de
+     comparación automático es la última actualización anterior. */
+  snapshotKPIs() {
+    try {
+      const d = this.obtenerDatos({});
+      return {
+        totalEst: d.totalEst, activos: d.activos, retirados: d.retirados,
+        rendimiento: d.rendimiento, cobertura: d.cobertura,
+        convalidaciones: d.convalidaciones, enRiesgo: d.enRiesgo,
+        conNotas: d.conNotas, sinNotas: d.sinNotas
+      };
+    } catch (e) { return null; }
+  },
+
+  firmaSnapshot(kpis) { return JSON.stringify(kpis); },
+
+  leerHistorial() {
+    try {
+      const bruto = JSON.parse(localStorage.getItem('tic-stats-historial') || '[]');
+      return Array.isArray(bruto) ? bruto.filter(x => x && x.ts && x.kpis) : [];
+    } catch (e) { return []; }
+  },
+
+  registrarSnapshot() {
+    const kpis = this.snapshotKPIs();
+    if (!kpis) return;
+    const firma = this.firmaSnapshot(kpis);
+    const historial = this.leerHistorial();
+    const ultimo = historial[historial.length - 1];
+    if (ultimo && ultimo.firma === firma) return;
+    historial.push({ ts: Date.now(), firma, kpis });
+    try { localStorage.setItem('tic-stats-historial', JSON.stringify(historial.slice(-30))); } catch (e) { /* cuota */ }
+  },
+
+  /* Referencia automática: la última instantánea cuyo estado de datos
+     difiere del actual. Si todo está igual, devuelve la última igual. */
+  comparacionAuto() {
+    try {
+      const historial = this.leerHistorial();
+      if (!historial.length) return null;
+      const kpis = this.snapshotKPIs();
+      if (!kpis) return null;
+      const firma = this.firmaSnapshot(kpis);
+      let base = null;
+      for (let i = historial.length - 1; i >= 0; i--) {
+        if (historial[i].firma !== firma) { base = historial[i]; break; }
+      }
+      if (!base) base = historial[historial.length - 1];
+      const fecha = new Date(base.ts);
+      const sinCambios = base.firma === firma;
+      return {
+        sinCambios,
+        ts: base.ts,
+        actual: kpis,
+        datos: {
+          totalEst: base.kpis.totalEst, activos: base.kpis.activos,
+          retirados: base.kpis.retirados, rendimiento: base.kpis.rendimiento,
+          cobertura: base.kpis.cobertura, convalidaciones: base.kpis.convalidaciones
+        },
+        etiqueta: sinCambios
+          ? 'sin cambios desde la última actualización'
+          : 'la última actualización (' + fecha.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ')'
+      };
+    } catch (e) { return null; }
+  },
+
+  /* Franja de resumen: qué KPI cambiaron y cuánto, en chips planos. */
+  cambiosHTML(auto) {
+    if (!auto) return '';
+    const items = [
+      { etq: 'Estudiantes', icono: 'ri-group-line', clave: 'totalEst', sufijo: '' },
+      { etq: 'Activos', icono: 'ri-user-follow-line', clave: 'activos', sufijo: '' },
+      { etq: 'Retirados', icono: 'ri-user-unfollow-line', clave: 'retirados', sufijo: '' },
+      { etq: 'Rendimiento', icono: 'ri-line-chart-line', clave: 'rendimiento', sufijo: '/100' },
+      { etq: 'Cobertura', icono: 'ri-checkbox-circle-line', clave: 'cobertura', sufijo: '%' },
+      { etq: 'Convalidaciones', icono: 'ri-award-line', clave: 'convalidaciones', sufijo: '' }
+    ].map(f => {
+      const actual = auto.actual[f.clave];
+      const antes = auto.datos[f.clave];
+      const dif = (typeof actual === 'number' && typeof antes === 'number') ? actual - antes : 0;
+      const dir = dif > 0 ? 'sube' : dif < 0 ? 'baja' : 'igual';
+      const marca = dif > 0 ? '▲' : dif < 0 ? '▼' : '●';
+      const texto = dif === 0 ? 'sin cambios' : `${marca} ${dif > 0 ? '+' : ''}${dif}${f.sufijo}`;
+      return `<span class="cambio-chip cambio-${dir}"><i class="${f.icono}" aria-hidden="true"></i> ${UI.escaparTexto(f.etq)} <strong>${UI.escaparTexto(texto)}</strong></span>`;
+    }).join('');
+    const cuando = new Date(auto.ts).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return `
+      <section class="bloque-analisis cambios-bloque no-imprimir" aria-label="Cambios respecto a la última actualización">
+        <div class="bloque-titulo">
+          <h2><i class="ri-history-line" aria-hidden="true"></i> vs. última actualización</h2>
+          <span class="bloque-nota">${auto.sinCambios ? 'Los datos no han cambiado desde la última captura' : UI.escaparTexto('Cambios detectados desde ' + cuando)}</span>
+        </div>
+        <div class="cambios-rejilla">${items}</div>
+      </section>`;
+  },
+
   renderVistaEstadisticas() {
     const filtros = this.leerFiltros();
     let d = null;
@@ -315,8 +413,10 @@ const StatsEngine = {
     const grupos = DataEngine.getGrupos();
     const hayFiltros = Boolean(filtros.grupo || filtros.estado || filtros.modulo || filtros.comparar);
     const comparacion = errorVista ? null : this.datosComparacion(filtros);
-    const base = comparacion ? comparacion.datos : null;
-    const etiquetaBase = comparacion ? comparacion.etiqueta : '';
+    if (!comparacion && !errorVista) this.registrarSnapshot();
+    const auto = (errorVista || comparacion) ? null : this.comparacionAuto();
+    const base = comparacion ? comparacion.datos : (auto ? auto.datos : null);
+    const etiquetaBase = comparacion ? comparacion.etiqueta : (auto ? auto.etiqueta : 'la última actualización');
 
     // ── Cabecera y barra de filtros: presentes en todos los estados ──
     const cabecera = `
@@ -418,7 +518,7 @@ const StatsEngine = {
       <section class="bloque-analisis" aria-label="Indicadores esenciales">
         <div class="bloque-titulo">
           <h2><i class="ri-speed-line" aria-hidden="true"></i> Indicadores esenciales</h2>
-          <span class="bloque-nota">${comparacion ? `Comparando con ${UI.escaparTexto(etiquetaBase)}` : '6 métricas del periodo en curso'}</span>
+          <span class="bloque-nota">${comparacion ? `Comparando con ${UI.escaparTexto(etiquetaBase)}` : auto ? (auto.sinCambios ? `Sin cambios respecto a la última actualización` : 'Comparando contra la última captura de datos') : '6 métricas del periodo en curso'}</span>
         </div>
         <div class="kpi-grid">
           ${this.kpiHTML({ valor: d.totalEst, etiqueta: 'Estudiantes', ayuda: 'estudiantes', icono: 'ri-group-line', tono: 'azul', base: comparar(d.totalEst, 'totalEst') })}
@@ -429,6 +529,9 @@ const StatsEngine = {
           ${this.kpiHTML({ valor: d.convalidaciones, etiqueta: 'Convalidaciones', ayuda: 'convalidaciones', icono: 'ri-award-line', tono: 'ambar', base: comparar(d.convalidaciones, 'convalidaciones') })}
         </div>
       </section>`;
+
+    // ── 2 · Cambios respecto a la última actualización de datos ──
+    const cambios = auto ? this.cambiosHTML(auto) : '';
 
     // ── 3 · Visualizaciones ──
     const graficas = `
@@ -610,6 +713,7 @@ const StatsEngine = {
 
         ${cabecera}
         ${kpis}
+        ${cambios}
         ${barraFiltros}
         ${graficas}
         ${tablaDetalle}
