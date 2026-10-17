@@ -290,34 +290,258 @@ html[data-theme] .view-eyebrow {
   text-transform: uppercase;
 }
 
-/* ══ 4 · SIDEBAR — superficie con blur medio, flat ════════════════════ */
+/* ══ 4 · NAVEGACIÓN — panel central con blur (sin sidebar lateral) ════ */
+/* El sidebar se transforma: no ocupa cajón lateral; se muestra como
+   ventana centrada en el viewport con todas las opciones en rejilla. */
+html[data-theme] .main-wrapper,
+html[data-theme] .sidebar.collapsed ~ .main-wrapper {
+  margin-left: 0 !important;
+}
+
 html[data-theme] .sidebar {
-  background: var(--bg-surface);
-  -webkit-backdrop-filter: var(--blur-sat);
-  backdrop-filter: var(--blur-sat);
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(680px, 94vw);
+  height: fit-content;
+  max-height: min(82vh, 760px);
+  background: var(--bg-elevated);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  backdrop-filter: blur(22px) saturate(130%);
   border: 1px solid var(--border-default);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-xs);
+  border-radius: 5px;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: scale(0.985);
+  transition: opacity var(--t-base), transform var(--t-base), visibility var(--t-base);
 }
-html[data-theme] .sidebar::before,
-html[data-theme] .sidebar::after { display: none; }
+html[data-theme] .sidebar.open {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: none;
+}
+/* Residuos del modo cajón/íconos heredado: anularlos por completo */
+html[data-theme] .sidebar.collapsed,
+html[data-theme] .sidebar.expanded {
+  width: min(680px, 94vw) !important;
+}
+html[data-theme] .sidebar.collapsed .brand-info,
+html[data-theme] .sidebar.collapsed .sidebar-nav span,
+html[data-theme] .sidebar.collapsed .nav-section,
+html[data-theme] .sidebar.collapsed .user-details,
+html[data-theme] .sidebar.collapsed .dev-credit,
+html[data-theme] .sidebar.collapsed .sidebar-footer {
+  display: revert !important;
+}
+html[data-theme] .sidebar.collapsed .sidebar-header {
+  padding: 16px 18px;
+  justify-content: revert;
+  gap: 12px;
+}
+html[data-theme] .sidebar.collapsed .nav-item {
+  justify-content: revert;
+  gap: 10px;
+  padding: 12px 14px;
+}
+/* El modo "colapsado a iconos" ya no existe: el panel siempre muestra
+   sus textos, sin tooltips Laterales y sin anchuras a cero. */
+html[data-theme] .sidebar:not(.expanded) .brand-info,
+html[data-theme] .sidebar:not(.expanded) .user-details,
+html[data-theme] .sidebar:not(.expanded) .dev-credit,
+html[data-theme] .sidebar:not(.expanded) .nav-section,
+html[data-theme] .sidebar:not(.expanded) .nav-item span,
+html[data-theme] .sidebar:not(.expanded) .sidebar-footer-text,
+html[data-theme] .sidebar:not(.expanded) .sidebar-footer-credit {
+  max-width: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  margin-block: revert !important;
+  padding-block: revert !important;
+}
+html[data-theme] .sidebar:not(.expanded) .nav-item::after {
+  content: none !important;
+}
+html[data-theme] .sidebar:not(.expanded) .nav-item,
+html[data-theme] .sidebar:not(.expanded) .sidebar-header,
+html[data-theme] .sidebar:not(.expanded) .sidebar-footer,
+html[data-theme] .sidebar:not(.expanded) .user-card {
+  justify-content: inherit;
+  gap: 10px;
+  padding-inline: revert;
+}
+/* Fuerza clara sobre el menú legacy: iconos sin chip de color,
+   texto siempre visible, activo invertido por contraste. */
+html[data-theme] .sidebar .sidebar-nav .nav-section,
+html[data-theme] .sidebar .sidebar-nav .nav-grupo {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: none !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+}
+html[data-theme] .sidebar .sidebar-nav .nav-grupo .nav-grupo-chevron { color: var(--text-muted) !important; }
+html[data-theme] .sidebar .sidebar-nav .nav-item,
+html[data-theme] .sidebar .sidebar-nav .nav-item:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html[data-theme] .sidebar .sidebar-nav .nav-item i,
+html[data-theme] .sidebar .sidebar-nav .nav-item:hover i {
+  color: var(--text-primary) !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+  width: 22px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  font-size: 1.15rem !important;
+}
+html[data-theme] .sidebar .sidebar-nav .nav-item span {
+  display: inline !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html[data-theme] .sidebar .sidebar-nav .nav-item.active,
+html[data-theme] .sidebar .sidebar-nav .nav-item.active:hover {
+  background: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+  color: var(--bg-body) !important;
+}
+html[data-theme] .sidebar .sidebar-nav .nav-item.active i,
+html[data-theme] .sidebar .sidebar-nav .nav-item.active:hover i {
+  color: var(--bg-body) !important;
+  background: none !important;
+}
+html[data-theme] .sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: rgba(0, 0, 0, 0.4);
+}
+html[data-theme] .sidebar-backdrop.show { opacity: 1; visibility: visible; pointer-events: auto; }
 
-html[data-theme] .sidebar-header { background: none; }
-html[data-theme] .sidebar-header::after,
-html[data-theme] .sidebar-header-bg { display: none; }
-html[data-theme] .brand-info h2 {
-  font-size: 1.02rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+html[data-theme] .sidebar-header { background: none; padding: 16px 18px; gap: 12px; }
+html[data-theme] .sidebar-header .nav-close { display: inline-grid; }
+html[data-theme] .sidebar-nav {
+  padding: 6px 16px 16px;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
-html[data-theme] .brand-subtitle,
-html[data-theme] .brand-info span {
+/* Opciones como tarjetas en rejilla */
+html[data-theme] .nav-grupo-items,
+html[data-theme] .sidebar-nav [data-nav-grupos-items] {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 8px;
+  padding: 2px 0 10px;
+}
+html[data-theme] .nav-item,
+html[data-theme] .sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  min-height: 52px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+html[data-theme] .nav-item i {
+  font-size: 1.15rem;
+  width: 22px;
+  text-align: center;
+}
+html[data-theme] .nav-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default) !important;
+  transform: none;
+}
+html[data-theme] .nav-item.active,
+html[data-theme] .nav-item.active:hover {
+  background: var(--text-primary);
+  border-color: var(--text-primary) !important;
+  color: var(--bg-body) !important;
+}
+html[data-theme] .nav-item.active i { color: var(--bg-body) !important; }
+html[data-theme] .nav-section.nav-grupo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 2px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+/* Subsecciones integradas en la tarjeta */
+html[data-theme] .nav-con-hijos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+html[data-theme] .nav-con-hijos > .nav-item { width: 100%; }
+html[data-theme] .nav-chevros,
+html[data-theme] .nav-chevron {
+  background: none;
+  border: none;
   color: var(--text-muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.03em;
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
+  display: inline-grid;
+  place-items: center;
 }
-html[data-theme] .logo-box img { filter: none; opacity: 0.92; }
+html[data-theme] .nav-hijos {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+}
+html[data-theme] .nav-hijos .nav-item {
+  min-height: 40px;
+  padding: 9px 12px;
+  background: none;
+  border: none !important;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+html[data-theme] .nav-hijos .nav-item:hover { color: var(--text-primary); background: var(--bg-hover); }
+html[data-theme] .nav-hijos .nav-item.active { background: var(--bg-active); color: var(--text-primary); }
+html[data-theme] .nav-hijos .nav-item.active i { color: var(--text-primary); }
 
+html[data-theme] .sidebar-footer {
+  border-top: 1px solid var(--border-subtle);
+  background: none;
+  padding: 12px 18px 14px;
+  flex: 0 0 auto;
+}
+
+html[data-theme] .nav-item .nav-badge {
+  background: var(--acento-suave);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  box-shadow: none;
+  text-shadow: none;
+}
 html[data-theme] .nav-section, html[data-theme] .nav-grupo {
   color: var(--text-muted);
   font-size: 0.63rem;
@@ -325,53 +549,10 @@ html[data-theme] .nav-section, html[data-theme] .nav-grupo {
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-html[data-theme] .nav-item,
-html[data-theme] .sidebar .nav-item {
-  color: var(--text-secondary);
-  background: none;
-  border: none;
-  border-radius: var(--r-md);
-  box-shadow: none;
-  font-weight: 500;
-  transition: background-color var(--t-fast), color var(--t-fast);
-}
-html[data-theme] .nav-item i {
-  color: var(--text-muted);
-  filter: none;
-  transition: color var(--t-fast);
-}
-html[data-theme] .nav-item::before { display: none; }
-html[data-theme] .nav-item:hover,
-html[data-theme] .sidebar .nav-item:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-  border-color: transparent !important;
-  box-shadow: none;
-}
-html[data-theme] .nav-item:hover i { color: var(--text-primary); }
-html[data-theme] .nav-item.active,
-html[data-theme] .nav-item.active:hover,
-html[data-theme] .sidebar .nav-item.active,
-html[data-theme] .sidebar .nav-item.active:hover {
-  color: var(--text-primary);
-  background: var(--bg-active);
-  border-color: transparent !important;
-  box-shadow: none;
-  font-weight: 600;
-}
-html[data-theme] .nav-item.active::before { display: none; }
-html[data-theme] .nav-item.active i { color: var(--text-primary); filter: none; }
-html[data-theme] .nav-item .nav-badge {
-  background: var(--acento-suave);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-  box-shadow: none;
-  text-shadow: none;
-}
 html[data-theme] .nav-hijos,
 html[data-theme] [data-nav-hijos] {
-  background: none;
-  border-radius: var(--r-md);
+  background: var(--bg-input);
+  border-radius: 5px;
 }
 
 html[data-theme] .sidebar-footer {

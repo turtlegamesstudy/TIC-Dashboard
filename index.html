@@ -314,7 +314,7 @@
 
   <a class="skip-link" href="#workspace">Saltar al contenido principal</a>
   <div class="app-container" id="app-container" hidden aria-hidden="true" inert>
-    <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+    <aside class="sidebar" id="sidebar" aria-label="Panel de navegación">
       <div class="sidebar-header">
         <div class="sidebar-header-bg" aria-hidden="true"></div>
         <div class="logo-box">
@@ -326,6 +326,9 @@
           <span class="brand-subtitle">Tecnológico Nacional</span>
           <span id="sidebar-center-name">Centro tecnológico</span>
         </div>
+        <button class="btn-icon" id="btn-close-nav" type="button" title="Cerrar navegación" aria-label="Cerrar navegación"
+          onclick="UI.closeSidebar()" style="margin-left: auto;"><i class="ri-close-line"
+            aria-hidden="true"></i></button>
       </div>
       <!-- El menú se genera desde el registro de secciones (js/14-secciones.js):
            aquí solo vive el contenedor. -->
@@ -342,9 +345,11 @@
     <div class="main-wrapper">
       <header class="topbar">
         <div class="topbar-left">
-          <button class="btn-icon" id="btn-toggle-sidebar" type="button" title="Expandir navegación"
-            aria-label="Expandir navegación" aria-expanded="false" aria-controls="sidebar"><i
-              class="ri-menu-unfold-line" aria-hidden="true"></i></button>
+          <button class="btn-icon" id="btn-toggle-sidebar" type="button" title="Abrir panel de navegación"
+            aria-label="Abrir panel de navegación" aria-expanded="false" aria-controls="sidebar"
+            >
+            <i class="ri-apps-2-line" aria-hidden="true"></i>
+          </button>
           <div class="search-box">
             <i class="ri-search-line" aria-hidden="true" style="pointer-events: none;"></i>
             <label class="sr-only" for="global-search">Buscar estudiante o grupo</label>

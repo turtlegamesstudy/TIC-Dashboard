@@ -770,8 +770,8 @@ const UI = {
         this.currentModule = item.getAttribute('data-module');
         this.actualizarNavActivo(this.currentModule);
         this.renderCurrentModule();
-        // En móvil el menú se cierra tras navegar
-        if (this.isMobileLayout()) this.closeSidebar();
+        // El panel de navegación se cierra tras elegir una opción
+        this.closeSidebar();
         document.querySelector('.workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
@@ -807,9 +807,6 @@ const UI = {
       }
     });
     window.addEventListener('resize', () => {
-      if (this.isMobileLayout()) return;
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar && sidebar.classList.contains('open')) this.closeSidebar();
       // El tamaño del menú no cambia con un resize: solo se vuelve a
       // aplicar la preferencia guardada (por si cambió el dispositivo).
       this.aplicarMenuGuardado();
@@ -949,26 +946,15 @@ const UI = {
     contenedor.innerHTML = html;
   },
 
-  // En escritorio colapsa el menú a iconos; en móvil/tablet lo abre
-  // como cajón con fondo oscurecido (abrir / cerrar).
+  // El botón de navegación abre/cierra el panel central de opciones.
   isMobileLayout() {
     return window.matchMedia('(max-width: 1024px)').matches;
   },
 
   toggleSidebar() {
-    if (this.isMobileLayout()) {
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar && sidebar.classList.contains('open')) this.closeSidebar();
-      else this.openSidebar();
-      return;
-    }
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-      const expanded = sidebar.classList.toggle('expanded');
-      sidebar.classList.remove('collapsed');
-      if (typeof Ajustes !== 'undefined' && Ajustes) Ajustes.ponerMenu(expanded ? 'expandido' : 'iconos');
-    }
-    this.sincronizarEstadoMenu();
+    if (sidebar && sidebar.classList.contains('open')) this.closeSidebar();
+    else this.openSidebar();
   },
 
   openSidebar() {
@@ -1008,26 +994,18 @@ const UI = {
     this.sincronizarEstadoMenu();
   },
 
-  /* Deja el botón del menú de acuerdo con el estado real: en móvil
-     refleja el cajón (open) y en escritorio la clase expanded. */
+  /* Deja el botón del menú de acuerdo con el estado real del panel. */
   sincronizarEstadoMenu() {
     const sidebar = document.getElementById('sidebar');
     const icono = document.querySelector('#btn-toggle-sidebar i');
     const boton = document.getElementById('btn-toggle-sidebar');
-    const movil = this.isMobileLayout();
-    const abierto = movil
-      ? Boolean(sidebar && sidebar.classList.contains('open'))
-      : Boolean(sidebar && sidebar.classList.contains('expanded'));
+    const abierto = Boolean(sidebar && sidebar.classList.contains('open'));
     if (icono) {
-      icono.className = movil
-        ? (abierto ? 'ri-close-line' : 'ri-menu-fold-line')
-        : (abierto ? 'ri-menu-fold-line' : 'ri-menu-unfold-line');
+      icono.className = abierto ? 'ri-close-line' : 'ri-apps-2-line';
     }
     if (!boton) return;
     boton.setAttribute('aria-expanded', String(abierto));
-    boton.title = movil
-      ? (abierto ? 'Cerrar navegación' : 'Mostrar navegación')
-      : (abierto ? 'Contraer navegación' : 'Expandir navegación');
+    boton.title = abierto ? 'Cerrar navegación' : 'Abrir panel de navegación';
     boton.setAttribute('aria-label', boton.title);
   },
 
