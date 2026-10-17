@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -10,6 +10,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="assets/carousel/inatec-graduacion-2k.jpg">
   <link
     href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Bitter:wght@500;600;700&display=swap"
     rel="stylesheet">
@@ -21,14 +22,14 @@
   <!-- Tema guardado (oscuro por defecto / claro): se aplica antes del primer pintado -->
   <script>try { var _t = localStorage.getItem('tic-theme'); document.documentElement.setAttribute('data-theme', _t === 'light' ? 'light' : 'dark'); } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }</script>
   <!-- Movimiento: se aplica antes del CSS para que la primera pintura ya
-      respete la elección (Opciones → Animaciones). -->
+      respete la elecciÃ³n (Opciones â†’ Animaciones). -->
   <script>try { var _m = localStorage.getItem('tic-motion'); if (_m === 'on' || _m === 'off') { document.documentElement.setAttribute('data-motion', _m); } } catch (e) { }</script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <!-- [NUEVO] Librerías para el Reporte PDF de Equipos Innovatec / Hackathon -->
+  <!-- [NUEVO] LibrerÃ­as para el Reporte PDF de Equipos Innovatec / Hackathon -->
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  <!-- [NUEVO] Librerías para llenar el Informe de Avance en Word -->
+  <!-- [NUEVO] LibrerÃ­as para llenar el Informe de Avance en Word -->
   <script defer src="https://unpkg.com/pizzip@3.1.6/dist/pizzip.js"></script>
   <script defer src="https://unpkg.com/docxtemplater@3.44.0/build/docxtemplater.js"></script>
 
@@ -37,11 +38,11 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="remodelacion.css">
   <link rel="stylesheet" href="flat.css">
-  <!-- <base target="_blank"> eliminado: causaba que todo se abriera en pestaña nueva y bloqueaba inputs -->
+  <!-- <base target="_blank"> eliminado: causaba que todo se abriera en pestaÃ±a nueva y bloqueaba inputs -->
 </head>
 
 <body>
-  <!-- ═══ Intro épica INATEC: se reproduce al iniciar sesión ═══ -->
+  <!-- â•â•â• Intro Ã©pica INATEC: se reproduce al iniciar sesiÃ³n â•â•â• -->
   <div class="auth-intro" id="auth-intro" hidden aria-hidden="true">
     <div class="ai-watermark" aria-hidden="true"><img src="assets/emblema-blanco.png" alt=""></div>
     <div class="ai-glow" aria-hidden="true"></div>
@@ -69,9 +70,9 @@
         <div class="ai-progress-track"><span id="ai-progress-fill"></span></div>
       </div>
       <ul class="ai-log">
-        <li>Sesión segura establecida</li>
+        <li>SesiÃ³n segura establecida</li>
         <li>Recursos institucionales verificados</li>
-        <li>Panel académico preparado</li>
+        <li>Panel acadÃ©mico preparado</li>
       </ul>
     </div>
     <div class="ai-skip">Pulsa ESC o haz clic para omitir</div>
@@ -93,11 +94,11 @@
         <div class="auth-brand-glass">
           <img class="auth-logo auth-logo-claro" src="assets/logo-inatec.png" alt="INATEC" height="64">
           <img class="auth-logo auth-logo-oscuro" src="assets/logo-inatec-blanco.png" alt="INATEC" height="64">
-          <p class="auth-brand-eyebrow">Instituto Nacional Tecnológico</p>
+          <p class="auth-brand-eyebrow">Instituto Nacional TecnolÃ³gico</p>
           <h1 class="auth-brand-title" id="auth-title">TIC Dashboard</h1>
-          <p class="auth-brand-slogan">Cuaderno Docente Digital<br>Sistema de gestión académica</p>
+          <p class="auth-brand-slogan">Cuaderno Docente Digital<br>Sistema de gestiÃ³n acadÃ©mica</p>
           <div class="auth-brand-pills">
-            <span>Estadísticas</span>
+            <span>EstadÃ­sticas</span>
             <span>Avances</span>
             <span>Reportes</span>
           </div>
@@ -108,23 +109,23 @@
       <div class="auth-panel">
         <div class="auth-panel-header">
           <p class="auth-eyebrow">Acceso docente</p>
-          <p class="auth-welcome">Bienvenido de nuevo 👋</p>
+          <p class="auth-welcome">Bienvenido de nuevo ðŸ‘‹</p>
           <p class="auth-description">Ingresa tus credenciales para continuar</p>
         </div>
         <div class="auth-form">
-          <label class="auth-field" for="auth-email">Correo electrónico</label>
+          <label class="auth-field" for="auth-email">Correo electrÃ³nico</label>
           <div class="auth-input-wrap">
             <i class="ri-mail-line" aria-hidden="true"></i>
             <input id="auth-email" name="email" type="email" autocomplete="username" required
               placeholder="docente@inatec.edu.ni">
           </div>
-          <label class="auth-field" for="auth-password">Contraseña</label>
+          <label class="auth-field" for="auth-password">ContraseÃ±a</label>
           <div class="auth-input-wrap">
             <i class="ri-lock-line" aria-hidden="true"></i>
             <input id="auth-password" name="password" type="password" autocomplete="current-password" required
-              placeholder="••••••••">
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
             <button type="button" class="auth-password-toggle" id="auth-password-toggle"
-              aria-label="Mostrar contraseña" title="Mostrar contraseña">
+              aria-label="Mostrar contraseÃ±a" title="Mostrar contraseÃ±a">
               <i class="ri-eye-line" aria-hidden="true"></i>
             </button>
           </div>
@@ -132,12 +133,12 @@
           <button class="auth-submit" type="submit" id="auth-submit">
             <span>Ingresar</span><i class="ri-arrow-right-line" aria-hidden="true"></i>
           </button>
-          <button class="auth-reset" type="button" id="auth-reset">¿Olvidaste tu contraseña?</button>
+          <button class="auth-reset" type="button" id="auth-reset">Â¿Olvidaste tu contraseÃ±a?</button>
         </div>
         <div class="auth-footer">
           <img class="auth-emblem auth-emblem-claro" src="assets/emblema.png" alt="" height="16">
           <img class="auth-emblem auth-emblem-oscuro" src="assets/emblema-blanco.png" alt="" height="16">
-          <span>INATEC · Nicaragua</span>
+          <span>INATEC Â· Nicaragua</span>
         </div>
       </div>
     </form>
@@ -147,25 +148,25 @@
         <img class="auth-footer-emblem auth-logo-oscuro" src="assets/emblema-blanco.png" alt="" height="30">
         <div class="apf-brand-text">
           <strong>TIC Dashboard</strong>
-          <span>Cuaderno Docente Digital · Sistema de gestión académica del Instituto Nacional Tecnológico</span>
+          <span>Cuaderno Docente Digital Â· Sistema de gestiÃ³n acadÃ©mica del Instituto Nacional TecnolÃ³gico</span>
         </div>
       </div>
       <div class="apf-col apf-links">
         <a href="https://www.tecnacional.edu.ni" target="_blank" rel="noopener">Portal INATEC</a>
-        <a href="https://serviciosenlinea.tecnacional.edu.ni" target="_blank" rel="noopener">Servicios en Línea</a>
+        <a href="https://serviciosenlinea.tecnacional.edu.ni" target="_blank" rel="noopener">Servicios en LÃ­nea</a>
         <a href="https://campus.tecnacional.edu.ni" target="_blank" rel="noopener">Campus Virtual</a>
       </div>
       <div class="apf-col apf-legal">
-        <strong>© 2026 Turtle Games Dev</strong>
-        <span>Docente TIC Hanzell Mayorga · Managua, Nicaragua</span>
-        <span>Capacitación y Educación Técnica Gratuita y de Calidad</span>
+        <strong>Â© 2026 Turtle Games Dev</strong>
+        <span>Docente TIC Hanzell Mayorga Â· Managua, Nicaragua</span>
+        <span>CapacitaciÃ³n y EducaciÃ³n TÃ©cnica Gratuita y de Calidad</span>
       </div>
     </footer>
   </section>
 
   <div class="app-loading is-entering" id="app-loading" data-modo="inicio" role="status" aria-live="polite"
-    aria-label="Cargando aplicación">
-    <!-- Fondo gráfico: cuadrícula de cuaderno muy tenue con dos guías
+    aria-label="Cargando aplicaciÃ³n">
+    <!-- Fondo grÃ¡fico: cuadrÃ­cula de cuaderno muy tenue con dos guÃ­as
          que barren despacio (elemento decorativo, sin ruido visual) -->
     <div class="cargador-fondo" aria-hidden="true">
       <span class="cargador-guia-h"></span>
@@ -174,7 +175,7 @@
 
     <div class="cargador">
       <!-- Escena principal: aura celeste, marco orbital y una
-           ilustración vectorial distinta para cada contexto -->
+           ilustraciÃ³n vectorial distinta para cada contexto -->
       <div class="cargador-escena" aria-hidden="true">
         <span class="cargador-aura"></span>
 
@@ -250,7 +251,7 @@
               fill="#01a5e0"></path>
           </g>
 
-          <!-- Modo exportación: el archivo con sus indicadores -->
+          <!-- Modo exportaciÃ³n: el archivo con sus indicadores -->
           <g class="escena escena-exportacion">
             <path d="M42 10h46l22 22v76a9 9 0 0 1-9 9H42a9 9 0 0 1-9-9V19a9 9 0 0 1 9-9z" fill="#ffffff"
               stroke="#cfe3f2" stroke-width="1.5"></path>
@@ -269,7 +270,7 @@
             <path class="destello destello-2" d="M136 30l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#e10b7b"></path>
           </g>
 
-          <!-- Modo sesión: el escudo de acceso -->
+          <!-- Modo sesiÃ³n: el escudo de acceso -->
           <g class="escena escena-sesion">
             <path d="M80 8l42 15v34c0 26-18 44-42 53-24-9-42-27-42-53V23z" fill="url(#grad-in)"></path>
             <path class="palomita-grande" d="M62 58l13 13 25-27" fill="none" stroke="#ffffff" stroke-width="7"
@@ -292,7 +293,7 @@
         <span class="cargador-marca-texto">
           <strong>INATEC</strong>
           <span class="cargador-regla" aria-hidden="true"></span>
-          <small id="loading-center-name">Centro tecnológico</small>
+          <small id="loading-center-name">Centro tecnolÃ³gico</small>
         </span>
       </header>
 
@@ -301,7 +302,7 @@
 
       <div class="cargador-copy">
         <p class="cargador-titulo" id="app-loading-message">Preparando tu espacio...</p>
-        <p class="cargador-nota" id="app-loading-caption">Un momento: estamos preparando tu información</p>
+        <p class="cargador-nota" id="app-loading-caption">Un momento: estamos preparando tu informaciÃ³n</p>
       </div>
 
       <div class="cargador-reintentar" id="app-loading-retry-wrap" hidden>
@@ -316,33 +317,33 @@
 
   <a class="skip-link" href="#workspace">Saltar al contenido principal</a>
   <div class="app-container" id="app-container" hidden aria-hidden="true" inert>
-    <aside class="sidebar" id="sidebar" aria-label="Panel de navegación">
+    <aside class="sidebar" id="sidebar" aria-label="Panel de navegaciÃ³n">
       <div class="sidebar-header">
         <div class="nav-search" id="nav-search-wrap">
           <i class="ri-search-line" aria-hidden="true"></i>
-          <input id="nav-buscar" type="search" placeholder="Buscar sección…" autocomplete="off"
-            aria-label="Buscar sección en el panel de navegación">
+          <input id="nav-buscar" type="search" placeholder="Buscar secciÃ³nâ€¦" autocomplete="off"
+            aria-label="Buscar secciÃ³n en el panel de navegaciÃ³n">
         </div>
-        <button class="btn-icon" id="btn-close-nav" type="button" title="Cerrar navegación" aria-label="Cerrar navegación"
+        <button class="btn-icon" id="btn-close-nav" type="button" title="Cerrar navegaciÃ³n" aria-label="Cerrar navegaciÃ³n"
           onclick="UI.closeSidebar()"><i class="ri-close-line" aria-hidden="true"></i></button>
       </div>
-      <!-- El menú se genera desde el registro de secciones (js/14-secciones.js):
-           aquí solo vive el contenedor. -->
+      <!-- El menÃº se genera desde el registro de secciones (js/14-secciones.js):
+           aquÃ­ solo vive el contenedor. -->
       <nav class="sidebar-nav" id="sidebar-nav" aria-label="Secciones del panel"></nav>
       <div class="sidebar-footer">
         <div class="sidebar-footer-divider" aria-hidden="true"></div>
-        <p class="sidebar-footer-text">Sistema de Gestión Académica<br>Cuaderno Docente Digital</p>
-        <p class="sidebar-footer-credit">Desarrollado por <strong>Turtle Games Dev</strong><br>Docente TIC · Hanzell Mayorga · INATEC</p>
+        <p class="sidebar-footer-text">Sistema de GestiÃ³n AcadÃ©mica<br>Cuaderno Docente Digital</p>
+        <p class="sidebar-footer-credit">Desarrollado por <strong>Turtle Games Dev</strong><br>Docente TIC Â· Hanzell Mayorga Â· INATEC</p>
       </div>
     </aside>
-    <!-- Fondo que cierra el menú al tocar fuera (móvil / tablet) -->
+    <!-- Fondo que cierra el menÃº al tocar fuera (mÃ³vil / tablet) -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="UI.closeSidebar()"></div>
 
     <div class="main-wrapper">
       <header class="topbar">
         <div class="topbar-left">
-          <button class="btn-icon" id="btn-toggle-sidebar" type="button" title="Abrir panel de navegación"
-            aria-label="Abrir panel de navegación" aria-expanded="false" aria-controls="sidebar"
+          <button class="btn-icon" id="btn-toggle-sidebar" type="button" title="Abrir panel de navegaciÃ³n"
+            aria-label="Abrir panel de navegaciÃ³n" aria-expanded="false" aria-controls="sidebar"
             >
             <i class="ri-apps-2-line" aria-hidden="true"></i>
           </button>
@@ -350,8 +351,8 @@
             <i class="ri-search-line" aria-hidden="true" style="pointer-events: none;"></i>
             <label class="sr-only" for="global-search">Buscar estudiante o grupo</label>
             <input type="text" id="global-search" placeholder="Buscar estudiante o grupo..." autocomplete="off">
-            <button class="search-clear" id="search-clear-btn" type="button" title="Limpiar búsqueda"
-              aria-label="Limpiar búsqueda"
+            <button class="search-clear" id="search-clear-btn" type="button" title="Limpiar bÃºsqueda"
+              aria-label="Limpiar bÃºsqueda"
               onclick="document.getElementById('global-search').value=''; document.getElementById('global-search').dispatchEvent(new Event('input'));"><i
                 class="ri-close-line" aria-hidden="true"></i></button>
           </div>
@@ -360,15 +361,15 @@
           <button class="btn-icon" id="btn-toggle-theme" type="button" title="Cambiar tema claro u oscuro"
             aria-label="Cambiar tema claro u oscuro" onclick="UI.toggleTheme()"><i class="ri-moon-clear-line"
               aria-hidden="true"></i></button>
-          <div class="topbar-data-actions" role="group" aria-label="Gestión de base de datos">
+          <div class="topbar-data-actions" role="group" aria-label="GestiÃ³n de base de datos">
             <span class="toolbar-group-label" aria-hidden="true">Datos</span>
             <button class="btn-primary-soft" type="button" onclick="UI.abrirModalConfigExport()"
-              title="Configurar exportación" aria-label="Configurar exportación"><i class="ri-settings-3-line"
-                aria-hidden="true"></i><span class="btn-label">Configurar Exportación</span></button>
+              title="Configurar exportaciÃ³n" aria-label="Configurar exportaciÃ³n"><i class="ri-settings-3-line"
+                aria-hidden="true"></i><span class="btn-label">Configurar ExportaciÃ³n</span></button>
             <button class="btn-primary-soft" type="button" onclick="DataEngine.exportDBJSON()" title="Descargar DB.json"
               aria-label="Descargar DB.json"><i class="ri-download-cloud-2-line" aria-hidden="true"></i><span
                 class="btn-label">Descargar DB.json</span></button>
-            <button class="btn-primary-soft" type="button" onclick="DataEngine.recargarBase().catch(error => UI.showToast(error.message || 'No se pudo recargar la base.', 'error'))" title="Descarga la última versión de la base compartida (sin pantalla en vivo: nadie te pisa los datos mientras trabajas)" aria-label="Recargar base de datos"><i class="ri-refresh-line" aria-hidden="true"></i><span class="btn-label">Recargar base</span></button>
+            <button class="btn-primary-soft" type="button" onclick="DataEngine.recargarBase().catch(error => UI.showToast(error.message || 'No se pudo recargar la base.', 'error'))" title="Descarga la Ãºltima versiÃ³n de la base compartida (sin pantalla en vivo: nadie te pisa los datos mientras trabajas)" aria-label="Recargar base de datos"><i class="ri-refresh-line" aria-hidden="true"></i><span class="btn-label">Recargar base</span></button>
             <button class="btn-primary-soft" id="admin-import-trigger" data-permiso="cargarBase" type="button"
               onclick="document.getElementById('db-file-input').click()" title="Cargar DB.json (solo administradores)"
               aria-label="Cargar DB.json"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i><span
@@ -381,10 +382,10 @@
             <div class="topbar-account-details">
               <span class="topbar-account-name" id="current-user-name">Usuario</span>
               <span class="topbar-account-meta"><span id="current-user-role">Docente</span><span
-                  aria-hidden="true">·</span><span id="current-user-center">Centro tecnológico</span></span>
+                  aria-hidden="true">Â·</span><span id="current-user-center">Centro tecnolÃ³gico</span></span>
             </div>
-            <button class="topbar-signout" type="button" onclick="AuthManager.signOut()" title="Cerrar sesión"
-              aria-label="Cerrar sesión">
+            <button class="topbar-signout" type="button" onclick="AuthManager.signOut()" title="Cerrar sesiÃ³n"
+              aria-label="Cerrar sesiÃ³n">
               <i class="ri-logout-box-r-line" aria-hidden="true"></i>
             </button>
           </div>
@@ -397,7 +398,7 @@
       <div class="section-settings-header">
         <div>
           <h2 id="section-settings-title"><i class="ri-equalizer-2-line" aria-hidden="true"></i> Filtros y ajustes</h2>
-          <p>Ajustes, filtros y vistas de esta sección</p>
+          <p>Ajustes, filtros y vistas de esta secciÃ³n</p>
         </div>
         <button class="btn-icon" id="btn-close-section-settings" type="button" title="Cerrar ajustes"
           aria-label="Cerrar ajustes"><i class="ri-close-line" aria-hidden="true"></i></button>
@@ -416,7 +417,7 @@
           <h3>Editar estudiante</h3>
           <p class="panel-lema">Corrige los datos de la ficha: el cambio se guarda en la base del centro.</p>
         </div>
-        <button type="button" class="btn-icon panel-cerrar" onclick="UI.closeModal()" aria-label="Cerrar edición"><i
+        <button type="button" class="btn-icon panel-cerrar" onclick="UI.closeModal()" aria-label="Cerrar ediciÃ³n"><i
             class="ri-close-line" aria-hidden="true"></i></button>
       </header>
       <form id="form-edit-student" onsubmit="UI.saveStudentEdit(event)">
@@ -428,9 +429,9 @@
                 class="form-control" required></div>
             <div class="form-group"><label for="edit-apellidos">Apellidos</label><input type="text" id="edit-apellidos"
                 class="form-control" required></div>
-            <div class="form-group"><label for="edit-correo">Correo electrónico</label><input type="email"
+            <div class="form-group"><label for="edit-correo">Correo electrÃ³nico</label><input type="email"
                 id="edit-correo" class="form-control" required></div>
-            <div class="form-group"><label for="edit-telefono">Teléfono</label><input type="text" id="edit-telefono"
+            <div class="form-group"><label for="edit-telefono">TelÃ©fono</label><input type="text" id="edit-telefono"
                 class="form-control" required></div>
           </div>
           <div class="rejilla-2">
@@ -445,7 +446,7 @@
               <label for="edit-motivo-retiro">Motivo de retiro <span class="etiqueta-apoyo">(soporte / referencia
                   interna)</span></label>
               <textarea id="edit-motivo-retiro" class="form-control" rows="3"
-                placeholder="Ej: Dejó de asistir desde el 12/06, no respondió mensajes ni llamadas..."></textarea>
+                placeholder="Ej: DejÃ³ de asistir desde el 12/06, no respondiÃ³ mensajes ni llamadas..."></textarea>
             </div>
           </div>
         </div>
@@ -464,15 +465,15 @@
         <span class="panel-icono"><i class="ri-award-line" aria-hidden="true"></i></span>
         <div class="panel-titular">
           <p class="panel-eyebrow">Cuaderno Docente</p>
-          <h3>Gestión de convalidaciones</h3>
-          <p class="panel-lema">Módulos reconocidos sin cursar: no se promedian y quedan como cubiertos.</p>
+          <h3>GestiÃ³n de convalidaciones</h3>
+          <p class="panel-lema">MÃ³dulos reconocidos sin cursar: no se promedian y quedan como cubiertos.</p>
         </div>
         <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalConvalidaciones()"
           aria-label="Cerrar convalidaciones"><i class="ri-close-line" aria-hidden="true"></i></button>
       </header>
       <div class="panel-cuerpo">
         <section class="panel-formulario panel-acentuado">
-          <h4 class="panel-titulo"><i class="ri-add-circle-line" aria-hidden="true"></i> Registrar una convalidación
+          <h4 class="panel-titulo"><i class="ri-add-circle-line" aria-hidden="true"></i> Registrar una convalidaciÃ³n
           </h4>
           <div class="rejilla-2">
             <div class="form-group">
@@ -482,15 +483,15 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="select-modulo-convalidar">Módulo transversal</label>
+              <label for="select-modulo-convalidar">MÃ³dulo transversal</label>
               <select id="select-modulo-convalidar" class="form-control">
-                <option value="">-- Seleccionar módulo --</option>
+                <option value="">-- Seleccionar mÃ³dulo --</option>
               </select>
             </div>
           </div>
           <div class="panel-pie">
             <button class="btn-primary" type="button" onclick="DataEngine.guardarConvalidacion()"><i
-                class="ri-save-line" aria-hidden="true"></i> Guardar convalidación</button>
+                class="ri-save-line" aria-hidden="true"></i> Guardar convalidaciÃ³n</button>
           </div>
         </section>
         <section class="panel-tabla">
@@ -500,8 +501,8 @@
               <thead>
                 <tr>
                   <th scope="col">Estudiante</th>
-                  <th scope="col">Módulo</th>
-                  <th scope="col" style="text-align: center;">Acción</th>
+                  <th scope="col">MÃ³dulo</th>
+                  <th scope="col" style="text-align: center;">AcciÃ³n</th>
                 </tr>
               </thead>
               <tbody id="tbody-convalidaciones-lista">
@@ -526,17 +527,17 @@
         <span class="panel-icono"><i class="ri-file-excel-2-line" aria-hidden="true"></i></span>
         <div class="panel-titular">
           <p class="panel-eyebrow">Cuaderno Docente</p>
-          <h3>Configuración de exportación</h3>
-          <p class="panel-lema">Tipografía, columnas, alturas y papel de los documentos que genera el panel.</p>
+          <h3>ConfiguraciÃ³n de exportaciÃ³n</h3>
+          <p class="panel-lema">TipografÃ­a, columnas, alturas y papel de los documentos que genera el panel.</p>
         </div>
         <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalConfigExport()"
-          aria-label="Cerrar configuración"><i class="ri-close-line" aria-hidden="true"></i></button>
+          aria-label="Cerrar configuraciÃ³n"><i class="ri-close-line" aria-hidden="true"></i></button>
       </header>
 
       <div class="panel-rejilla">
 
         <div class="panel-seccion">
-          <h4 class="panel-titulo">📝 Fuente y Texto</h4>
+          <h4 class="panel-titulo">ðŸ“ Fuente y Texto</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Fuente:</label>
             <select id="cfg-font-family" class="form-control">
@@ -546,7 +547,7 @@
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 10px;">
-            <label>Tamaño fuente (pt):</label>
+            <label>TamaÃ±o fuente (pt):</label>
             <input type="number" id="cfg-font-size" class="form-control" value="14" min="8" max="24">
           </div>
           <div class="form-group" style="margin-bottom: 10px;">
@@ -563,7 +564,7 @@
         </div>
 
         <div class="panel-seccion">
-          <h4 class="panel-titulo">📐 Bordes y Relleno</h4>
+          <h4 class="panel-titulo">ðŸ“ Bordes y Relleno</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Color borde tabla:</label>
             <select id="cfg-border-color" class="form-control">
@@ -586,7 +587,7 @@
         </div>
 
         <div class="panel-seccion">
-          <h4 class="panel-titulo">📏 Anchos de Columna (px)</h4>
+          <h4 class="panel-titulo">ðŸ“ Anchos de Columna (px)</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Columna A (No.):</label>
             <input type="number" id="cfg-col-a" class="form-control" value="227" min="30" max="500">
@@ -606,7 +607,7 @@
         </div>
 
         <div class="panel-seccion">
-          <h4 class="panel-titulo">📐 Altos de Fila (px)</h4>
+          <h4 class="panel-titulo">ðŸ“ Altos de Fila (px)</h4>
           <div class="form-group" style="margin-bottom: 10px;">
             <label>Encabezado tabla principal:</label>
             <input type="number" id="cfg-row-header-main" class="form-control" value="170" min="20" max="300">
@@ -626,27 +627,27 @@
         </div>
 
         <div class="panel-seccion">
-          <h4 class="panel-titulo">🖨️ Configuración de Impresión</h4>
+          <h4 class="panel-titulo">ðŸ–¨ï¸ ConfiguraciÃ³n de ImpresiÃ³n</h4>
           <div class="form-group" style="margin-bottom: 10px;">
-            <label>Orientación:</label>
+            <label>OrientaciÃ³n:</label>
             <select id="cfg-print-orientation" class="form-control">
               <option value="landscape">Horizontal</option>
               <option value="portrait">Vertical</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 10px;">
-            <label>Tamaño de papel:</label>
+            <label>TamaÃ±o de papel:</label>
             <select id="cfg-print-paper" class="form-control">
-              <option value="9">A4 (210 × 297 mm)</option>
-              <option value="1">Carta (215.9 × 279.4 mm)</option>
-              <option value="5">Legal (215.9 × 355.6 mm)</option>
-              <option value="8">A3 (297 × 420 mm)</option>
-              <option value="11">A5 (148 × 210 mm)</option>
-              <option value="3">Tabloid (279.4 × 431.8 mm)</option>
+              <option value="9">A4 (210 Ã— 297 mm)</option>
+              <option value="1">Carta (215.9 Ã— 279.4 mm)</option>
+              <option value="5">Legal (215.9 Ã— 355.6 mm)</option>
+              <option value="8">A3 (297 Ã— 420 mm)</option>
+              <option value="11">A5 (148 Ã— 210 mm)</option>
+              <option value="3">Tabloid (279.4 Ã— 431.8 mm)</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 10px;">
-            <label>Márgenes:</label>
+            <label>MÃ¡rgenes:</label>
             <select id="cfg-print-margin" class="form-control">
               <option value="estrecho">Estrecho</option>
               <option value="normal">Normal</option>
@@ -655,23 +656,23 @@
           </div>
           <div class="form-group" style="margin-bottom: 10px;">
             <label><input type="checkbox" id="cfg-print-fit" checked style="margin-right: 6px;">Ajustar ancho y alto a 1
-              página</label>
+              pÃ¡gina</label>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
             <label><input type="checkbox" id="cfg-print-centered" checked style="margin-right: 6px;">Centrar hoja en la
-              página</label>
+              pÃ¡gina</label>
           </div>
         </div>
 
         <div class="panel-seccion ancha">
-          <h4 class="panel-titulo">🏛️ Membrete Institucional</h4>
+          <h4 class="panel-titulo">ðŸ›ï¸ Membrete Institucional</h4>
           <div class="rejilla-3">
             <div class="form-group" style="margin-bottom: 0;">
-              <label>Título INATEC (pt):</label>
+              <label>TÃ­tulo INATEC (pt):</label>
               <input type="number" id="cfg-title-inatec" class="form-control" value="18" min="10" max="30">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label>Subtítulo (pt):</label>
+              <label>SubtÃ­tulo (pt):</label>
               <input type="number" id="cfg-title-centro" class="form-control" value="16" min="10" max="30">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
@@ -684,11 +685,11 @@
       </div>
 
       <div class="modal-actions panel-acciones split">
-        <button class="btn-secondary" onclick="ConfigExport.resetDefaults()">🔄 Restaurar Predeterminados</button>
+        <button class="btn-secondary" onclick="ConfigExport.resetDefaults()">ðŸ”„ Restaurar Predeterminados</button>
         <div>
           <button class="btn-secondary" onclick="UI.cerrarModalConfigExport()">Cancelar</button>
           <button class="btn-primary" onclick="ConfigExport.guardar()"><i class="ri-save-line"></i> Guardar
-            Configuración</button>
+            ConfiguraciÃ³n</button>
         </div>
       </div>
     </div>
@@ -709,7 +710,7 @@
       <form onsubmit="CuadernoEngine.guardarConfiguracionAcademica(event)">
         <div class="panel-cuerpo panel-formulario">
           <div class="form-group">
-            <label for="cfg-coordinador-academico">Coordinador(a) académico(a)</label>
+            <label for="cfg-coordinador-academico">Coordinador(a) acadÃ©mico(a)</label>
             <input type="text" id="cfg-coordinador-academico" class="form-control" maxlength="120"
               placeholder="Nombre completo">
           </div>
@@ -733,7 +734,7 @@
     </div>
   </div>
 
-  <!-- ═══ MODAL: Crear / Editar Equipo (Innovatec / Hackathon) ═══ -->
+  <!-- â•â•â• MODAL: Crear / Editar Equipo (Innovatec / Hackathon) â•â•â• -->
   <div id="modal-equipo" class="modal-overlay hidden">
     <div class="modal-content panel modal-md">
       <header class="panel-cabecera">
@@ -755,7 +756,7 @@
               <input type="text" id="equipo-nombre" class="form-control" placeholder="Ej: Los Innovadores" required>
             </div>
             <div class="form-group">
-              <label for="equipo-categoria">Categoría</label>
+              <label for="equipo-categoria">CategorÃ­a</label>
               <select id="equipo-categoria" class="form-control" required>
                 <option value="Innovatec">Innovatec</option>
                 <option value="Hackathon">Hackathon</option>
@@ -774,22 +775,22 @@
               <option value="">-- Seleccionar Grupo --</option>
             </select>
             <p id="equipo-profesor-guia-preview" class="panel-nota"><i class="ri-user-star-line" aria-hidden="true"></i>
-              Profesor guía: <strong>—</strong></p>
+              Profesor guÃ­a: <strong>â€”</strong></p>
           </div>
           <div class="form-group">
-            <label for="equipo-descripcion">Descripción del proyecto</label>
+            <label for="equipo-descripcion">DescripciÃ³n del proyecto</label>
             <textarea id="equipo-descripcion" class="form-control" rows="3"
-              placeholder="¿Qué hace el proyecto y qué problema resuelve?"></textarea>
+              placeholder="Â¿QuÃ© hace el proyecto y quÃ© problema resuelve?"></textarea>
           </div>
           <div class="form-group">
             <label for="equipo-propuesta-valor">Propuesta de valor</label>
             <textarea id="equipo-propuesta-valor" class="form-control" rows="2"
-              placeholder="¿Qué hace único o valioso al proyecto?"></textarea>
+              placeholder="Â¿QuÃ© hace Ãºnico o valioso al proyecto?"></textarea>
           </div>
           <div class="form-group">
             <label for="equipo-entregables">Entregables</label>
             <textarea id="equipo-entregables" class="form-control" rows="2"
-              placeholder="Ej: Prototipo funcional, informe técnico, video pitch..."></textarea>
+              placeholder="Ej: Prototipo funcional, informe tÃ©cnico, video pitch..."></textarea>
           </div>
         </div>
         <div class="modal-actions panel-acciones">
@@ -801,14 +802,14 @@
     </div>
   </div>
 
-  <!-- ═══ MODAL: Asignar Docente Guía a un Grupo ═══ -->
+  <!-- â•â•â• MODAL: Asignar Docente GuÃ­a a un Grupo â•â•â• -->
   <div id="modal-docente-guia" class="modal-overlay hidden">
     <div class="modal-content panel modal-sm">
       <header class="panel-cabecera">
         <span class="panel-icono"><i class="ri-user-star-line" aria-hidden="true"></i></span>
         <div class="panel-titular">
           <p class="panel-eyebrow">Grupos de clase</p>
-          <h3>Asignar docente guía</h3>
+          <h3>Asignar docente guÃ­a</h3>
           <p class="panel-lema">Nombre del docente responsable del grupo en el cuaderno y los informes.</p>
         </div>
         <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalDocenteGuia()" aria-label="Cerrar"><i
@@ -819,9 +820,9 @@
           <input type="hidden" id="docente-guia-grupo-id">
           <p class="panel-nota">Grupo: <strong id="docente-guia-grupo-nombre"></strong></p>
           <div class="form-group">
-            <label for="docente-guia-nombre">Nombre del docente guía</label>
+            <label for="docente-guia-nombre">Nombre del docente guÃ­a</label>
             <input type="text" id="docente-guia-nombre" class="form-control"
-              placeholder="Ej. Hanzell René Mayorga Calero">
+              placeholder="Ej. Hanzell RenÃ© Mayorga Calero">
           </div>
         </div>
         <div class="modal-actions panel-acciones">
@@ -832,7 +833,7 @@
     </div>
   </div>
 
-  <!-- ═══ MODAL: Asignar TIC Responsable de un Grupo ═══ -->
+  <!-- â•â•â• MODAL: Asignar TIC Responsable de un Grupo â•â•â• -->
   <div id="modal-tic-responsable" class="modal-overlay hidden">
     <div class="modal-content panel modal-sm">
       <header class="panel-cabecera">
@@ -848,9 +849,9 @@
               if (sel) sel.disabled = checked;
               if (inp) inp.disabled = checked;
             " />
-            <label for="tic-responsable-igual-docente"><i class="ri-user-star-line" aria-hidden="true" style="color:var(--secondary-blue)"></i> Usar mismo que Docente Guía</label>
+            <label for="tic-responsable-igual-docente"><i class="ri-user-star-line" aria-hidden="true" style="color:var(--secondary-blue)"></i> Usar mismo que Docente GuÃ­a</label>
           </div>
-          <p class="panel-lema">Docente del sistema que firma como TIC en la exportación del cuaderno docente.</p>
+          <p class="panel-lema">Docente del sistema que firma como TIC en la exportaciÃ³n del cuaderno docente.</p>
         </div>
         <button type="button" class="btn-icon panel-cerrar" onclick="UI.cerrarModalTicResponsable()"
           aria-label="Cerrar"><i class="ri-close-line" aria-hidden="true"></i></button>
@@ -868,7 +869,7 @@
           <div class="form-group">
             <label for="tic-responsable-nombre">O escribir nombre manualmente</label>
             <input type="text" id="tic-responsable-nombre" class="form-control" list="lista-docentes-sistema"
-              placeholder="Ej. Hanzell René Mayorga Calero" autocomplete="off">
+              placeholder="Ej. Hanzell RenÃ© Mayorga Calero" autocomplete="off">
             <datalist id="lista-docentes-sistema"></datalist>
             <p class="panel-nota" id="tic-responsable-nota" hidden>No se pudo cargar la lista de docentes: escribe el
               nombre a mano.</p>
@@ -882,7 +883,7 @@
     </div>
   </div>
 
-  <!-- ═══ MODAL: Crear / Editar Integrante de Equipo ═══ -->
+  <!-- â•â•â• MODAL: Crear / Editar Integrante de Equipo â•â•â• -->
   <div id="modal-integrante" class="modal-overlay hidden">
     <div class="modal-content panel modal-ms">
       <header class="panel-cabecera">
@@ -918,15 +919,15 @@
               <input type="text" id="integrante-apellidos" class="form-control" required>
             </div>
             <div class="form-group">
-              <label for="integrante-correo">Correo electrónico</label>
+              <label for="integrante-correo">Correo electrÃ³nico</label>
               <input type="email" id="integrante-correo" class="form-control" required>
             </div>
             <div class="form-group">
-              <label for="integrante-telefono">Teléfono</label>
+              <label for="integrante-telefono">TelÃ©fono</label>
               <input type="text" id="integrante-telefono" class="form-control" required>
             </div>
             <div class="form-group">
-              <label for="integrante-cedula">Cédula</label>
+              <label for="integrante-cedula">CÃ©dula</label>
               <input type="text" id="integrante-cedula" class="form-control" placeholder="000-000000-0000X">
             </div>
             <div class="form-group">
@@ -949,8 +950,8 @@
 
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- JS dividido en módulos por responsabilidad (antes un solo app.js de 2600+ líneas).
-       El orden importa: cada archivo depende de que los anteriores ya estén cargados. -->
+  <!-- JS dividido en mÃ³dulos por responsabilidad (antes un solo app.js de 2600+ lÃ­neas).
+       El orden importa: cada archivo depende de que los anteriores ya estÃ©n cargados. -->
   <script defer src="js/10-firebase-bootstrap.js"></script>
   <script defer src="js/01-cuaderno-engine.js"></script>
   <script defer src="js/02-data-engine.js"></script>
@@ -958,8 +959,6 @@
   <script defer src="js/04-ui-core.js"></script>
   <script defer src="js/05-message-engine.js"></script>
   <script defer src="js/06-stats-engine.js"></script>
-  <script defer src="js/07-examenes-engine.js"></script>
-  <script defer src="js/08-informe-engine.js"></script>
   <script defer src="js/09-equipos-engine.js"></script>
   <script defer src="js/11-auth.js"></script>
   <script defer src="js/12-admin-manager.js"></script>
@@ -970,9 +969,7 @@
   <script defer src="js/17-auth-carousel.js"></script>
   <script defer src="js/18-auth-intro.js"></script>
   <script defer src="js/19-auditoria.js"></script>
-  <script defer src="js/20-plantillas.js"></script>
-  <script defer src="js/21-reportes.js"></script>
-  <script defer src="js/22-asistencia.js"></script>
+  <script defer src="js/23-carga-diferida.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>
 

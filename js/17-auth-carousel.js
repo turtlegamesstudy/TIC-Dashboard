@@ -43,11 +43,21 @@
     return i === 0 ? capaA : capaB;
   }
 
-  /* Precargar: las transiciones no esperan a la red */
-  IMAGENES.forEach(function (imagen) {
+  /* Precargar: solo las 2 primeras al instante (el login no debe
+     descargar MB de puro carrusel); el resto baja en cola, una por
+     transición, mientras el usuario escribe su usuario. */
+  function precargar(imagen) {
     var precarga = new Image();
     precarga.src = imagen.src;
-  });
+  }
+  IMAGENES.slice(0, 2).forEach(precargar);
+  var enCola = IMAGENES.slice(2);
+  function cargarEnCola() {
+    if (!enCola.length) return;
+    precargar(enCola.shift());
+    setTimeout(cargarEnCola, TIEMPO);
+  }
+  setTimeout(cargarEnCola, TIEMPO);
 
   /* ── Barras de progreso ── */
   function pintarBarras() {
