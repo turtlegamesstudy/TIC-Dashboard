@@ -111,9 +111,9 @@
   --shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow: var(--shadow-sm);
 
-  /* Radios discretos */
-  --r-sm: 3px;  --r-md: 5px;  --r-lg: 7px;  --r-xl: 8px;  --r-2xl: 8px;
-  --r-full: 9999px;
+  /* Radios discretos — límite duro de 5px en todo el panel */
+  --r-sm: 3px;  --r-md: 5px;  --r-lg: 5px;  --r-xl: 5px;  --r-2xl: 5px;
+  --r-full: 5px;
   --button-radius: var(--r-md);
   --button-height: 38px;
 }
@@ -870,3 +870,159 @@ html[data-theme] #btn-toggle-theme i { transition: transform var(--t-base); }
   html[data-theme] .custom-table th,
   html[data-theme] .custom-table td { white-space: normal; }
 }
+
+/* ══ 16 · LÍMITE DURO DE REDONDEO (≤5px en todo) ══════════════════════ */
+/* Nada en el panel supera 5px: gana sobre píldoras legacy incluso con !important */
+html[data-theme] .af-chip,
+html[data-theme] .af-pill,
+html[data-theme] .pie-version,
+html[data-theme] [class*="pie-"][class*="pill"] {
+  border-radius: 5px !important;
+}
+html[data-theme] .btn-primary,
+html[data-theme] .btn-primary-soft,
+html[data-theme] .btn-secondary,
+html[data-theme] .btn-success,
+html[data-theme] .btn-ghost,
+html[data-theme] .btn-warning,
+html[data-theme] .badge-status,
+html[data-theme] .badge-modulo,
+html[data-theme] .form-control,
+html[data-theme] .search-box,
+html[data-theme] .auth-submit,
+html[data-theme] .auth-input-wrap,
+html[data-theme] .af-chip {
+  border-radius: var(--button-radius) !important;
+}
+
+/* ══ 17 · SIDEBAR — jerarquía icono + texto, encabezado y pie ═════════ */
+html[data-theme] .sidebar {
+  border-radius: 5px;
+}
+html[data-theme] .sidebar-header {
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+html[data-theme] .logo-box img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  padding: 6px;
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  background: var(--bg-input);
+  box-sizing: border-box;
+}
+html[data-theme] .brand-info h2 { font-size: 0.95rem; }
+html[data-theme] .sidebar-footer {
+  background: var(--bg-card);
+  padding: 12px 16px 14px;
+}
+html[data-theme] .sidebar-footer-divider { border-top: 1px solid var(--border-subtle); background: none; }
+html[data-theme] .sidebar-footer-text {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+html[data-theme] .sidebar-footer-credit {
+  font-size: 0.6rem;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+
+/* ══ 18 · ENCABEZADOS — más postura, menos volumen ═══════════════════ */
+html[data-theme] .view-header h1 {
+  font-size: 1.45rem;
+  font-weight: 650;
+}
+html[data-theme] .panel-cabecera { padding: 12px 16px; }
+html[data-theme] .panel-cabecera .panel-titular h3 { font-size: 0.95rem; }
+html[data-theme] .panel-rejilla .panel-seccion,
+html[data-theme] .panel-seccion {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+}
+html[data-theme] section h4.panel-titulo {
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ══ 19 · AUTH PANEL — semitransparente con blur plano ═══════════════ */
+html[data-theme] .auth-card {
+  background: var(--bg-surface) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+html[data-theme] .auth-brand-glass {
+  background: var(--acento-suave) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+html[data-theme] .auth-panel {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: none;
+}
+html[data-theme] .auth-panel .auth-input-wrap {
+  background: var(--input-fondo);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+}
+html[data-theme] .auth-panel input {
+  background: transparent;
+  color: var(--text-primary);
+}
+html[data-theme] .auth-panel input:focus { border: none; outline: none; }
+html[data-theme] .auth-panel .auth-input-wrap:focus-within { border-color: var(--text-primary); }
+html[data-theme] .auth-brand-title,
+html[data-theme] .auth-brand-slogan,
+html[data-theme] .auth-brand-pills span {
+  color: var(--text-primary);
+}
+html[data-theme] .auth-brand-pills span {
+  background: var(--acento-suave);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  box-shadow: none;
+}
+html[data-theme] .auth-submit {
+  background: var(--text-primary) !important;
+  color: var(--bg-body) !important;
+  border: 1px solid var(--text-primary);
+  box-shadow: none !important;
+}
+html[data-theme] .auth-submit:hover { opacity: 0.88; }
+html[data-theme] .auth-password-toggle { color: var(--text-muted); }
+html[data-theme] .pie-version,
+html[data-theme] .auth-system-footer,
+html[data-theme] .auth-page-footer {
+  color: var(--text-muted);
+}
+html[data-theme] .auth-page-footer a { color: var(--text-secondary); }
+html[data-theme] .auth-page-footer a:hover { color: var(--text-primary); }
+
+/* ══ 20 · CIRCULARES FUNCIONALES → 5px (avatares incluidos) ══════════ */
+html[data-theme] .avatar,
+html[data-theme] .topbar-account .avatar,
+html[data-theme] .avatar::before,
+html[data-theme] .msg-avatar-mini,
+html[data-theme] [class*="avatar"] {
+  border-radius: 5px !important;
+}
+html[data-theme] .ai-orb,
+html[data-theme] .ai-watermark img { border-radius: 0; }
