@@ -124,7 +124,7 @@ export default function AdminScreen() {
       </motion.div>
 
       {selected ? (
-        <motion.div className="modal-overlay" style={{ position: "fixed", inset: 0, zIndex: 120, display: "grid", placeItems: "center", background: "rgba(2,6,14,0.66)", backdropFilter: "blur(8px)" }}
+        <motion.div className="modal-overlay" style={{ position: "fixed", inset: 0, zIndex: 120, display: "grid", placeItems: "center" }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div className="modal-content panel" initial={{ opacity: 0, y: 18, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: 0.25 }} style={{ width: "min(440px, 92vw)" }}>
             <div className="panel-cabecera">
@@ -132,15 +132,15 @@ export default function AdminScreen() {
               <button type="button" className="modal-close" onClick={() => setSelected(null)} aria-label="Cerrar"><i className="ri-close-line" /></button>
             </div>
             <div className="panel-cuerpo" style={{ padding: 18 }}>
-              <p style={{ marginTop: 0, color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+              <p style={{ marginTop: 0, color: "var(--text-muted)", fontSize: "0.9rem" }}>
                 Estás generando un enlace de restablecimiento de contraseña para <strong style={{ color: "var(--text-primary)" }}>{selected.correo}</strong>. El usuario recibirá el correo con las instrucciones para crear una nueva contraseña.
               </p>
               <form onSubmit={sendReset} style={{ display: "grid", gap: 14 }}>
                 <div className="form-group">
                   <label htmlFor="admin-new-password">Nueva contraseña temporal (mín. 8 caracteres)</label>
-                  <input id="admin-new-password" className="form-control" type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ width: "100%", padding: 12, borderRadius: 12, background: "var(--input-fondo)", border: "1px solid var(--input-borde)", color: "var(--text-primary)" }} />
+                  <input id="admin-new-password" className="form-control" type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ width: "100%", padding: 10, borderRadius: 6, background: "var(--input-fondo)", border: "1px solid var(--input-borde)", color: "var(--text-primary)", fontFamily: "inherit", fontSize: "0.88rem" }} />
                 </div>
-                {msg.tipo ? <div style={{ padding: 12, borderRadius: 12, background: msg.tipo === "error" ? "rgba(220,38,38,0.16)" : "rgba(0,168,89,0.16)", border: `1px solid ${msg.tipo === "error" ? "rgba(220,38,38,0.45)" : "rgba(0,168,89,0.45)"}`, color: msg.tipo === "error" ? "#ff8a96" : "var(--neon-green)", fontSize: "0.85rem" }}>{msg.texto}</div> : null}
+                {msg.tipo ? <div style={{ padding: 12, borderRadius: 6, background: "var(--acento-suave)", border: "1px solid var(--border-default)", color: "var(--text-primary)", fontSize: "0.85rem" }}>{msg.texto}</div> : null}
                 <div className="panel-acciones" style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 14, display: "flex", justifyContent: "flex-end", gap: 10 }}>
                   <button type="button" className="btn-ghost" onClick={() => { setSelected(null); setPassword(""); setMsg({ tipo: "", texto: "" }); }}>Cancelar</button>
                   <motion.button type="submit" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} disabled={sending} className="btn-primary">

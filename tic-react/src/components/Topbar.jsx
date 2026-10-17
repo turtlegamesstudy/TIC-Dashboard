@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 export default function Topbar({ onToggleSidebar }) {
-  const [theme, setTheme] = useState(() => (localStorage.getItem("tic-theme") === "light" ? "light" : "dark"));
+  const [theme, setTheme] = useState(() => (localStorage.getItem("tic-theme") === "dark" ? "dark" : "light"));
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -12,7 +12,7 @@ export default function Topbar({ onToggleSidebar }) {
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   return (
-    <header className="topbar" style={{ position: "sticky", top: "var(--s-4)" }}>
+    <header className="topbar" style={{ position: "sticky", top: "12px" }}>
       <div className="topbar-left">
         <button
           type="button"
@@ -35,8 +35,8 @@ export default function Topbar({ onToggleSidebar }) {
       </div>
       <div className="topbar-right">
         <motion.button
-          whileHover={{ rotate: 8, scale: 1.05 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
           type="button"
           className="btn-icon"
           onClick={toggleTheme}

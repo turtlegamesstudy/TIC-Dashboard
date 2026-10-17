@@ -10,8 +10,8 @@ function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div className="app-loading" style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
-        <div style={{ fontFamily: "Bitter, serif", fontSize: "1.4rem" }}>Cargando sesión…</div>
+      <div className="app-loading" style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, minHeight: "100vh" }}>
+        <div style={{ fontFamily: "inherit", fontSize: "1.05rem", fontWeight: 550, letterSpacing: "0.01em" }}>Cargando sesión…</div>
       </div>
     );
   }

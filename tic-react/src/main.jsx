@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import "./index.css";
 import "./styles/style.css";
 import "./styles/remodelacion.css";
+import "./styles/flat.css";
 
 // Por defecto el tema oscuro (estilo login) hereda del remodelacion.css.
 // Mantenemos la preferencia guardada por el usuario si existe.

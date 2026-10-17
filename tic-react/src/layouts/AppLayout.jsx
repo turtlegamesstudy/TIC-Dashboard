@@ -22,7 +22,7 @@ export default function AppLayout() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.28, ease: [0.22, 0.68, 0, 1.1] }}
+              transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
               style={{ width: "100%" }}
             >
               <Outlet />

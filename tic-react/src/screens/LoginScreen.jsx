@@ -54,10 +54,34 @@ export default function LoginScreen() {
   };
 
   const entrada = (delay) => ({
-    initial: { opacity: 0, y: 26, filter: "blur(14px)" },
-    animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-    transition: { duration: 0.55, delay, ease: [0.2, 0.8, 0.2, 1] }
+    initial: { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, delay, ease: [0.25, 0.1, 0.25, 1] }
   });
+
+  const estiloEtiqueta = {
+    display: "block",
+    fontSize: "0.68rem",
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: "var(--text-muted)",
+    marginBottom: 6
+  };
+
+  const estiloCampo = {
+    width: "100%",
+    padding: "11px 14px",
+    borderRadius: 6,
+    background: "var(--input-fondo)",
+    color: "var(--text-primary)",
+    border: "1px solid var(--border-default)",
+    outline: "none",
+    fontSize: "0.92rem",
+    fontFamily: "inherit",
+    boxSizing: "border-box",
+    transition: "border-color 160ms ease"
+  };
 
   return (
     <div
@@ -68,72 +92,55 @@ export default function LoginScreen() {
         overflow: "auto",
         display: "grid",
         placeItems: "center",
-        padding: "40px",
+        padding: "24px",
         zIndex: 9999
       }}
     >
-      {/* Fondo del login: auroras rosa/azul muy difuminadas */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(900px 500px at 85% -5%, rgba(230, 0,126, .22), transparent 60%), radial-gradient(800px 600px at -5% 15%, rgba(0,92,169,.32), transparent 55%), radial-gradient(1000px 800px at 50% 115%, rgba(0,168,89,.14), transparent 60%)",
-          pointerEvents: "none"
-        }}
-      />
-
-      {/* Formulario: se difumina y retrocede cuando arranca la sesión */}
+      {/* Formulario: se atenúa cuando arranca la sesión */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.94, filter: "blur(24px)" }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{
           opacity: signingIn ? 0.35 : 1,
-          scale: signingIn ? 0.96 : 1,
-          filter: signingIn ? "blur(10px)" : "blur(0px)"
+          scale: signingIn ? 0.98 : 1
         }}
-        transition={{ duration: 0.55, ease: [0.2, 0.8, 0.2, 1] }}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
         className="auth-panel"
         style={{
           position: "relative",
-          width: "min(440px, 100%)",
-          padding: "38px 34px 30px",
-          borderRadius: 24,
-          background: "rgba(8, 16, 30, 0.68)",
-          backdropFilter: "blur(24px) saturate(160%)",
-          WebkitBackdropFilter: "blur(24px) saturate(160%)",
-          border: "1px solid rgba(255,255,255,0.14)",
-          boxShadow:
-            "0 30px 70px rgba(0,0,0,.5), 0 0 60px rgba(230,0,126,.12), inset 0 1px 0 rgba(255,255,255,.08)"
+          width: "min(400px, 100%)",
+          padding: "36px 32px 26px",
+          borderRadius: 8
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: 22 }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
           <motion.img
             {...entrada(0.05)}
             src="/assets/logo-inatec-blanco.png"
             alt="TIC Dashboard"
-            width={72}
-            height={72}
-            style={{ filter: "drop-shadow(0 0 22px rgba(230,0,126,.45))" }}
+            width={64}
+            height={64}
+            style={{ opacity: 0.92 }}
           />
           <motion.h1
-            {...entrada(0.12)}
+            {...entrada(0.1)}
             style={{
-              fontFamily: "Bitter, serif",
-              fontSize: "2rem",
-              margin: "12px 0 4px",
-              color: "#eef4ff",
-              letterSpacing: "0.02em",
-              fontWeight: 700
+              fontFamily: "inherit",
+              fontSize: "1.55rem",
+              margin: "14px 0 4px",
+              color: "var(--text-primary)",
+              letterSpacing: "-0.02em",
+              fontWeight: 650
             }}
           >
             TIC Dashboard
           </motion.h1>
           <motion.p
-            {...entrada(0.18)}
+            {...entrada(0.15)}
             style={{
-              color: "#8496b0",
-              fontSize: "0.85rem",
-              letterSpacing: "0.04em",
+              color: "var(--text-muted)",
+              fontSize: "0.7rem",
+              fontWeight: 600,
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
               margin: 0
             }}
@@ -142,21 +149,9 @@ export default function LoginScreen() {
           </motion.p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
-          <motion.div {...entrada(0.24)}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#b7c5db",
-                marginBottom: 6
-              }}
-            >
-              Correo institucional
-            </label>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
+          <motion.div {...entrada(0.2)}>
+            <label style={estiloEtiqueta}>Correo institucional</label>
             <input
               type="email"
               required
@@ -164,33 +159,15 @@ export default function LoginScreen() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="usuario@inatec.edu.ni"
               style={{
-                width: "100%",
-                padding: "13px 18px",
-                borderRadius: 999,
-                background: "rgba(4, 9, 19, 0.62)",
-                color: "#eef4ff",
-                border: "1px solid rgba(255,255,255,0.13)",
-                outline: "none",
-                fontSize: "0.95rem",
-                boxSizing: "border-box"
+                ...estiloCampo
               }}
+              onFocus={(e) => { e.target.style.borderColor = "var(--text-primary)"; }}
+              onBlur={(e) => { e.target.style.borderColor = "var(--border-default)"; }}
             />
           </motion.div>
 
-          <motion.div {...entrada(0.3)}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#b7c5db",
-                marginBottom: 6
-              }}
-            >
-              Contraseña
-            </label>
+          <motion.div {...entrada(0.26)}>
+            <label style={estiloEtiqueta}>Contraseña</label>
             <input
               type="password"
               required
@@ -198,16 +175,10 @@ export default function LoginScreen() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               style={{
-                width: "100%",
-                padding: "13px 18px",
-                borderRadius: 999,
-                background: "rgba(4, 9, 19, 0.62)",
-                color: "#eef4ff",
-                border: "1px solid rgba(255,255,255,0.13)",
-                outline: "none",
-                fontSize: "0.95rem",
-                boxSizing: "border-box"
+                ...estiloCampo
               }}
+              onFocus={(e) => { e.target.style.borderColor = "var(--text-primary)"; }}
+              onBlur={(e) => { e.target.style.borderColor = "var(--border-default)"; }}
             />
           </motion.div>
 
@@ -215,15 +186,15 @@ export default function LoginScreen() {
             {error ? (
               <motion.div
                 key="error"
-                initial={{ opacity: 0, y: -6 }}
+                initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 style={{
                   padding: 12,
-                  borderRadius: 14,
-                  background: "rgba(220,38,38,0.16)",
-                  border: "1px solid rgba(220,38,38,0.45)",
-                  color: "#ff8a96",
+                  borderRadius: 5,
+                  background: "var(--acento-suave)",
+                  border: "1px solid var(--border-default)",
+                  color: "var(--text-primary)",
                   fontSize: "0.85rem"
                 }}
               >
@@ -233,23 +204,23 @@ export default function LoginScreen() {
           </AnimatePresence>
 
           <motion.button
-            {...entrada(0.36)}
-            whileHover={{ y: -2, boxShadow: "0 10px 30px rgba(230,0,126,0.6)" }}
+            {...entrada(0.32)}
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={signingIn}
             style={{
-              marginTop: 6,
-              padding: "14px 18px",
-              borderRadius: 999,
-              border: "none",
-              background: "linear-gradient(135deg, #E6007E, #c4006a)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: "0.95rem",
-              letterSpacing: "0.02em",
+              marginTop: 4,
+              padding: "12px 16px",
+              borderRadius: 5,
+              border: "1px solid var(--text-primary)",
+              background: "var(--text-primary)",
+              color: "var(--bg-body)",
+              fontFamily: "inherit",
+              fontWeight: 560,
+              fontSize: "0.92rem",
+              letterSpacing: "0.01em",
               cursor: signingIn ? "wait" : "pointer",
-              boxShadow: "0 4px 18px rgba(230,0,126,0.38)"
+              opacity: signingIn ? 0.55 : 1
             }}
           >
             {signingIn ? "Ingresando…" : "Ingresar"}
@@ -257,135 +228,97 @@ export default function LoginScreen() {
         </form>
 
         <motion.div
-          {...entrada(0.42)}
+          {...entrada(0.38)}
           style={{
-            marginTop: 22,
+            marginTop: 24,
+            paddingTop: 16,
+            borderTop: "1px solid var(--border-subtle)",
             textAlign: "center",
-            fontSize: "0.7rem",
-            color: "#6b7d99",
+            fontSize: "0.68rem",
+            color: "var(--text-muted)",
             letterSpacing: "0.04em"
           }}
         >
-          Desarrollado por <strong style={{ color: "#eef4ff" }}>Turtle Games Dev</strong>
+          Desarrollado por <strong style={{ color: "var(--text-secondary)" }}>Turtle Games Dev</strong>
         </motion.div>
       </motion.div>
 
-      {/* ═══ Animación de inicio de sesión: vidrio, anillo, pasos y progreso ═══ */}
+      {/* ═══ Pantalla de inicio de sesión: vidrio monocromo, pasos y progreso ═══ */}
       <AnimatePresence>
         {signingIn ? (
           <motion.div
             key="signin"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.35 } }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
             style={{
               position: "fixed",
               inset: 0,
               zIndex: 10000,
               display: "grid",
               placeItems: "center",
-              background: "rgba(4, 8, 16, 0.5)",
-              backdropFilter: "blur(24px) saturate(150%)",
-              WebkitBackdropFilter: "blur(24px) saturate(150%)"
+              background: "var(--overlay-bg, rgba(0,0,0,0.4))",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)"
             }}
           >
-            {/* Orbes difuminados que flotan detrás del vidrio */}
             <motion.div
-              animate={{ x: [-60, 60, -60], y: [-40, 50, -40] }}
-              transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                position: "absolute",
-                top: "18%",
-                left: "12%",
-                width: 340,
-                height: 340,
-                borderRadius: "50%",
-                background: "rgba(230, 0, 126, 0.22)",
-                filter: "blur(70px)"
-              }}
-            />
-            <motion.div
-              animate={{ x: [50, -50, 50], y: [40, -60, 40] }}
-              transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                position: "absolute",
-                bottom: "14%",
-                right: "10%",
-                width: 300,
-                height: 300,
-                borderRadius: "50%",
-                background: "rgba(0, 92, 169, 0.25)",
-                filter: "blur(70px)"
-              }}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, filter: "blur(24px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
               style={{
                 position: "relative",
-                width: "min(400px, 92vw)",
-                padding: "36px 32px 30px",
-                borderRadius: 22,
+                width: "min(380px, 92vw)",
+                padding: "32px 30px 26px",
+                borderRadius: 8,
                 textAlign: "center",
-                background: "rgba(10, 18, 34, 0.72)",
-                backdropFilter: "blur(28px) saturate(160%)",
-                WebkitBackdropFilter: "blur(28px) saturate(160%)",
-                border: "1px solid rgba(255,255,255,0.16)",
-                boxShadow:
-                  "0 30px 80px rgba(0,0,0,.55), 0 0 70px rgba(230,0,126,.16), inset 0 1px 0 rgba(255,255,255,.1)"
+                background: "var(--bg-elevated, rgba(18,18,18,0.88))",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                border: "1px solid var(--border-default, rgba(255,255,255,0.15))",
+                boxShadow: "0 16px 44px rgba(0,0,0,0.65)"
               }}
             >
-              {/* Anillo giratorio alrededor del logo */}
-              <div style={{ position: "relative", width: 76, height: 76, margin: "0 auto" }}>
+              {/* Puntos de progreso alrededor del logo */}
+              <div style={{ position: "relative", width: 62, height: 62, margin: "0 auto", display: "grid", placeItems: "center" }}>
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
                   style={{
                     position: "absolute",
                     inset: 0,
                     borderRadius: "50%",
-                    background:
-                      "conic-gradient(from 0deg, #E6007E, #005CA9, #E6007E)"
+                    border: "2px solid var(--border-subtle, rgba(255,255,255,0.1))",
+                    borderTopColor: "var(--text-primary, #fafafa)"
                   }}
                 />
-                <motion.div
-                  style={{
-                    position: "absolute",
-                    inset: 3,
-                    borderRadius: "50%",
-                    background: "#0a1222",
-                    display: "grid",
-                    placeItems: "center"
-                  }}
-                >
-                  <img
-                    src="/assets/logo-inatec-blanco.png"
-                    alt="TIC Dashboard"
-                    width={44}
-                    height={44}
-                    style={{ filter: "drop-shadow(0 0 14px rgba(230,0,126,.5))" }}
-                  />
-                </motion.div>
+                <img
+                  src="/assets/logo-inatec-blanco.png"
+                  alt="TIC Dashboard"
+                  width={36}
+                  height={36}
+                  style={{ opacity: 0.9 }}
+                />
               </div>
 
               <div
                 style={{
-                  fontFamily: "Bitter, serif",
-                  fontSize: "1.6rem",
-                  color: "#eef4ff",
+                  fontFamily: "inherit",
+                  fontSize: "1.25rem",
+                  color: "var(--text-primary, #fafafa)",
                   margin: "16px 0 2px",
-                  fontWeight: 700
+                  fontWeight: 650,
+                  letterSpacing: "-0.02em"
                 }}
               >
                 TIC Dashboard
               </div>
               <div
                 style={{
-                  color: "#8496b0",
-                  fontSize: "0.7rem",
-                  letterSpacing: "0.14em",
+                  color: "var(--text-muted, rgba(255,255,255,0.45))",
+                  fontSize: "0.66rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase"
                 }}
               >
@@ -393,50 +326,43 @@ export default function LoginScreen() {
               </div>
 
               {/* Pasos con checks */}
-              <div style={{ display: "grid", gap: 9, margin: "20px 0 16px", textAlign: "left" }}>
+              <div style={{ display: "grid", gap: 7, margin: "20px 0 16px", textAlign: "left" }}>
                 {PASOS.map((p, i) => {
                   const hecho = i < paso;
                   const activo = i === paso;
                   return (
                     <motion.div
                       key={i}
-                      initial={{ opacity: 0, x: -14, filter: "blur(6px)" }}
-                      animate={{
-                        opacity: hecho || activo ? 1 : 0.4,
-                        x: 0,
-                        filter: "blur(0px)"
-                      }}
-                      transition={{ delay: 0.35 + i * 0.55, duration: 0.4 }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: hecho || activo ? 1 : 0.4, x: 0 }}
+                      transition={{ delay: 0.3 + i * 0.55, duration: 0.3 }}
                       style={{
                         display: "flex",
                         alignItems: "center",
                         gap: 10,
-                        padding: "9px 12px",
-                        borderRadius: 12,
-                        background:
-                          activo
-                            ? "rgba(230,0,126,0.12)"
-                            : "rgba(255,255,255,0.04)",
-                        border: activo
-                          ? "1px solid rgba(230,0,126,0.35)"
-                          : "1px solid transparent"
+                        padding: "8px 11px",
+                        borderRadius: 5,
+                        background: activo ? "var(--acento-suave, rgba(255,255,255,0.09))" : "var(--bg-input, rgba(255,255,255,0.06))",
+                        border: "1px solid",
+                        borderColor: activo ? "var(--border-strong, rgba(255,255,255,0.34))" : "var(--border-subtle, rgba(255,255,255,0.08))"
                       }}
                     >
                       <span
                         style={{
-                          width: 22,
-                          height: 22,
+                          width: 20,
+                          height: 20,
                           borderRadius: "50%",
                           display: "grid",
                           placeItems: "center",
-                          fontSize: 13,
+                          fontSize: 12,
                           flex: "0 0 auto",
                           background: hecho
-                            ? "#00A859"
+                            ? "var(--text-primary, #fafafa)"
                             : activo
-                              ? "#E6007E"
-                              : "rgba(255,255,255,0.12)",
-                          color: hecho || activo ? "#fff" : "#5d6f8c"
+                              ? "var(--bg-active, rgba(255,255,255,0.1))"
+                              : "var(--bg-input, rgba(255,255,255,0.06))",
+                          border: "1px solid var(--border-subtle)",
+                          color: hecho ? "var(--bg-body, #050505)" : "var(--text-muted, rgba(255,255,255,0.45))"
                         }}
                       >
                         {hecho ? (
@@ -447,8 +373,8 @@ export default function LoginScreen() {
                       </span>
                       <span
                         style={{
-                          fontSize: "0.84rem",
-                          color: hecho || activo ? "#e7eefb" : "#7488a5",
+                          fontSize: "0.82rem",
+                          color: hecho || activo ? "var(--text-primary, #fafafa)" : "var(--text-muted, rgba(255,255,255,0.45))",
                           fontWeight: activo ? 600 : 400
                         }}
                       >
@@ -463,9 +389,9 @@ export default function LoginScreen() {
               {/* Barra de progreso + porcentaje */}
               <div
                 style={{
-                  height: 6,
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.1)",
+                  height: 4,
+                  borderRadius: 2,
+                  background: "var(--acento-suave, rgba(255,255,255,0.09))",
                   overflow: "hidden"
                 }}
               >
@@ -474,17 +400,16 @@ export default function LoginScreen() {
                   transition={{ duration: 0.15 }}
                   style={{
                     height: "100%",
-                    borderRadius: 999,
-                    background: "linear-gradient(90deg, #E6007E, #005CA9)",
-                    boxShadow: "0 0 12px rgba(230,0,126,.6)"
+                    borderRadius: 2,
+                    background: "var(--text-primary, #fafafa)"
                   }}
                 />
               </div>
               <div
                 style={{
                   marginTop: 8,
-                  fontSize: "0.72rem",
-                  color: "#8496b0",
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted, rgba(255,255,255,0.45))",
                   fontVariantNumeric: "tabular-nums"
                 }}
               >
