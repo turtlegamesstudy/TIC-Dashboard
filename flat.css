@@ -2929,3 +2929,25 @@ html[data-theme="light"] a:not(.btn-primary-soft):not(.btn-ghost) {
 }
 html[data-theme="light"] .cambio-sube { color: #0f7b3a; }
 html[data-theme="light"] .cambio-baja { color: #b3261e; }
+
+/* -- 34 · HOJA DE CÁLCULO DE NOTAS -----------------------------------
+   Celda plana integrada en la tabla; al enfocarse se marca con el
+   acento; sin contadores de flechas nativos (son ruido a la vista). */
+html[data-theme] .nota-celda {
+  width: 100%;
+  min-width: 68px;
+  padding: 5px 6px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+html[data-theme] .nota-celda::-webkit-outer-spin-button,
+html[data-theme] .nota-celda::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+html[data-theme] .nota-celda:hover { border-color: var(--border-default); }
+html[data-theme] .nota-celda:focus-visible { border-color: var(--rosa); box-shadow: 0 0 0 1px var(--rosa) inset; outline: none !important; }
+html[data-theme] .nota-celda::placeholder { color: var(--text-muted); font-style: italic; }

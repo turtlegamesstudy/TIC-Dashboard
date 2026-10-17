@@ -1002,12 +1002,145 @@ const UI = {
         if (e.retirado || e.estado === 'Retirado') nota = 'Retirado';
         else if (e.convalidaciones && e.convalidaciones[moduloFiltro]) nota = 'Convalidado';
         const esNum = typeof nota === 'number';
-        html += `<td style="text-align: center; ${col.esTotal ? 'background-color: var(--primary-soft, #f0fdf4);' : ''}">${col.esTotal ? `<span class="badge-status ${esNum && nota >= 60 ? 'activo' : ''}">${nota}</span>` : (esNum ? `<strong>${nota}</strong>` : nota)}</td>`;
+        if (col.esTotal) {
+          html += `<td style="text-align: center; background-color: var(--primary-soft, #f0fdf4);"><span class="badge-status ${esNum && nota >= 60 ? 'activo' : ''}">${nota}</span></td>`;
+        } else if (typeof nota === 'string' && nota.length && nota !== '-') {
+          /* Retirado / Convalidado: estado, no cifra — celda informativa */
+          html += `<td style="text-align: center;"><span class="badge-status">${nota}</span></td>`;
+        } else {
+          /* Hoja de cálculo: la celda se edita en línea (flechas/Tab/Enter),
+             acepta pegar rangos y guarda solo, sin botones. */
+          html += `<td style="text-align: center;" data-hoja-celda><input type="number" min="0" max="100" step="0.01" inputmode="decimal" ` +
+            `class="nota-celda" data-estudiante="${String(e.id ?? '').replace(/"/g, '&quot;')}" ` +
+            `data-columna="${String(col.nombreDisplay).replace(/"/g, '&quot;')}" ` +
+            `value="${esNum ? nota : ''}" aria-label="Nota de ${String(e.nombres + ' ' + e.apellidos).replace(/"/g, '&quot;')} en ${String(col.nombreDisplay).replace(/"/g, '&quot;')}" /></td>`;
+        }
       });
       html += `</tr>`;
     });
     html += `</tbody></table></div>`;
     contenedor.innerHTML = html;
+    this.vincularHojaNotas(contenedor, moduloFiltro);
+  },
+
+  /* ═══ Hoja de cálculo de notas: edición masiva con teclado ═══
+     · Flechas/Enter navegan verticalmente, Tab horizontal.
+     · Pegar un rango desde Excel rellena hacia abajo/derecha.
+     · Cada lote de cambios se guarda sin botones (guardado por
+       transacciones propio de DataEngine.save(), con avisos si otro
+       usuario tocó el mismo registro: nada se pisa en silencio). */
+  _guardadoNotasTimer: null,
+
+  vincularHojaNotas(contenedor, moduloFiltro) {
+    const celdas = Array.from(contenedor.querySelectorAll('.nota-celda'));
+    if (!celdas.length) return;
+    const original = new WeakMap();
+    celdas.forEach(celda => {
+      original.set(celda, celda.value);
+      celda.addEventListener('focus', () => celda.select());
+      celda.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          celda.value = original.get(celda);
+          celda.blur();
+          return;
+        }
+        let destino = null;
+        if (event.key === 'Enter') destino = event.shiftKey ? 'arriba' : 'abajo';
+        else if (event.key === 'ArrowDown') destino = 'abajo';
+        else if (event.key === 'ArrowUp') destino = 'arriba';
+        else if (event.key === 'ArrowLeft' && celda.selectionStart === 0 && !celda.selectionEnd) destino = 'izquierda';
+        else if (event.key === 'ArrowRight' && celda.selectionEnd === celda.value.length && celda.selectionStart === celda.selectionEnd) destino = 'derecha';
+        if (destino) {
+          event.preventDefault();
+          const siguiente = this.celdaVecinas(celdas, celda, destino);
+          if (siguiente) siguiente.focus();
+        }
+      });
+      celda.addEventListener('change', () => {
+        const notaTexto = celda.value.replace(',', '.').trim();
+        if (notaTexto === '') { this.notaAlmacenar(celda, moduloFiltro, null); return; }
+        const valor = Number(notaTexto);
+        if (!isFinite(valor) || valor < 0 || valor > 100) {
+          UI.showToast('⚠ La nota debe estar entre 0 y 100.', 'warning');
+          celda.value = original.get(celda);
+          return;
+        }
+        this.notaAlmacenar(celda, moduloFiltro, valor);
+      });
+      celda.addEventListener('paste', event => this.notaPegar(event, moduloFiltro));
+    });
+  },
+
+  /* Vecina de la celda activa en la rejilla (misma fila/columna). */
+  celdaVecinas(celdas, actual, destino) {
+    const indice = celdas.indexOf(actual);
+    if (indice === -1) return null;
+    const marco = actual.closest('td[data-hoja-celda]');
+    const fila = marco ? marco.parentElement : null;
+    if (!fila) return null;
+    const celdasFila = fila ? Array.from(fila.querySelectorAll('.nota-celda')) : [];
+    const columna = celdasFila.indexOf(actual);
+    if (destino === 'arriba' || destino === 'abajo') {
+      const filaDestino = destino === 'abajo' ? fila.nextElementSibling : fila.previousElementSibling;
+      if (!filaDestino) return null;
+      return (Array.from(filaDestino.querySelectorAll('.nota-celda')))[columna] || null;
+    }
+    return destino === 'izquierda' ? (celdasFila[columna - 1] || null) : (celdasFila[columna + 1] || null);
+  },
+
+  /* Escribe la cifra en la base local y programa el guardado. */
+  notaAlmacenar(celda, moduloFiltro, valor) {
+    const estudiante = ((DataEngine.getGrupoById(document.getElementById('select-grupo-cuaderno')?.value) || {}).estudiantes || [])
+      .find(e => String(e.id) === celda.dataset.estudiante);
+    if (!estudiante) return;
+    if (!estudiante.evaluacionesPorModulo) estudiante.evaluacionesPorModulo = {};
+    if (!estudiante.evaluacionesPorModulo[moduloFiltro]) estudiante.evaluacionesPorModulo[moduloFiltro] = {};
+    if (!estudiante.evaluacionesPorModulo[moduloFiltro].notas) estudiante.evaluacionesPorModulo[moduloFiltro].notas = {};
+    const fuente = estudiante.evaluacionesPorModulo[moduloFiltro].notas;
+    if (valor === null) delete fuente[celda.dataset.columna];
+    else fuente[celda.dataset.columna] = valor;
+    clearTimeout(this._guardadoNotasTimer);
+    this._guardadoNotasTimer = setTimeout(() => {
+      DataEngine.save().catch(() => { /* save() ya avisa por su cuenta */ });
+    }, 900);
+  },
+
+  /* Pegado de rangos: una columna desde Excel baja por las filas;
+     una fila o matriz se reparte por columnas. Respeta retirados. */
+  notaPegar(event, moduloFiltro) {
+    const texto = event.clipboardData ? event.clipboardData.getData('text/plain') : '';
+    if (!texto || !/[\t\n]/.test(texto.trim())) return; /* un solo valor: pegado normal */
+    event.preventDefault();
+    const matriz = texto.replace(/\r/g, '').split('\n').filter(l => l.trim() !== '').map(l => l.split('\t'));
+    const celda = event.target;
+    const marco = celda.closest('td[data-hoja-celda]');
+    const filaInicio = texto.includes('\n') ? marco.parentElement : null;
+    const tbody = marco.parentElement.parentElement;
+    const filas = Array.from(tbody.querySelectorAll('tr'));
+    const filaBase = filas.indexOf(marco.parentElement);
+    const colBase = Array.from(marco.parentElement.querySelectorAll('.nota-celda')).indexOf(celda);
+    if (filaBase < 0 || colBase < 0) return;
+    let aplicados = 0;
+    matriz.forEach((linea, i) => {
+      const filaDestino = filas[filaBase + i];
+      if (!filaDestino) return;
+      const inputs = Array.from(filaDestino.querySelectorAll('.nota-celda'));
+      linea.forEach((valorCrudo, j) => {
+        const objetivo = inputs[colBase + j];
+        if (!objetivo) return;
+        const limpio = String(valorCrudo).replace(',', '.').trim();
+        if (limpio === '') return;
+        const numero = Number(limpio);
+        if (!isFinite(numero) || numero < 0 || numero > 100) return;
+        objetivo.value = numero;
+        this.notaAlmacenar(objetivo, moduloFiltro, numero);
+        aplicados++;
+      });
+    });
+    if (aplicados) UI.showToast(`✔ ${aplicados} nota(s) pegadas: se guardan solas.`, 'success');
+    celda.blur();
+    this._guardadoNotasTimer && clearTimeout(this._guardadoNotasTimer);
+    this._guardadoNotasTimer = setTimeout(() => DataEngine.save().catch(() => { }), 900);
   },
 
   // El botón de navegación abre/cierra el panel central de opciones.
