@@ -434,8 +434,37 @@ html[data-theme] .sidebar-backdrop {
 }
 html[data-theme] .sidebar-backdrop.show { opacity: 1; visibility: visible; pointer-events: auto; }
 
-html[data-theme] .sidebar-header { background: none; padding: 16px 18px; gap: 12px; }
-html[data-theme] .sidebar-header .nav-close { display: inline-grid; }
+html[data-theme] .sidebar-header {
+  background: none;
+  padding: 14px 18px;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+/* Cabecera del panel: título limpio, sin logo ni marca */
+html[data-theme] .sidebar-header .sidebar-header-bg,
+html[data-theme] .sidebar-header .logo-box,
+html[data-theme] .sidebar-header .brand-info {
+  display: none !important;
+}
+html[data-theme] .sidebar-header .sidebar-nav-title {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+html[data-theme] .sidebar-header .btn-native,
+html[data-theme] .sidebar-header #btn-close-nav {
+  margin-left: auto;
+  color: var(--text-secondary);
+}
+html[data-theme] .sidebar-header #btn-close-nav:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
 html[data-theme] .sidebar-nav {
   padding: 6px 16px 16px;
   overflow-y: auto;
@@ -445,27 +474,32 @@ html[data-theme] .sidebar-nav {
 html[data-theme] .nav-grupo-items,
 html[data-theme] .sidebar-nav [data-nav-grupos-items] {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
-  gap: 8px;
-  padding: 2px 0 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 7px;
+  padding: 4px 0 14px;
 }
 html[data-theme] .nav-item,
 html[data-theme] .sidebar .nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
-  min-height: 52px;
+  padding: 11px 13px;
+  min-height: 48px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle) !important;
   border-radius: 5px;
-  font-size: 0.9rem;
-  line-height: 1.25;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
 }
 html[data-theme] .nav-item i {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   width: 22px;
   text-align: center;
+  opacity: 0.75;
+  flex-shrink: 0;
 }
 html[data-theme] .nav-item:hover {
   background: var(--bg-hover);
@@ -478,16 +512,27 @@ html[data-theme] .nav-item.active:hover {
   border-color: var(--text-primary) !important;
   color: var(--bg-body) !important;
 }
-html[data-theme] .nav-item.active i { color: var(--bg-body) !important; }
+html[data-theme] .nav-item.active i { color: var(--bg-body) !important; opacity: 1 !important; }
 html[data-theme] .nav-section.nav-grupo {
   display: flex;
   align-items: center;
+  gap: 10px;
   justify-content: space-between;
   width: 100%;
-  padding: 10px 2px 6px;
+  padding: 12px 2px 4px;
   background: none;
   border: none;
   cursor: pointer;
+}
+/* Línea fina de progreso al lado del título de grupo */
+html[data-theme] .nav-section.nav-grupo > span:first-child::after {
+  content: "";
+  display: inline-block;
+  width: 26px;
+  height: 1px;
+  margin-left: 10px;
+  vertical-align: middle;
+  background: var(--border-default);
 }
 /* Subsecciones integradas en la tarjeta */
 html[data-theme] .nav-con-hijos {
@@ -530,9 +575,11 @@ html[data-theme] .nav-hijos .nav-item.active i { color: var(--text-primary); }
 html[data-theme] .sidebar-footer {
   border-top: 1px solid var(--border-subtle);
   background: none;
-  padding: 12px 18px 14px;
+  padding: 10px 18px 12px;
   flex: 0 0 auto;
+  text-align: center;
 }
+html[data-theme] .sidebar-footer .sidebar-footer-divider { display: none; }
 
 html[data-theme] .nav-item .nav-badge {
   background: var(--acento-suave);
@@ -1207,3 +1254,81 @@ html[data-theme] [class*="avatar"] {
 }
 html[data-theme] .ai-orb,
 html[data-theme] .ai-watermark img { border-radius: 0; }
+
+/* ══ 21 · PULIDO GENERAL — ritmo, jerarquía y microdetalle ════════════ */
+/* Superficies: por defecto sin blur en cards del workspace (más nítido),
+   el blur queda para superficies flotantes (topbar, modales, panel). */
+html[data-theme] .kpi-card,
+html[data-theme] .group-header-card,
+html[data-theme] .chart-box,
+html[data-theme] .card-widget,
+html[data-theme] .avisos-filtros,
+html[data-theme] .admin-panel,
+html[data-theme] .table-container {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-theme] .kpi-card:hover,
+html[data-theme] .card-widget:hover,
+html[data-theme] .chart-box:hover,
+html[data-theme] .admin-panel:hover {
+  border-color: var(--border-default);
+}
+/* Contenido centrado con ritmo consistente */
+html[data-theme] .workspace {
+  max-width: 1280px !important;
+  margin-inline: auto !important;
+  padding: clamp(16px, 2.4vw, 32px) !important;
+  scroll-behavior: smooth;
+}
+/* Titulares: residuo punteado en lugar de barra gruesa */
+html[data-theme] .view-header h1::after {
+  width: 28px;
+  height: 2px;
+  opacity: 0.85;
+}
+html[data-theme] .view-header h2 { font-weight: 650; }
+/* Botones: tipografía ajustada, sin sobresaltos */
+html[data-theme] .btn-primary,
+html[data-theme] .btn-primary-soft,
+html[data-theme] .btn-secondary,
+html[data-theme] .btn-ghost,
+html[data-theme] .btn-success {
+  letter-spacing: 0.005em;
+  font-weight: 590;
+}
+html[data-theme] .btn-primary:hover { background: var(--text-primary); opacity: 0.86; }
+/* Topbar flotante discreta */
+html[data-theme] .topbar {
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+html[data-theme] .topbar .btn-icon { width: 36px; height: 36px; }
+/* Modales: interior aireado */
+html[data-theme] .modal-content { overflow: hidden; }
+html[data-theme] .modal-content > .panel-cabecera,
+html[data-theme] .modal-header {
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--border-subtle);
+}
+/* Inputs dentro de tarjetas heredan altura consistente */
+html[data-theme] .form-control { min-height: 38px; }
+html[data-theme] select.form-control {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 49%, var(--text-muted) 50%),
+                    linear-gradient(-45deg, transparent 49%, var(--text-muted) 50%);
+  background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
+}
+/* Barra de desplazamiento aún más discreta */
+html[data-theme] *::-webkit-scrollbar { width: 6px; height: 6px; }
+html[data-theme] *::-webkit-scrollbar-thumb { border-radius: 3px; opacity: 0.6; }
+/* Avatar cuadrado plano con iniciales legibles */
+html[data-theme] .avatar {
+  background: var(--bg-active);
+  color: var(--text-primary);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
