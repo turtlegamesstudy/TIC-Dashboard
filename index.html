@@ -316,7 +316,11 @@
   <div class="app-container" id="app-container" hidden aria-hidden="true" inert>
     <aside class="sidebar" id="sidebar" aria-label="Panel de navegación">
       <div class="sidebar-header">
-        <p class="sidebar-nav-title">Navegación</p>
+        <div class="nav-search" id="nav-search-wrap">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input id="nav-buscar" type="search" placeholder="Buscar sección…" autocomplete="off"
+            aria-label="Buscar sección en el panel de navegación">
+        </div>
         <button class="btn-icon" id="btn-close-nav" type="button" title="Cerrar navegación" aria-label="Cerrar navegación"
           onclick="UI.closeSidebar()"><i class="ri-close-line" aria-hidden="true"></i></button>
       </div>

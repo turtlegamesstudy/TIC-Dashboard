@@ -43,6 +43,12 @@
   --acento-suave:  rgba(0, 0, 0, 0.07);
   --acento-brillo: rgba(0, 0, 0, 0.2);
 
+  /* Rosa INATEC — acento secundario para lo importante y lo seleccionado */
+  --rosa:        #E6007E;
+  --rosa-hover:  #c4006a;
+  --rosa-suave:  rgba(230, 0, 126, 0.1);
+  --rosa-borde:  rgba(230, 0, 126, 0.38);
+
   /* Alias usados por capas heredadas — neutralizados */
   --brand-pink: #0a0a0a;
   --brand-blue: rgba(0, 0, 0, 0.55);
@@ -140,6 +146,12 @@
   --acento:        #fafafa;
   --acento-suave:  rgba(255, 255, 255, 0.09);
   --acento-brillo: rgba(255, 255, 255, 0.22);
+
+  /* Rosa INATEC — acento secundario */
+  --rosa:        #ff2f94;
+  --rosa-hover:  #E6007E;
+  --rosa-suave:  rgba(255, 47, 148, 0.12);
+  --rosa-borde:  rgba(255, 47, 148, 0.45);
 
   --brand-pink: #fafafa;
   --brand-blue: rgba(255, 255, 255, 0.55);
@@ -2034,4 +2046,135 @@ html[data-theme] .admin-users-page .admin-user-status.is-inactive {
   border: 1px solid var(--border-subtle) !important;
   color: var(--text-primary) !important;
   box-shadow: none !important;
+}
+
+/* ══ 25 · ROSA INATEC — acento para lo importante y lo seleccionado ════ */
+/* Un solo color con sentido: acciones primarias, foco de formulario,
+   filas/secciones activas y elementos marcados. Todo lo demás sigue
+   estrictamente monocromo. */
+
+/* Botón primario sólido rosa */
+html[data-theme] .btn-primary {
+  background: var(--rosa) !important;
+  border-color: var(--rosa) !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(230, 0, 126, 0.25) !important;
+}
+html[data-theme] .btn-primary:hover {
+  background: var(--rosa-hover) !important;
+  border-color: var(--rosa-hover) !important;
+  color: #ffffff !important;
+  opacity: 1;
+}
+html[data-theme] .auth-submit {
+  background: var(--rosa) !important;
+  border-color: var(--rosa) !important;
+  color: #ffffff !important;
+}
+html[data-theme] .auth-submit:hover { background: var(--rosa-hover) !important; opacity: 1; }
+
+/* Navegación: opción activa en rosa; buscador con foco rosa */
+html[data-theme] .sidebar .sidebar-nav .nav-item.active,
+html[data-theme] .sidebar .sidebar-nav .nav-item.active:hover {
+  background: var(--rosa) !important;
+  border-color: var(--rosa) !important;
+  color: #ffffff !important;
+}
+html[data-theme] .sidebar .sidebar-nav .nav-item.active i {
+  color: #ffffff !important;
+}
+html[data-theme] .nav-search:focus-within { border-color: var(--rosa) !important; }
+html[data-theme] .nav-search:focus-within i { color: var(--rosa) !important; }
+
+/* Buscador del topbar y campos: el foco parla en rosa */
+html[data-theme] .search-box:focus-within { border-color: var(--rosa) !important; }
+html[data-theme] .search-box:focus-within i { color: var(--rosa) !important; }
+html[data-theme] .form-control:focus,
+html[data-theme] .group-header-card .form-control:focus,
+html[data-theme] .panel .form-control:focus,
+html[data-theme] .admin-users-page .admin-search:focus-within {
+  border-color: var(--rosa) !important;
+}
+html[data-theme] input[type="checkbox"],
+html[data-theme] input[type="radio"],
+html[data-theme] .panel input[type="checkbox"] { accent-color: var(--rosa); }
+
+/* Fila seleccionada / marcada de cualquier tabla */
+html[data-theme] .custom-table tbody tr.selected,
+html[data-theme] .custom-table tbody tr[aria-selected="true"] {
+  box-shadow: inset 3px 0 0 var(--rosa);
+}
+html[data-theme] .admin-users-page .admin-users-table .btn-primary-soft.is-success {
+  background: var(--rosa) !important;
+  border-color: var(--rosa) !important;
+  color: #ffffff !important;
+}
+html[data-theme] .admin-users-page .admin-online-badge.is-online {
+  color: var(--rosa) !important;
+  border-color: var(--rosa-borde) !important;
+}
+
+/* Barra de acento de los titulares de vista */
+html[data-theme] .view-header h1::after { background: var(--rosa) !important; }
+
+/* Acciones destacadas del dashboard y botones de éxito usados como
+   acción principal quedan en rosa (lo importante resalta; el resto gris) */
+html[data-theme] .dash-accion.primaria {
+  border-color: var(--rosa) !important;
+  color: var(--rosa) !important;
+}
+html[data-theme] .dash-accion.primaria:hover { background: var(--rosa-suave) !important; }
+html[data-theme] .btn-success {
+  background: var(--rosa) !important;
+  border-color: var(--rosa) !important;
+  color: #ffffff !important;
+}
+
+/* ══ 26 · PANEL DE NAVEGACIÓN — buscador y recientes ═════════════════ */
+html[data-theme] .sidebar-header {
+  gap: 8px;
+}
+html[data-theme] .sidebar-header .sidebar-nav-title { display: none !important; }
+html[data-theme] .nav-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--input-fondo);
+  border: 1px solid var(--input-borde);
+  border-radius: 5px;
+  transition: border-color var(--t-fast);
+}
+html[data-theme] .nav-search i {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+html[data-theme] .nav-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.86rem;
+}
+html[data-theme] .nav-search input::placeholder { color: var(--text-disabled); }
+html[data-theme] .nav-search input:focus { outline: none; }
+html[data-theme] .nav-sin-resultados {
+  margin: 8px 4px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+/* Grupo de recientes destacado suave */
+html[data-theme] .nav-recientes-items .nav-item {
+  background: var(--rosa-suave) !important;
+  border-color: rgba(230, 0, 126, 0.22) !important;
+}
+html[data-theme] .nav-recientes-items .nav-item:hover {
+  border-color: var(--rosa-borde) !important;
 }

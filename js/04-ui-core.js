@@ -58,11 +58,50 @@ const UI = {
   irA(id) {
     const seccion = typeof Secciones === 'undefined' ? null : Secciones.obtener(id);
     if (!seccion || !Secciones.puedeVer(seccion, AuthManager.profile)) return false;
+    this.registrarNavegacionReciente(seccion.id);
     this.closeSectionSettings(false);
     this.currentModule = seccion.id;
     this.actualizarNavActivo(seccion.id);
     this.renderCurrentModule();
     return true;
+  },
+
+  /* ── Command palette del panel de navegación ──
+     Secciones recientes (localStorage) + buscador que filtra el menú. */
+  registradoRecientes: 'tic-nav-recientes',
+
+  registrarNavegacionReciente(id) {
+    try {
+      const previo = JSON.parse(localStorage.getItem(this.registradoRecientes) || '[]')
+        .filter(item => item !== id);
+      const lista = [id, ...previo].slice(0, 4);
+      localStorage.setItem(this.registradoRecientes, JSON.stringify(lista));
+    } catch (_) { /* almacenamiento bloqueado: se ignora */ }
+    this.pintarNavRecientes();
+  },
+
+  pintarNavRecientes() {
+    const nav = document.getElementById('sidebar-nav');
+    if (!nav || typeof Secciones === 'undefined') return;
+    nav.querySelector('[data-nav-recientes]')?.remove();
+    let ids = [];
+    try {
+      ids = JSON.parse(localStorage.getItem(this.registradoRecientes) || '[]') || [];
+    } catch (_) { ids = []; }
+    const visibles = ids
+      .map(id => Secciones.obtener(id))
+      .filter(s => s && Secciones.puedeVer(s, AuthManager.profile));
+    if (visibles.length < 2) return;
+    const bloque = document.createElement('div');
+    bloque.setAttribute('data-nav-recientes', '');
+    bloque.innerHTML =
+      `<button type="button" class="nav-section nav-grupo"><span>Recientes</span></button>` +
+      `<div class="nav-grupo-items nav-recientes-items" data-recientes-items>` +
+      visibles.map(s =>
+        `<a href="#${s.id}" class="nav-item" data-module="${s.id}" title="${s.titulo}">` +
+        `<i class="${s.icono}" aria-hidden="true"></i><span>${s.etiqueta}</span></a>`).join('') +
+      `</div>`;
+    nav.prepend(bloque);
   },
 
   /* ── Subsecciones del menú lateral ──
@@ -731,6 +770,20 @@ const UI = {
     // aparecen tras cambiar de perfil) se enlazan solas.
     const sidebarNav = document.getElementById('sidebar-nav');
     if (sidebarNav) {
+      const navBuscar = document.getElementById('nav-buscar');
+      if (navBuscar) {
+        navBuscar.addEventListener('input', () => this.filtrarNavegacion(navBuscar.value));
+        /* Escape dentro del buscador cierra el panel */
+        navBuscar.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { e.stopPropagation(); this.closeSidebar(); }
+          /* Enter abre la primera coincidencia visible */
+          if (e.key === 'Enter') {
+            const primera = [...sidebarNav.querySelectorAll('.nav-item')]
+              .find(i => !i.hidden && !(i.closest('.nav-con-hijos')?.hidden));
+            if (primera) { primera.click(); navBuscar.blur(); }
+          }
+        });
+      }
       sidebarNav.addEventListener('click', (event) => {
         const destino = event.target;
         if (!destino || !destino.closest) return;
@@ -962,7 +1015,15 @@ const UI = {
     const backdrop = document.getElementById('sidebar-backdrop');
     if (sidebar) sidebar.classList.add('open');
     if (backdrop) backdrop.classList.add('show');
+    this.pintarNavRecientes();
     this.sincronizarEstadoMenu();
+    /* El buscador entra limpio y con foco, listo para filtrar */
+    const buscar = document.getElementById('nav-buscar');
+    if (buscar) {
+      buscar.value = '';
+      this.filtrarNavegacion('');
+      setTimeout(() => buscar.focus({ preventScroll: true }), 60);
+    }
   },
 
   closeSidebar() {
@@ -970,12 +1031,67 @@ const UI = {
     const backdrop = document.getElementById('sidebar-backdrop');
     if (sidebar) sidebar.classList.remove('open');
     if (backdrop) backdrop.classList.remove('show');
+    const buscar = document.getElementById('nav-buscar');
+    if (buscar) {
+      buscar.value = '';
+      this.filtrarNavegacion('');
+      buscar.blur();
+    }
     // [CONSISTENCIA] Antes aquí se borraba "expanded"/"collapsed", así que
     // cualquier resize (rotar la tablet, abrir las herramientas de
     // desarrollo, cambiar el zoom) devolvía el menú a iconos y cada
     // equipo se quedaba con un aspecto distinto. Ahora el tamaño del
     // menú en escritorio solo lo decide la persona con el botón.
     this.sincronizarEstadoMenu();
+  },
+
+  /* Filtra el menú por texto: coincide contra etiqueta y título (sin
+     acentos). Los grupos sin coincidencias se ocultan. */
+  filtrarNavegacion(texto) {
+    const nav = document.getElementById('sidebar-nav');
+    if (!nav) return;
+    const q = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    nav.querySelectorAll('.nav-item').forEach(item => {
+      const textoItem = (item.textContent + ' ' + (item.title || '')).toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      item.hidden = Boolean(q) && !textoItem.includes(q);
+    });
+    /* Cada tarjeta de sección: visible si el padre o algún hijo coincide */
+    nav.querySelectorAll('.nav-con-hijos').forEach(bloque => {
+      const madre = bloque.querySelector(':scope > .nav-item');
+      const hijos = [...bloque.querySelectorAll('.nav-hijos .nav-item')];
+      const visible = !q || (madre && !madre.hidden) || hijos.some(h => !h.hidden);
+      bloque.hidden = !visible;
+      if (madre && q) madre.hidden = !(hijos.some(h => !h.hidden) || madre.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q));
+    });
+    /* Recientes: se ocultan al buscar para dejar solo resultados */
+    nav.querySelector('[data-nav-recientes]').hidden = Boolean(q);
+    /* Cada grupo se muestra si tiene algo visible */
+    nav.querySelectorAll('.nav-grupo-items, [data-nav-grupos-items]').forEach(lista => {
+      const contenedor = lista.closest('.nav-con-hijos');
+      const items = [...lista.querySelectorAll('.nav-item')].filter(i => contenedor ? !contenedor.hidden : true);
+      lista.hidden = !q ? false : !items.some(i => !i.hidden);
+    });
+    nav.querySelectorAll('.nav-section.nav-grupo').forEach(botón => {
+      const nombre = botón.getAttribute('data-nav-grupo');
+      const lista = nav.querySelector(`[data-nav-grupos-items="${nombre}"]`);
+      botón.style.display = (!q && (!lista || !lista.hidden)) || (q && lista && !lista.hidden) ? '' : 'none';
+    });
+    /* Mensaje cuando nada coincide */
+    const hay = [...nav.querySelectorAll('.nav-item')].some(i => {
+      const c = i.closest('.nav-con-hijos');
+      return !(c ? c.hidden : i.hidden);
+    });
+    let vacio = nav.querySelector('.nav-sin-resultados');
+    if (!hay) {
+      if (!vacio) {
+        vacio = document.createElement('p');
+        vacio.className = 'nav-sin-resultados';
+        vacio.textContent = 'Sin resultados';
+        nav.appendChild(vacio);
+      }
+      vacio.hidden = false;
+    } else if (vacio) vacio.hidden = true;
   },
 
   /* Estado guardado del menú (igual en todos los equipos salvo que
