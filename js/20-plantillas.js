@@ -120,7 +120,10 @@ window.Plantillas = (function () {
       `<button type="button" class="btn-ghost" onclick="Plantillas.dialogoGuardar('${grupoId.replace(/'/g, "\\'")}', '${String(moduloFiltro).replace(/'/g, "\\'")}')">` +
       `<i class="ri-booklet-line" aria-hidden="true"></i> Guardar esta estructura</button>` +
       `<button type="button" class="btn-ghost" onclick="Plantillas.dialogoAplicar('${grupoId.replace(/'/g, "\\'")}', '${String(moduloFiltro).replace(/'/g, "\\'")}')">` +
-      `<i class="ri-file-copy-2-line" aria-hidden="true"></i> Plantillas (${leer().length})</button>`;
+      `<i class="ri-file-copy-2-line" aria-hidden="true"></i> Plantillas (${leer().length})</button>` +
+      (typeof Reportes !== 'undefined'
+        ? `<button type="button" class="btn-ghost" onclick="Reportes.dialogo('${grupoId.replace(/'/g, "\\'")}')"><i class="ri-file-group-line" aria-hidden="true"></i> Informes en lote</button>`
+        : '');
     contenedor.prepend(barra);
   }
 
