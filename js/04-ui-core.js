@@ -972,6 +972,7 @@ const UI = {
       });
       html += `</tbody></table></div>`;
       contenedor.innerHTML = html;
+      if (typeof Asistencia !== 'undefined') Asistencia.botoneria(contenedor);
       return;
     }
 
@@ -991,6 +992,7 @@ const UI = {
 
     if (columnasOrdenadas.length === 0) {
       contenedor.innerHTML = `<div class="table-container" style="padding: 40px; text-align: center; color: var(--text-muted);"><i class="ri-information-line" style="font-size: 2.5rem; display: block; margin-bottom: 8px;"></i><p>No se han importado calificaciones para el módulo: <strong>${moduloFiltro}</strong>.</p><small>Selecciona este módulo e importa su archivo Excel correspondiente.</small></div>`;
+      if (typeof Asistencia !== 'undefined') Asistencia.botoneria(contenedor);
       return;
     }
 
@@ -1022,6 +1024,7 @@ const UI = {
     contenedor.innerHTML = html;
     this.vincularHojaNotas(contenedor, moduloFiltro);
     if (typeof Plantillas !== 'undefined') Plantillas.botoneria(contenedor, moduloFiltro);
+    if (typeof Asistencia !== 'undefined') Asistencia.botoneria(contenedor);
   },
 
   /* ═══ Hoja de cálculo de notas: edición masiva con teclado ═══
