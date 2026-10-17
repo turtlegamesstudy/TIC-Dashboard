@@ -88,9 +88,10 @@ const UI = {
     try {
       ids = JSON.parse(localStorage.getItem(this.registradoRecientes) || '[]') || [];
     } catch (_) { ids = []; }
+    const perfil = (typeof AuthManager !== 'undefined' && AuthManager) ? AuthManager.profile : null;
     const visibles = ids
       .map(id => Secciones.obtener(id))
-      .filter(s => s && Secciones.puedeVer(s, AuthManager.profile));
+      .filter(s => s && Secciones.puedeVer(s, perfil));
     if (visibles.length < 2) return;
     const bloque = document.createElement('div');
     bloque.setAttribute('data-nav-recientes', '');
@@ -1015,8 +1016,9 @@ const UI = {
     const backdrop = document.getElementById('sidebar-backdrop');
     if (sidebar) sidebar.classList.add('open');
     if (backdrop) backdrop.classList.add('show');
-    this.pintarNavRecientes();
+    /* Primero el icono del botón (estado seguro), luego lo decorativo */
     this.sincronizarEstadoMenu();
+    this.pintarNavRecientes();
     /* El buscador entra limpio y con foco, listo para filtrar */
     const buscar = document.getElementById('nav-buscar');
     if (buscar) {
@@ -1031,6 +1033,8 @@ const UI = {
     const backdrop = document.getElementById('sidebar-backdrop');
     if (sidebar) sidebar.classList.remove('open');
     if (backdrop) backdrop.classList.remove('show');
+    /* Primero el icono del botón (estado seguro), luego lo decorativo */
+    this.sincronizarEstadoMenu();
     const buscar = document.getElementById('nav-buscar');
     if (buscar) {
       buscar.value = '';
@@ -1042,7 +1046,6 @@ const UI = {
     // desarrollo, cambiar el zoom) devolvía el menú a iconos y cada
     // equipo se quedaba con un aspecto distinto. Ahora el tamaño del
     // menú en escritorio solo lo decide la persona con el botón.
-    this.sincronizarEstadoMenu();
   },
 
   /* Filtra el menú por texto: coincide contra etiqueta y título (sin
@@ -1065,7 +1068,8 @@ const UI = {
       if (madre && q) madre.hidden = !(hijos.some(h => !h.hidden) || madre.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q));
     });
     /* Recientes: se ocultan al buscar para dejar solo resultados */
-    nav.querySelector('[data-nav-recientes]').hidden = Boolean(q);
+    const recientesBloque = nav.querySelector('[data-nav-recientes]');
+    if (recientesBloque) recientesBloque.hidden = Boolean(q);
     /* Cada grupo se muestra si tiene algo visible */
     nav.querySelectorAll('.nav-grupo-items, [data-nav-grupos-items]').forEach(lista => {
       const contenedor = lista.closest('.nav-con-hijos');
