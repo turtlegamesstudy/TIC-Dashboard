@@ -103,7 +103,14 @@ const AuthManager = {
       }
       this.user = user;
       this.profile = profile;
-      this.activeCenterId = profile.centerId;
+      /* Centro operativo de la sesión: el Administrador Global no
+         pertenece a un centro fijo — elige uno y queda recordado
+         en este equipo; los demás roles siempre trabajan el suyo. */
+      let centroInicial = profile.centerId || null;
+      if (!centroInicial) {
+        try { centroInicial = localStorage.getItem('tic-centro-activo') || null; } catch (_) { }
+      }
+      this.activeCenterId = centroInicial || 'ct-ariel-darce';
       const staffSnapshot = await services.database.ref(`staffProfiles/${user.uid}`).once('value');
       this.staffProfile = {
         firstName: '',

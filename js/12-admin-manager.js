@@ -42,12 +42,16 @@ const AdminManager = {
           </div>
         </header>
 
+        ${AuthManager.profile?.role === 'global' ? `
         <div class="group-header-card admin-center-bar">
           <label class="tb-label" for="admin-active-center"><i class="ri-building-2-line" aria-hidden="true"></i> Centro operativo</label>
           <select id="admin-active-center" aria-label="Centro operativo"></select>
           <button class="btn-primary-soft" type="button" data-admin-action="switch-center"><i class="ri-folder-open-line" aria-hidden="true"></i> Abrir centro</button>
-          <p class="admin-center-note">Abre la base compartida de otro centro tecnológico para consultarlo o actualizarlo.</p>
-        </div>
+          <p class="admin-center-note">Perteneces a todos los centros a la vez: abre el espacio de datos del que quieras operar.</p>
+        </div>` : `
+        <div class="group-header-card admin-center-bar">
+          <p class="admin-center-note"><i class="ri-lock-2-line" aria-hidden="true"></i> Administras <strong>solo tu centro tecnológico</strong> — su listado, sus notas, sus equipos y sus cuentas locales. Abrir el espacio de otro centro es capacidad del <strong>Administrador Global</strong>.</p>
+        </div>`}
 
         <div class="admin-resumen kpi-grid" aria-label="Resumen de administración">
           <article class="kpi-card">
@@ -420,9 +424,15 @@ const AdminManager = {
   },
 
   _renderCenterSelects() {
-    const centers = Object.entries(this.centers)
+    let centers = Object.entries(this.centers)
       .filter(([, center]) => center.active !== false)
       .sort((left, right) => String(left[1].name).localeCompare(String(right[1].name), 'es'));
+    /* El administrador del centro solo ve su propio centro en lista
+       y selector; el Administrador Global ve todos. */
+    if (AuthManager.profile?.role !== 'global') {
+      const propio = AuthManager.profile?.centerId || '';
+      centers = centers.filter(([id]) => id === propio);
+    }
     const options = selected => centers.map(([id, center]) =>
       `<option value="${this._escape(id)}"${id === selected ? ' selected' : ''}>${this._escape(center.name)}</option>`
     ).join('');
@@ -435,10 +445,22 @@ const AdminManager = {
   /* Filtros de la lista de cuentas (texto, rol y estado). */
   _filtros: { texto: '', rol: 'todos', estado: 'todos' },
 
+  /* ¿Esta cuenta está dentro del alcance del rol actual?
+     (admin del centro → solo su centro; global → todas). */
+  _enAlcance(profile) {
+    if (!profile) return false;
+    if (AuthManager.profile?.role === 'global') return true;
+    const propio = AuthManager.profile?.centerId || '';
+    return !profile.centerId || profile.centerId === propio;
+  },
+
   _filtrarCuentas(entries) {
     const { texto, rol, estado } = this._filtros;
     const busqueda = String(texto || '').trim().toLowerCase();
     return entries.filter(([uid, profile]) => {
+      /* El Administrador solo administra las cuentas de SU centro;
+         el Administrador Global ve todas. */
+      if (!this._enAlcance(profile)) return false;
       if (rol !== 'todos' && (profile.role === 'admin' || profile.role === 'global' ? 'admin' : (profile.role === 'invitado' ? 'invitado' : 'docente')) !== rol) return false;
       if (estado === 'activas' && profile.active !== true) return false;
       if (estado === 'inactivas' && profile.active === true) return false;
@@ -453,17 +475,23 @@ const AdminManager = {
   },
 
   _renderUsers(container) {
+    const esGlobal = AuthManager.profile?.role === 'global';
     const entries = Object.entries(this.users)
-      .filter(([, profile]) => profile && typeof profile === 'object')
+      .filter(([, profile]) => profile && typeof profile === 'object' && this._enAlcance(profile))
       .sort((left, right) => String(left[1].displayName || left[1].email || left[0])
         .localeCompare(String(right[1].displayName || right[1].email || right[0]), 'es'));
+    const totalAlcance = entries.length;
     this._actualizarResumen(entries);
     const filtrados = this._filtrarCuentas(entries);
     const resumen = document.querySelector?.('[data-admin-results]');
     if (resumen) {
-      resumen.textContent = filtrados.length === entries.length
-        ? `${entries.length} cuenta${entries.length === 1 ? '' : 's'} en este centro.`
-        : `${filtrados.length} de ${entries.length} cuentas coinciden con el filtro.`;
+      resumen.textContent = esGlobal
+        ? (filtrados.length === entries.length
+          ? `${entries.length} cuenta${entries.length === 1 ? '' : 's'} en TODOS los centros.`
+          : `${filtrados.length} de ${entries.length} cuentas coinciden con el filtro.`)
+        : (filtrados.length === entries.length
+          ? `${entries.length} cuenta${entries.length === 1 ? '' : 's'} en este centro.`
+          : `${filtrados.length} de ${entries.length} cuentas coinciden con el filtro.`);
     }
     if (entries.length === 0) {
       container.innerHTML = `<div class="admin-empty"><i class="ri-user-search-line" aria-hidden="true"></i><p>Todavía no hay perfiles registrados.</p></div>`;
@@ -570,8 +598,13 @@ const AdminManager = {
     const resumenRol = typeof Permisos !== 'undefined' ? Permisos.resumenRol(role) : '';
     const iniciales = name.split(/\s+/).slice(0, 2).map(parte => parte.charAt(0))
       .join('').toLocaleUpperCase('es') || '?';
-    const centers = Object.entries(this.centers)
-      .filter(([, center]) => center.active !== false)
+    /* En la fila, el selector de centro ofrece todos los centros SOLO
+       al Administrador Global; el admin local ve el nombre del suyo. */
+    const listaCentros = AuthManager.profile?.role === 'global'
+      ? Object.entries(this.centers).filter(([, center]) => center.active !== false)
+      : Object.entries(this.centers).filter(([id, center]) => id === (AuthManager.profile?.centerId || '') && center.active !== false);
+    const centers = (listaCentros.length ? listaCentros : Object.entries(this.centers).filter(([id]) => id === centerId))
+      .sort((left, right) => String(left[1].name).localeCompare(String(right[1].name), 'es'))
       .map(([id, center]) => `<option value="${this._escape(id)}"${id === centerId ? ' selected' : ''}>${this._escape(center.name)}</option>`)
       .join('');
     return `
@@ -681,6 +714,11 @@ const AdminManager = {
   async assignCenter(uid, centerId) {
     try {
       this._requireAdmin();
+      /* Asignar cuentas entre centros es exclusivo del Administrador Global;
+         el administrador local solo ve (y nunca mueve) las de su centro. */
+      if (AuthManager.profile?.role !== 'global') {
+        throw new Error('Solo el Administrador Global puede asignar centros a otras cuentas.');
+      }
       if (uid === AuthManager.user?.uid) throw new Error('No puedes cambiar tu propio centro desde esta lista.');
       this._getTargetProfile(uid);
       if (!this.centers[centerId] || this.centers[centerId].active === false) {
@@ -703,6 +741,16 @@ const AdminManager = {
       const centerId = document.getElementById('admin-active-center')?.value;
       if (!this.centers[centerId] || this.centers[centerId].active === false) {
         throw new Error('Selecciona un centro activo.');
+      }
+      /* Alcance: el administrador del centro SOLO opera su centro
+         asignado; abrir otro espacio es exclusivo del Administrador
+         Global (que no pertenece a uno solo). */
+      if (AuthManager.profile?.role !== 'global') {
+        if (centerId !== AuthManager.profile?.centerId) {
+          throw new Error('Como Administrador solo puedes operar tu propio centro. Abrir otro centro es del Administrador Global.');
+        }
+      } else {
+        try { localStorage.setItem('tic-centro-activo', centerId); } catch (_) { }
       }
       AuthManager.activeCenterId = centerId;
       AuthManager.profile.centerName = this.centers[centerId].name;

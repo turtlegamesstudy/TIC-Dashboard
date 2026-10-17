@@ -33,6 +33,26 @@
           throw new Error('Tu cuenta todavía no tiene un centro tecnológico asignado. Contacta al Administrador Global.');
         }
 
+        if (profile.role === 'global') {
+          /* El Administrador Global NO pertenece a un solo centro:
+             garantizamos que el centro por defecto exista, pero no
+             le escribimos centerId en su cuenta; su centro operativo
+             lo elige él (y se recuerda en este equipo). */
+          const centerId = AuthManager.activeCenterId || 'ct-ariel-darce';
+          const centerReference = database.ref(`centers/${centerId}`);
+          const centerSnapshot = await centerReference.child('metadata').once('value');
+          if (!centerSnapshot.val()?.metadata?.name) {
+            await centerReference.child('metadata').set({
+              id: centerId,
+              name: 'Centro Tecnológico Ariel Darce',
+              active: true,
+              createdAt: new Date().toISOString()
+            });
+          }
+          profile.centerName = centerSnapshot.val()?.name || 'Centro Tecnológico Ariel Darce';
+          return profile;
+        }
+
         const centerId = 'ct-ariel-darce';
         const centerReference = database.ref(`centers/${centerId}`);
         const legacyReference = database.ref('appData');

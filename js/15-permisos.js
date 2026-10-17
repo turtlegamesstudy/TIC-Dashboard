@@ -30,7 +30,7 @@ const Permisos = {
     /* Administrador del centro: gestión académica, sin gestión de cuentas. */
     cargarBase:           { roles: ['admin', 'global'], etiqueta: 'cargar una DB.json sobre la base compartida' },
     migrarAdjuntos:       { roles: ['admin', 'global'], etiqueta: 'migrar adjuntos antiguos' },
-    cambiarCentro:        { roles: ['admin', 'global'], etiqueta: 'cambiar de centro tecnológico' },
+    cambiarCentro:        { roles: ['global'], etiqueta: 'abrir el espacio de datos de otro centro tecnológico' },
     configurarMateria:    { roles: ['admin', 'global'], etiqueta: 'ampliar o recortar el catálogo de módulos del centro' },
     configurarInstitucion:{ roles: ['admin', 'global'], etiqueta: 'fijar responsables institucionales' },
     /* Permitidas a ambos roles: el trabajo diario del aula. */
