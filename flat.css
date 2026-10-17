@@ -2951,3 +2951,40 @@ html[data-theme] .nota-celda::-webkit-inner-spin-button { -webkit-appearance: no
 html[data-theme] .nota-celda:hover { border-color: var(--border-default); }
 html[data-theme] .nota-celda:focus-visible { border-color: var(--rosa); box-shadow: 0 0 0 1px var(--rosa) inset; outline: none !important; }
 html[data-theme] .nota-celda::placeholder { color: var(--text-muted); font-style: italic; }
+
+/* -- 35 · AUDITORÍA Y PAPELERA (institucional) -------------------------
+   Dos columnas planas dentro de Administración; filas seguidas sin
+   sombras, fecha y usuario tabulares para escaneo rápido. */
+html[data-theme] .audit-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+html[data-theme] .audit-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+html[data-theme] .audit-tabla td { font-size: 0.82rem; padding: 8px 10px; vertical-align: top; }
+html[data-theme] .audit-vacio { margin: 4px 0 0; font-size: 0.85rem; color: var(--text-muted); }
+html[data-theme] .papelera-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  margin-bottom: 8px;
+}
+html[data-theme] .papelera-item > i { flex: 0 0 auto; color: var(--text-muted); font-size: 1.15rem; }
+html[data-theme] .papelera-texto { min-width: 0; flex: 1 1 auto; }
+html[data-theme] .papelera-texto strong { display: block; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-theme] .papelera-texto small { color: var(--text-muted); font-size: 0.72rem; }

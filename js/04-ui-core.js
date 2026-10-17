@@ -1278,6 +1278,17 @@ const UI = {
     const group = DataEngine.db.grupos.find(g => g.id === groupId);
     if (group) {
       const previousStudents = group.estudiantes;
+      const eliminado = previousStudents.find(s => s.id === studentId);
+      if (eliminado && typeof Papelera !== 'undefined') {
+        Papelera.guardar({
+          tipo: 'estudiante', groupId: groupId, groupName: group.nombre,
+          estudiante: JSON.parse(JSON.stringify(eliminado))
+        });
+      }
+      if (typeof Auditoria !== 'undefined') {
+        Auditoria.registrar('Eliminar estudiante',
+          `${eliminado ? (eliminado.nombres || '') + ' ' + (eliminado.apellidos || '') : studentId} · grupo ${group.nombre || groupId}`);
+      }
       group.estudiantes = group.estudiantes.filter(s => s.id !== studentId);
       try {
         await DataEngine.save();
@@ -1309,6 +1320,12 @@ const UI = {
     if (!group) return;
     if (!confirm(`¿Estás seguro de eliminar el grupo "${group.nombre}"? Se perderán sus ${group.estudiantes.length} estudiantes.`)) return;
     const previousGroups = DataEngine.db.grupos;
+    if (typeof Papelera !== 'undefined') {
+      Papelera.guardar({ tipo: 'grupo', grupo: JSON.parse(JSON.stringify(group)) });
+    }
+    if (typeof Auditoria !== 'undefined') {
+      Auditoria.registrar('Eliminar grupo', `${group.nombre || groupId} · ${group.estudiantes.length} estudiante(s)`);
+    }
     DataEngine.db.grupos = DataEngine.db.grupos.filter(g => g.id !== groupId);
     try {
       await DataEngine.save();

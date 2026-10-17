@@ -418,7 +418,13 @@ Secciones.registrarVarias([
     orden: 110,
     roles: ['admin'],
     render: Secciones.desdeHTML(() => AdminManager.renderVista()),
-    alMostrar: () => AdminManager.cargarUsuarios(),
+    alMostrar: () => {
+      AdminManager.cargarUsuarios();
+      if (typeof Auditoria !== 'undefined') {
+        Auditoria.pintarPaneles();
+        if (typeof Papelera !== 'undefined') Papelera.pintar();
+      }
+    },
     hijos: [
       { id: 'usuarios', etiqueta: 'Usuarios y roles', icono: 'ri-group-line', roles: ['admin'] },
       { id: 'descargar', etiqueta: 'Descargar DB.json', icono: 'ri-download-cloud-2-line',

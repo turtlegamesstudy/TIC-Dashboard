@@ -280,6 +280,23 @@ const AdminManager = {
             </p>
           </section>
         </div>
+
+        <section class="bloque-analisis" aria-label="Auditoría institucional y papelera">
+          <div class="bloque-titulo">
+            <h2><i class="ri-file-shield-2-line" aria-hidden="true"></i> Auditoría y papelera</h2>
+            <span class="bloque-nota">Cada acción sensible queda registrada · lo eliminado se recupera</span>
+          </div>
+          <div class="audit-rejilla">
+            <div class="audit-col">
+              <h3 class="audit-titulo"><i class="ri-history-line" aria-hidden="true"></i> Bitácora de acciones</h3>
+              <div id="audit-lista"><p class="audit-vacio">Cargando bitácora…</p></div>
+            </div>
+            <div class="audit-col">
+              <h3 class="audit-titulo"><i class="ri-recycle-line" aria-hidden="true"></i> Papelera de restablecidos</h3>
+              <div id="papelera-lista"><p class="audit-vacio">Cargando papelera…</p></div>
+            </div>
+          </div>
+        </section>
       </section>`;
   },
 
