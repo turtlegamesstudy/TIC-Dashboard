@@ -6,6 +6,13 @@ const UI = {
   loadingStartedAt: 0,
 
   init() {
+    /* El botón del menú se enlaza PRIMERO: aunque algo falle más adelante
+       en la carga, el panel de navegación debe abrir siempre. */
+    const toggleBtn = document.getElementById('btn-toggle-sidebar');
+    if (toggleBtn && !toggleBtn.dataset.navToggleBound) {
+      toggleBtn.dataset.navToggleBound = '1';
+      toggleBtn.addEventListener('click', () => this.toggleSidebar());
+    }
     // Preferencias de este equipo (animaciones y aspecto del menú) y
     // permisos del rol: se aplican ANTES de pintar nada.
     if (typeof Ajustes !== 'undefined' && Ajustes) Ajustes.inicializar();
@@ -830,7 +837,10 @@ const UI = {
       });
     }
     const toggleBtn = document.getElementById('btn-toggle-sidebar');
-    if (toggleBtn) toggleBtn.addEventListener('click', () => this.toggleSidebar());
+    if (toggleBtn && !toggleBtn.dataset.navToggleBound) {
+      toggleBtn.dataset.navToggleBound = '1';
+      toggleBtn.addEventListener('click', () => this.toggleSidebar());
+    }
     document.getElementById('workspace')?.addEventListener('click', (event) => {
       if (event.target.closest('.section-settings-toggle')) this.toggleSectionSettings();
     });
