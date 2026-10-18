@@ -116,6 +116,7 @@
             this._keyEncodingVersion = Number(cache.encoding) || 1;
             this._sinRedAlAbrir = true;
             this._migrationNotice = `Sin conexión con la base compartida (${errorInicial.message || 'error de red'}). Se muestra la última copia guardada en este equipo; al volver la señal pulsa «Recargar base».`;
+            this._vincularColaOnline();
             return;
           }
           throw errorInicial;
@@ -191,6 +192,12 @@
 
         this._guardarCacheLocal();
         this._subscribeToChanges(database);
+        this._vincularColaOnline();
+        /* [OFFLINE-ESCRITURA] Si la sesión anterior guardó algo sin
+           conexión y ya hay red, la cola sale sola al abrir. */
+        if (this.tieneColaOffline()) {
+          this.drenarColaOffline(true).catch(() => { /* avisado */ });
+        }
       },
 
       _clone(value) {
@@ -504,6 +511,9 @@
         const numero = Array.isArray(this.db.grupos) ? this.db.grupos.length : Object.keys(this.db.grupos || {}).length;
         if (typeof UI !== 'undefined' && UI.showToast) {
           UI.showToast(`✔ Base recargada: ${numero} grupo(s).`, 'success');
+          if (this.tieneColaOffline()) {
+            UI.showToast('⚠️ Tienes una cola de cambios sin enviar a la nube (guardados sin conexión). Se intentará enviar si detecta señal.', 'warning');
+          }
         }
         return numero;
       },
@@ -705,13 +715,31 @@
       },
 
       async save() {
-        if (AuthManager.profile?.role === 'invitado') {
+        const invitado = AuthManager.profile?.role === 'invitado';
+        if (invitado) {
           const msg = '🔒 Tu cuenta de invitado es de solo lectura: no se pueden modificar ni guardar datos.';
           if (typeof UI !== 'undefined' && UI && typeof UI.showToast === 'function') UI.showToast(msg);
           throw new Error(msg);
         }
         if (!AuthManager.user || !this._syncSnapshot) {
           throw new Error('No se guardaron los cambios: no hay una sesión conectada a la base compartida.');
+        }
+        /* [OFFLINE-ESCRITURA] Sin señal, el cambio NO se pierde: queda en
+           una cola local (última foto de la base + cuántos guardados
+           lleva) y se envía solo cuando vuelve la conexión. */
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          this.db.lastUpdated = new Date().toISOString();
+          const paquete = this._serializeDatabase(this.db);
+          const encolado = this._guardarColaOffline(paquete);
+          this._syncSnapshot = this._clone(paquete);
+          this._guardarCacheLocal();
+          this._emitirSync('local', { coleccion: 'cola', nombre: encolado ? 'Guardado sin conexión' : 'Guardado local (cola no disponible)' });
+          if (typeof UI !== 'undefined' && UI && typeof UI.showToast === 'function') {
+            UI.showToast(encolado
+              ? '📶 Sin internet: guardado en este equipo. Se enviará cuando vuelva la conexión.'
+              : '⚠️ Sin internet y sin espacio para la cola: el cambio solo vive en esta pestaña.', encolado ? 'info' : 'warning');
+          }
+          return true;
         }
         this.db.lastUpdated = new Date().toISOString();
         const previous = this._syncSnapshot;
@@ -804,6 +832,116 @@
           UI?.showToast(`❌ ${error.message || 'No se pudieron guardar los cambios en Firebase.'}`);
           throw error;
         }
+      },
+
+      /* ═══ [OFFLINE-ESCRITURA] Cola de guardados hechos sin conexión ═══
+         Guarda la ÚLTIMA foto completa del centro más un contador de
+         cuántos guardados acumuló. Al reconectar, el drenaje envía esa
+         foto a la nube (y si mientras no había señal alguien más
+         escribió, la versión que se pisa queda respaldada en
+         centers/<centro>/respaldoOffline con fecha, cuenta y aviso). */
+      _claveColaOffline: 'tic-cola-sincronizacion',
+      _drenandoCola: false,
+
+      _guardarColaOffline(paquete) {
+        let encolado = false;
+        const previa = this._leerColaOffline();
+        try {
+          localStorage.setItem(this._claveColaOffline, JSON.stringify({
+            ts: new Date().toISOString(),
+            saves: (previa?.saves || 0) + 1,
+            db: paquete
+          }));
+          encolado = true;
+        } catch (_) {
+          /* Sin espacio para la cola: el usuario ya fue avisado y el
+             estado sigue vivo en memoria (caché y pestaña). */
+        }
+        return encolado;
+      },
+
+      _leerColaOffline() {
+        try {
+          const crudo = localStorage.getItem(this._claveColaOffline);
+          const paquete = crudo ? JSON.parse(crudo) : null;
+          return paquete && paquete.db ? paquete : null;
+        } catch (_) { return null; }
+      },
+
+      tieneColaOffline() {
+        return Boolean(this._leerColaOffline());
+      },
+
+      /* Enviados: cuántos guardados offline aún no han llegado a la nube. */
+      async drenarColaOffline(preguntar = true) {
+        if (this._drenandoCola) return 0;
+        const cola = this._leerColaOffline();
+        if (!cola || !AuthManager.user || !window.FirebaseServices?.database) return 0;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          if (typeof UI !== 'undefined' && UI?.showToast) UI.showToast('📶 Sigues sin internet: los cambios siguen en la cola local.', 'info');
+          return 0;
+        }
+        this._drenandoCola = true;
+        try {
+          const referencia = this._centerDataReference(window.FirebaseServices.database);
+          const snapshot = await referencia.once('value');
+          const remota = snapshot.val() || {};
+          const mejorTimespan = valor => { const d = Date.parse(valor || ''); return Number.isFinite(d) ? d : 0; };
+          const remotaCambioMientras = mejorTimespan(remota.lastUpdated) > mejorTimespan(cola.ts);
+          if (remotaCambioMientras) {
+            const respaldo = {
+              ts: cola.ts,
+              por: AuthManager.user.uid,
+              motivo: 'Cola offline enviada encima de una versión más nueva',
+              data: remota
+            };
+            const claveRespaldo = String(cola.ts).replace(/[.#$\[\]/]/g, '-');
+            /* El respaldo vive FUERA de appData (junto a él en el centro):
+               el envío de la cola reescribe appData completo y no debe
+               llevárselo por delante. */
+            const raizCentro = window.FirebaseServices.database
+              .ref(`centers/${AuthManager.activeCenterId || AuthManager.profile?.centerId || 'ct-ariel-darce'}`);
+            await raizCentro.child('respaldoOffline').child(claveRespaldo).set(respaldo);
+            if (preguntar) {
+              const seguir = window.confirm(
+                `Guardaste ${cola.saves} cambio(s) sin conexión y, mientras no había señal, la base compartida también cambió (${new Date(remota.lastUpdated).toLocaleString('es')}).\n\n` +
+                'Enviar tu cola pondrá TU versión por encima; la versión anterior queda respaldada (respaldoOffline) y en el centro de avisos.\n\n¿Enviar ahora?'
+              );
+              if (!seguir) return 0;
+            }
+          }
+          await referencia.set({ ...cola.db, updatedBy: AuthManager.user.uid });
+          try { localStorage.removeItem(this._claveColaOffline); } catch (_) { }
+          this.db = this._deserializeDatabase(JSON.parse(JSON.stringify(cola.db)));
+          this._migrarEsquema();
+          this._syncSnapshot = this._clone(this._serializeDatabase(this.db));
+          this._guardarCacheLocal();
+          this._notificarCambio('local', { colaEnviada: true, guardados: cola.saves });
+          if (typeof Mejoras !== 'undefined' && Mejoras && typeof Mejoras.registrarEvento === 'function') {
+            try { Mejoras.registrarEvento({ tipo: 'confirmacion', titulo: 'Cola offline enviada', texto: `${cola.saves} guardado(s) hechos sin conexión llegaron a la base compartida.${remotaCambioMientras ? ' La versión previa quedó respaldada (respaldoOffline).' : ''}`, seccion: 'cuaderno-docente', clave: 'cola-offline' }); } catch (_) { }
+          }
+          if (typeof UI !== 'undefined' && UI?.showToast) {
+            UI.showToast(`✅ Cola offline enviada: ${cola.saves} guardado(s) llegaron a la nube.`, 'success');
+          }
+          return cola.saves;
+        } catch (error) {
+          console.error('No se pudo enviar la cola de guardados offline:', error);
+          if (typeof UI !== 'undefined' && UI?.showToast) UI.showToast(`⚠️ No se pudo enviar la cola offline: ${error.message || 'error de red'}. Queda guardada para reintentar.`, 'warning');
+          return 0;
+        } finally {
+          this._drenandoCola = false;
+        }
+      },
+
+      /* El evento "online" del navegador dispara el drenaje una vez. */
+      _vincularColaOnline() {
+        if (this._colaVinculada) return;
+        this._colaVinculada = true;
+        try {
+          window.addEventListener('online', () => {
+            if (this.tieneColaOffline() && typeof this.drenarColaOffline === 'function') this.drenarColaOffline(true);
+          });
+        } catch (_) { /* entornos sin window: sin efecto */ }
       },
 
       // Revisa una base antes de sustituir la compartida: cuenta lo que

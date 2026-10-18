@@ -3113,6 +3113,109 @@ html[data-theme] select[size]:not([size="1"]) option,
 html[data-theme] select[multiple] option {
   padding: 6px 10px;
 }
+
+/* ══ 40 · PENDIENTES DE HOY + RIESGO ACADÉMICO ════════════════════════ */
+html[data-theme] .dash-recordatorios .record-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+html[data-theme] .record-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  background: var(--panel-fondo);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-fast), border-color var(--t-fast);
+}
+html[data-theme] .record-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+html[data-theme] .record-item > i:first-child {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+html[data-theme] .record-item.tono-rojo > i:first-child { color: var(--rosa); }
+html[data-theme] .record-item-texto { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+html[data-theme] .record-item-texto strong { font-size: 0.82rem; font-weight: 620; }
+html[data-theme] .record-item-texto small { font-size: 0.72rem; color: var(--text-muted); }
+html[data-theme] .record-item > i:last-child { color: var(--text-disabled); }
+
+html[data-theme] .riesgo-wrap {
+  margin: 8px 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-sm);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+html[data-theme] .riesgo-wrap.abierto { border-color: var(--border-strong); }
+html[data-theme] .riesgo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+html[data-theme] .riesgo-toggle i:first-child { color: var(--rosa); font-size: 1.05rem; }
+html[data-theme] .riesgo-toggle small { color: var(--text-muted); font-weight: 500; }
+html[data-theme] .riesgo-toggle .riesgo-flecha { margin-left: auto; color: var(--text-muted); transition: transform var(--t-fast); }
+html[data-theme] .riesgo-wrap.abierto .riesgo-flecha { transform: rotate(180deg); }
+html[data-theme] .riesgo-panel {
+  border-top: 1px solid var(--border-subtle);
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 6px;
+}
+html[data-theme] .riesgo-fila {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+}
+html[data-theme] .riesgo-fila:hover { background: var(--bg-hover); }
+html[data-theme] .riesgo-nombre {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 620;
+}
+html[data-theme] .riesgo-nombre i { color: var(--text-secondary); flex-shrink: 0; }
+html[data-theme] .riesgo-motivos { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 22px; }
+html[data-theme] .riesgo-motivo {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+html[data-theme] .riesgo-motivo.nivel-alto {
+  color: var(--rosa);
+  border-color: var(--rosa-borde);
+  background: var(--rosa-suave);
+  font-weight: 600;
+}
+html[data-theme] .riesgo-mas { margin: 4px 10px 6px; font-size: 0.72rem; color: var(--text-muted); }
 html[data-theme] .asi-fila.es-retirado .asi-nombre { color: var(--text-muted); }
 html[data-theme] .asi-fila.es-retirado .asi-nombre em { font-style: normal; font-size: 0.72rem; }
 html[data-theme] .asi-nombre { flex: 1 1 auto; min-width: 0; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
