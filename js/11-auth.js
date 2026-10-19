@@ -242,7 +242,10 @@ const AuthManager = {
     button.querySelector('span').textContent = 'Verificando...';
     this.setMessage('');
     try {
-      await window.FirebaseServices.auth.signInWithEmailAndPassword(email, password);
+      const credencial = await window.FirebaseServices.auth.signInWithEmailAndPassword(email, password);
+      if (typeof Legal !== 'undefined' && typeof Legal.guardarAceptacion === 'function') {
+        try { Legal.guardarAceptacion(credencial && credencial.user); } catch (_) { /* el registro legal jamás bloquea el acceso */ }
+      }
       // Intro épica INATEC: se reproduce mientras el panel termina de cargar.
       this._intro = (typeof AuthIntro !== 'undefined') ? AuthIntro.play() : null;
     } catch (error) {

@@ -188,25 +188,121 @@ window.Legal = (function () {
     </div>`;
   }
 
+  /* ── Consentimiento explícito del acceso ───────────────────────────── */
+  function consentimientoHTML() {
+    return `<div class="legal-consentir" id="legal-consentir">
+      <input type="checkbox" id="legal-consentir-check" aria-describedby="legal-consentir-texto">
+      <span id="legal-consentir-texto">Acepto la
+        <button type="button" data-legal="privacidad">Política de Privacidad</button>,
+        las <button type="button" data-legal="condiciones">Condiciones de uso</button> y la
+        <button type="button" data-legal="propiedad">Propiedad intelectual</button>
+        de ${escapar(EMPRESA)}.
+      </span>
+    </div>`;
+  }
+
   function vincularLogin() {
     try {
       const ancla = document.querySelector('.auth-panel') || document.querySelector('.auth-card');
-      if (!ancla || document.querySelector('.auth-panel .legal-pie')) return;
-      ancla.insertAdjacentHTML('beforeend', pieLoginHTML());
-      document.querySelectorAll('.legal-pie [data-legal]').forEach(boton => {
+      if (!ancla) return;
+      /* Pie de marca legal (una sola vez por pintada de la tarjeta) */
+      if (!ancla.querySelector('.legal-pie')) {
+        ancla.insertAdjacentHTML('beforeend', pieLoginHTML());
+      }
+      /* Consentimiento explícito antes de poder ingresar */
+      if (!ancla.querySelector('.legal-consentir')) {
+        const formulario = ancla.querySelector('.auth-form') || ancla;
+        const mensaje = formulario.querySelector('.auth-message');
+        const html = consentimientoHTML();
+        if (mensaje) mensaje.insertAdjacentHTML('beforebegin', html);
+        else formulario.insertAdjacentHTML('beforeend', html);
+        /* Pulsar el texto (sin ser un enlace) marca el casillero */
+        const caja = ancla.querySelector('.legal-consentir input[type="checkbox"]');
+        const texto = ancla.querySelector('.legal-consentir > span');
+        texto && texto.addEventListener('click', evento => {
+          if (evento.target.closest('button')) return;
+          if (caja && evento.target !== caja) caja.click();
+        });
+      }
+      ancla.querySelectorAll('.legal-pie [data-legal], .legal-consentir [data-legal]').forEach(boton => {
+        if (boton.dataset.legalVinculado) return;
+        boton.dataset.legalVinculado = '1';
         boton.addEventListener('click', () => abrirDocumento(boton.dataset.legal));
       });
+      premarcarConsentimiento();
     } catch (_) { /* la pantalla aún no está: se reintenta cuando aparezca */ }
   }
 
-  /* La tarjeta de acceso se vuelve a pintar entre visitas: al añadirse de
-     nuevo, el pie vuelve a inyectarse. */
+  /* El envío del login NO llega a 11-auth.js si el casillero está vacío.
+     Va en fase de captura sobre `document`: corre antes que el manejador
+     del formulario sin importar el orden de carga de los scripts. */
+  function vigilarEnvio() {
+    document.addEventListener('submit', evento => {
+      const formulario = evento.target;
+      if (!formulario || formulario.id !== 'auth-login-form') return;
+      const caja = document.getElementById('legal-consentir-check');
+      if (caja && !caja.checked) {
+        evento.preventDefault();
+        evento.stopImmediatePropagation();
+        rechazarConsentimiento();
+      }
+    }, true);
+  }
+
+  function rechazarConsentimiento() {
+    const fila = document.getElementById('legal-consentir');
+    if (fila) {
+      fila.classList.add('is-rechazado');
+      setTimeout(() => fila.classList.remove('is-rechazado'), 1800);
+    }
+    const mensaje = 'Debes aceptar la Política de Privacidad y las Condiciones de uso para ingresar.';
+    if (typeof UI !== 'undefined' && UI && typeof UI.showToast === 'function') UI.showToast(mensaje, 'warning');
+    const nodo = document.getElementById('auth-message');
+    if (nodo) {
+      nodo.textContent = mensaje;
+      nodo.classList.remove('is-success');
+      nodo.hidden = false;
+    }
+  }
+
+  function consentimientoAceptado() {
+    try { return !!localStorage.getItem('tic-legal-consenso'); } catch (_) { return false; }
+  }
+
+  function premarcarConsentimiento() {
+    const caja = document.getElementById('legal-consentir-check');
+    if (caja && consentimientoAceptado()) caja.checked = true;
+  }
+
+  /* Se llama desde 11-auth.js tras un ingreso exitoso: deja constancia
+     local (fecha) y escribe la aceptación en la cuenta de Firebase.
+     Nunca lanza: un fallo del registro no puede impedir el acceso. */
+  function guardarAceptacion(user) {
+    try {
+      const fecha = new Date().toISOString();
+      localStorage.setItem('tic-legal-consenso', fecha);
+      const caja = document.getElementById('legal-consentir-check');
+      if (caja) caja.checked = true;
+      const uid = user && user.uid;
+      const db = window.FirebaseServices && window.FirebaseServices.database;
+      if (!uid || !db) return;
+      db.ref(`users/${uid}/legal`).update({
+        aceptadoEn: fecha,
+        documento: 'legal-v1-' + YEAR
+      }).catch(() => { /* sin permiso o sin red: queda el registro local */ });
+    } catch (_) { /* nunca bloquea el ingreso */ }
+  }
+
+  /* La tarjeta de acceso se vuelve a pintar entre visitas: si falta el
+     pie o el consentimiento, se reinyectan. */
   function observarLogin() {
     try {
       if (!window.MutationObserver) return;
-      const observador = new MutationObserver(() => {
-        if (!document.querySelector('.auth-panel .legal-pie') && document.querySelector('.auth-panel')) vincularLogin();
-      });
+      const haceFalta = () => {
+        const ancla = document.querySelector('.auth-panel') || document.querySelector('.auth-card');
+        return !!ancla && (!ancla.querySelector('.legal-consentir') || !ancla.querySelector('.legal-pie'));
+      };
+      const observador = new MutationObserver(() => { if (haceFalta()) vincularLogin(); });
       observador.observe(document.body, { childList: true, subtree: true });
     } catch (_) { /* sin observador: queda el intento inicial */ }
   }
@@ -231,6 +327,7 @@ window.Legal = (function () {
       console.warn('Legal · sección no registrada:', error && error.message);
     }
     vincularLogin();
+    vigilarEnvio();
     observarLogin();
     document.addEventListener('keydown', evento => {
       if (evento.key === 'Escape') cerrarDocumento();
@@ -243,6 +340,7 @@ window.Legal = (function () {
   return {
     EMPRESA, AUTOR, CONTACTO,
     renderVista, textoPrivacidad, textoCondiciones, textoPropiedad,
-    abrirDocumento, cerrarDocumento, vincularLogin
+    abrirDocumento, cerrarDocumento, vincularLogin,
+    consentimientoAceptado, guardarAceptacion
   };
 })();

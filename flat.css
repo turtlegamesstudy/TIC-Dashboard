@@ -3524,7 +3524,9 @@ html[data-theme] .legal-contacto a:hover { text-decoration: underline; }
 
 /* Documento en modal (disponible desde la pantalla de acceso) */
 html[data-theme] .legal-velo {
-  position: fixed; inset: 0; z-index: 2000;
+  /* 15000: por encima del login (11000) y de la intro (12000):
+     los documentos se pueden leer SIN haber iniciado sesión. */
+  position: fixed; inset: 0; z-index: 15000;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
   background: rgba(0, 0, 0, .45); backdrop-filter: blur(6px);
@@ -3783,5 +3785,47 @@ html[data-theme] .ai-cursor {
   background: #35b5ea;
   box-shadow: 0 0 9px rgba(53, 181, 234, .8);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   46 · CONSENTIMIENTO LEGAL EN EL ACCESO
+   ───────────────────────────────────────────────────────────────────
+   El casillero «Acepto…» vive sobre el vidrio oscuro de la tarjeta
+   (la tarjeta es oscura en ambos temas), por eso su tinta y su azul
+   aquí son fijos y claros, sin depender del tema activo.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-theme] .legal-consentir {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin: 12px 0 2px; text-align: left;
+}
+html[data-theme] .legal-consentir input[type="checkbox"] {
+  flex: none; width: 16px; height: 16px; margin: 2px 0 0;
+  accent-color: #E6007E; cursor: pointer;
+}
+html[data-theme] .legal-consentir span {
+  font-size: .72rem; line-height: 1.55; color: rgba(255, 255, 255, .82);
+}
+html[data-theme] .legal-consentir button {
+  border: none; background: none; padding: 0;
+  font: inherit; font-size: inherit; cursor: pointer;
+  color: #4db6f0; text-decoration: underline; text-underline-offset: 2px;
+  border-radius: 3px;
+}
+html[data-theme] .legal-consentir button:hover { color: #7fd0ff; }
+html[data-theme] .legal-consentir button:focus-visible { outline: 2px solid #4db6f0; outline-offset: 2px; }
+
+/* Rechazo: la fila resalta en rosa y vibra brevemente */
+html[data-theme] .legal-consentir.is-rechazado span,
+html[data-theme] .legal-consentir.is-rechazado button { color: #ff8fc0; }
+html[data-theme]:not([data-motion="off"]) .legal-consentir.is-rechazado { animation: consentir-sacudida .5s ease; }
+@keyframes consentir-sacudida {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  55%      { transform: translateX(4px); }
+  80%      { transform: translateX(-2px); }
+}
+
+/* Los enlaces del pie legal también son claros sobre el vidrio del acceso */
+html[data-theme] .auth-screen .legal-links button { color: #4db6f0; }
+html[data-theme] .auth-screen .legal-links button:hover { color: #7fd0ff; }
 
 /* fin capa flat */
