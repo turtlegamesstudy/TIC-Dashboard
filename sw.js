@@ -1,19 +1,19 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   sw.js â€” PWA del TIC Dashboard
+/* ══════════════════════════════════════════════════════════════════════════
+   sw.js — PWA del TIC Dashboard
    Objetivo: que un docente con mala señal pueda REABRIR el panel
    y seguir viendo su base (los datos de la sesión se guardan en
    localStorage; la cola de escrituras la gestiona el SDK de
    Firebase mientras la pestaña siga abierta).
 
    Estrategia:
-   · Navegación (HTML)      â†’ red primero, cae a caché si no hay red.
-   · CSS/JS/imagenes/CDN    â†’ caché primero, se refresca de fondo.
+   · Navegación (HTML)      → red primero, cae a caché si no hay red.
+   · CSS/JS/imagenes/CDN    → caché primero, se refresca de fondo.
    Esto evita dos males: pantalla en blanco sin red, y quedarse
    clavados en una versión vieja cuando sí hay red.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
-var CACHE = 'tic-dashboard-v2';
+var CACHE = 'tic-dashboard-v3';
 var SHELL = [
   './',
   './index.html',

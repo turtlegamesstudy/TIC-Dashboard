@@ -1,0 +1,50 @@
+════════════════════════════════════════════════════════════════════════
+  TIC DASHBOARD — CUADERNO DOCENTE DIGITAL (INATEC)
+  © 2026 Turtle Games Dev — Hanzell René Mayorga Calero.
+  Todos los derechos reservados a nivel mundial.
+════════════════════════════════════════════════════════════════════════
+
+AVISO DE PROPIEDAD INTELECTUAL · PROPIEDAD PRIVADA
+
+Este repositorio contiene obra intelectual con derecho de autor,
+incluyendo pero sin limitarse a: código fuente, diseño de interfaz,
+flujos de trabajo, estructuras de datos, plantillas de documentos,
+textos de tutoría, nombre, marca y el concepto general del sistema
+como dashboard académico multicentro.
+
+1 · SIN LICENCIA
+    El acceso a este código (repositorio, clon, pago, paquete de
+    despliegue o vista web) NO CONCEDE NINGUNA LICENCIA de uso,
+    modificación, distribución ni reutilización. La ausencia de una
+    licencia open source es deliberada. "Ver" el código no es
+    "poder usar" el código.
+
+2 · QUEDA EXPRESAMENTE PROHIBIDO
+    a) Copiar, reproducir, distribuir o publicar el código o sus
+       partes, incluidas las subidas a otros repositorios o "forks" públicos.
+    b) Realizar ingeniería inversa, descompilación o reconstrucción.
+    c) Crear obras derivadas o productos "similares" o "inspirados"
+       usando este sistema como base.
+    d) Revender, subarrendar u operar el sistema para terceros.
+    e) Retirar o alterar este aviso ni los avisos en pantalla.
+
+3 · USO AUTORIZADO ÚNICO
+    El uso interno del panel por el personal autorizado de cada centro
+    tecnológico, según las Condiciones de uso mostradas en la
+    aplicación (dentro de la app: sección «Legal & Privacidad»).
+
+4 · REGISTRO Y PRUEBA DE AUTORÍA
+    La autoría y su anterioridad quedan acreditadas por la cadena de
+    commits fechados de este repositorio (_bitácora de desarrollo),
+    por las etiquetas de versión (p. ej. v1.0OFI) y por este aviso.
+    La obra está protegida por la legislación de derecho de autor
+    desde su creación, con o sin registro adicional ante la oficina
+    de propiedad intelectual.
+
+5 · CONTACTO
+    Titular: Hanzell René Mayorga Calero — Turtle Games Dev.
+    Autorizaciones, licencias comerciales y reportes de seguridad:
+    hanzell2007.mayorga@gmail.com
+
+    La infracción de estos derechos dará lugar a las reclamaciones
+    y medidas legales correspondientes.
