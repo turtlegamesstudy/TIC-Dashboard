@@ -23,7 +23,9 @@ var SHELL = [
   './assets/logo-inatec.png',
   './assets/logo-inatec-blanco.png',
   './assets/fondo-profundo.gif',
-  './assets/fondo-claro.gif'
+  './assets/fondo-claro.gif',
+  './assets/fondo-claro.png',
+  './assets/fondo-oscuro.png'
 ];
 
 self.addEventListener('install', function (evento) {

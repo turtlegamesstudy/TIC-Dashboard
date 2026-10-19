@@ -43,11 +43,18 @@
   --acento-suave:  rgba(0, 0, 0, 0.07);
   --acento-brillo: rgba(0, 0, 0, 0.2);
 
-  /* Rosa INATEC — acento secundario para lo importante y lo seleccionado */
+  /* Rosa INATEC — acento de acción: botones primarios, estado activo,
+     alertas y selección */
   --rosa:        #E6007E;
   --rosa-hover:  #c4006a;
   --rosa-suave:  rgba(230, 0, 126, 0.1);
   --rosa-borde:  rgba(230, 0, 126, 0.38);
+
+  /* Azul INATEC — acento informativo: rotulado, foco, estados confirmados */
+  --azul:        #0B72A9;
+  --azul-hover:  #095F8D;
+  --azul-suave:  rgba(1, 165, 228, 0.10);
+  --azul-borde:  rgba(1, 165, 228, 0.38);
 
   /* Alias usados por capas heredadas — neutralizados */
   --brand-pink: #0a0a0a;
@@ -147,11 +154,17 @@
   --acento-suave:  rgba(255, 255, 255, 0.09);
   --acento-brillo: rgba(255, 255, 255, 0.22);
 
-  /* Rosa INATEC — acento secundario */
+  /* Rosa INATEC — acento de acción */
   --rosa:        #ff2f94;
   --rosa-hover:  #E6007E;
   --rosa-suave:  rgba(255, 47, 148, 0.12);
   --rosa-borde:  rgba(255, 47, 148, 0.45);
+
+  /* Azul INATEC — acento informativo */
+  --azul:        #35B5EA;
+  --azul-hover:  #55C4EE;
+  --azul-suave:  rgba(1, 165, 228, 0.16);
+  --azul-borde:  rgba(1, 165, 228, 0.44);
 
   --brand-pink: #fafafa;
   --brand-blue: rgba(255, 255, 255, 0.55);
@@ -231,9 +244,13 @@
 }
 
 /* ══ 2 · BASE GLOBAL ═══════════════════════════════════════════════════ */
+/* El lienzo del fondo vive en body::before (fijo y z-index -1); body
+   queda transparente para que la imagen muestre por detrás de las
+   superficies translúcidas del panel. html porta el color de respaldo
+   por si la imagen no llega a cargar (capa heredada). */
 html[data-theme] body {
-  background: var(--bg-body);
-  background-attachment: scroll;
+  background-color: transparent;
+  background-image: none;
   color: var(--text-primary);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
@@ -1345,27 +1362,32 @@ html[data-theme] .avatar {
   letter-spacing: 0.02em;
 }
 
-/* ══ 22 · FONDO ANIMADO — GIF blurred tras todo el panel ══════════════ */
-/* El sistema GIF ya viene de style.css (fondo-claro / fondo-profundo,
-   body y contenedores transparentes, fallback estático sin motion).
-   Aquí solo lo afinamos a la estética flat: blur más profundo, menos
-   saturación y contraste bajo el panel. */
+/* ══ 22 · FONDO POR TEMA — imagen oficial fija tras todo el panel ═════
+   «Fondo Claro» y «Fondo Oscuro» sustituyen al GIF animado de la capa
+   heredada para el uso diario del panel. El arte viene preparado con
+   el centro despejado: se muestra limpio (blur mínimo) y los
+   contenedores translúcidos dejan verlo. Los GIF quedan solo en las
+   pantallas de login/cargador, que se conservan tal cual. */
 html[data-theme] body::before {
-  filter: blur(38px) saturate(62%);
+  background-image: url('assets/fondo-oscuro.png');
+  background-size: cover;
+  background-position: center;
+  filter: blur(6px) saturate(110%);
   opacity: 0.72;
 }
-html[data-theme="dark"] body::before {
-  filter: blur(38px) saturate(55%) brightness(0.82);
-  opacity: 0.66;
-}
 html[data-theme="light"] body::before {
-  opacity: 0.6;
+  background-image: url('assets/fondo-claro.png');
+  filter: none;
+  opacity: 0.85;
 }
-/* El video estático (sin animaciones) conserva el mismo tratamiento */
-html[data-motion="off"] body::before,
+/* Sin animaciones del sistema: la imagen es estática, mismo trato */
 html[data-theme="dark"][data-motion="off"] body::before {
-  filter: blur(24px) saturate(60%);
-  opacity: 0.6;
+  filter: blur(6px) saturate(108%);
+  opacity: 0.7;
+}
+html[data-theme="light"][data-motion="off"] body::before {
+  filter: none;
+  opacity: 0.85;
 }
 /* Superficies del panel: dejan ver el fondo solo por sus bordes suaves */
 html[data-theme] .auth-card,
@@ -2083,17 +2105,17 @@ html[data-theme] .sidebar .sidebar-nav .nav-item.active:hover {
 html[data-theme] .sidebar .sidebar-nav .nav-item.active i {
   color: #ffffff !important;
 }
-html[data-theme] .nav-search:focus-within { border-color: var(--rosa) !important; }
-html[data-theme] .nav-search:focus-within i { color: var(--rosa) !important; }
+html[data-theme] .nav-search:focus-within { border-color: var(--azul) !important; }
+html[data-theme] .nav-search:focus-within i { color: var(--azul) !important; }
 
-/* Buscador del topbar y campos: el foco parla en rosa */
-html[data-theme] .search-box:focus-within { border-color: var(--rosa) !important; }
-html[data-theme] .search-box:focus-within i { color: var(--rosa) !important; }
+/* Buscador del topbar y campos: el foco señala con azul */
+html[data-theme] .search-box:focus-within { border-color: var(--azul) !important; }
+html[data-theme] .search-box:focus-within i { color: var(--azul) !important; }
 html[data-theme] .form-control:focus,
 html[data-theme] .group-header-card .form-control:focus,
 html[data-theme] .panel .form-control:focus,
 html[data-theme] .admin-users-page .admin-search:focus-within {
-  border-color: var(--rosa) !important;
+  border-color: var(--azul) !important;
 }
 html[data-theme] input[type="checkbox"],
 html[data-theme] input[type="radio"],
@@ -2895,7 +2917,7 @@ html[data-theme] .auth-intro.is-playing .ai-tricolor { display: none !important;
    Foco visible SIEMPRE para teclado: el que navega con teclado o
    lupa del sistema debe saber dónde está, en claro y oscuro. */
 html[data-theme] :focus-visible {
-  outline: 2px solid var(--rosa) !important;
+  outline: 2px solid var(--azul) !important;
   outline-offset: 2px !important;
   border-radius: 3px;
 }
@@ -3413,3 +3435,35 @@ html[data-theme] .admin-aviso-global {
   color: var(--text-primary);
 }
 html[data-theme] .admin-aviso-global i { color: var(--rosa); font-size: 1.15rem; flex: 0 0 auto; }
+
+/* ══ 42 · AZUL INFORMATIVO — aplicaciones del acento azul ═════════════
+   Semántica de dos acentos: ROSA = acción (botón primario, ítem activo
+   del menú, centro abierto, alertas y pendientes); AZUL = información
+   (rotulado de secciones, iconos identitarios, estados confirmados,
+   foco de teclado y de campos). Nada de azules sueltos en capas
+   heredadas: todos salen de los tokens --azul-*. */
+/* Rotulado de sección: antetítulo y línea de acento bajo el título */
+html[data-theme] .view-eyebrow { color: var(--azul); }
+html[data-theme] .view-header h1::after { background: var(--azul); }
+
+/* Iconos identitarios de los bloques de análisis (paneles y estadísticas) */
+html[data-theme] .bloque-titulo h2 i { color: var(--azul); }
+
+/* KPI de tono informativo: azulado suave; rojo/verde siguen neutros */
+html[data-theme] .kpi-icono.azul,
+html[data-theme] .kpi-icono.cyan {
+  background: var(--azul-suave) !important;
+  color: var(--azul) !important;
+  border-color: var(--azul-borde);
+}
+
+/* Paneles de alcance (Vista Global / Jefe): identidad y confirmaciones */
+html[data-theme] .pg-titulo i { color: var(--azul); }
+html[data-theme] .pg-chip.ok {
+  color: var(--azul);
+  border-color: var(--azul-borde);
+  background: var(--azul-suave);
+  font-weight: 600;
+}
+
+/* fin capa flat */
