@@ -444,3 +444,32 @@ Secciones.registrarVarias([
     ]
   }
 ]);
+
+/* ── Paneles de alcance institucional ───────────────────────────
+   · Panel del Jefe: consolidado de los grupos de su turno (sección
+     visible a docente/admin/global; el docente solo la aprovecha si
+     su nombre figura como Jefe en «Configurar responsables»).
+   · Vista Global: comparativa de todos los centros; sección que solo
+     el rol global ve en su navegación. */
+Secciones.registrarVarias([
+  {
+    id: 'panel-jefe',
+    etiqueta: 'Jefe de Dep.',
+    icono: 'ri-user-star-line',
+    grupo: 'Principal',
+    orden: 40,
+    roles: ['docente', 'admin', 'global'],
+    render: Secciones.desdeHTML(() => JefePanel.renderVista()),
+    alMostrar: () => JefePanel.repintar()
+  },
+  {
+    id: 'panel-global',
+    etiqueta: 'Vista Global',
+    icono: 'ri-global-line',
+    grupo: 'Administración',
+    orden: 120,
+    roles: ['global'],
+    render: Secciones.desdeHTML(() => PanelGlobal.renderVista()),
+    alMostrar: () => PanelGlobal.alMostrar()
+  }
+]);

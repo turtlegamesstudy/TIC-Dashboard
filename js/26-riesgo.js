@@ -55,13 +55,25 @@ window.Riesgo = (function () {
     return salida;
   }
 
+  /* Módulos a evaluar: estructura definida → módulos observados en las
+     evaluaciones (grupos antiguos sin estructura) → transversales. */
+  function modulosDe(grupo) {
+    const estructura = grupo?.estructuraModulos && Object.keys(grupo.estructuraModulos);
+    if (estructura && estructura.length) return estructura;
+    const vistos = new Set();
+    (grupo?.estudiantes || []).forEach(estudiante => {
+      Object.keys(estudiante?.evaluacionesPorModulo || {}).forEach(modulo => vistos.add(modulo));
+    });
+    if (vistos.size) return Array.from(vistos);
+    return (typeof MODULOS_TRANSVERSALES !== 'undefined' && Array.isArray(MODULOS_TRANSVERSALES))
+      ? MODULOS_TRANSVERSALES.slice() : [];
+  }
+
   /* Informe del grupo: { grupo, total, estudiantes: [{estudiante, motivos}] } */
   function evaluarGrupo(grupo) {
     const salida = [];
     const mapaAsistencia = asistencias(grupo);
-    const modulos = (grupo?.estructuraModulos && Object.keys(grupo.estructuraModulos).length)
-      ? Object.keys(grupo.estructuraModulos)
-      : (typeof MODULOS_TRANSVERSALES !== 'undefined' ? MODULOS_TRANSVERSALES : []);
+    const modulos = modulosDe(grupo);
     (grupo?.estudiantes || []).forEach(estudiante => {
       if (!estudiante || estudiante.estado === 'Retirado') return;
       const convalidaciones = estudiante.convalidaciones || {};
@@ -154,5 +166,5 @@ window.Riesgo = (function () {
     }
   }
 
-  return { UMBRAL, notaFinal, asistencias, evaluarGrupo, botoneria };
+  return { UMBRAL, notaFinal, asistencias, modulosDe, evaluarGrupo, botoneria };
 })();

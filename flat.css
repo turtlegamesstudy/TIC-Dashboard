@@ -3216,6 +3216,81 @@ html[data-theme] .riesgo-motivo.nivel-alto {
   font-weight: 600;
 }
 html[data-theme] .riesgo-mas { margin: 4px 10px 6px; font-size: 0.72rem; color: var(--text-muted); }
+
+/* ══ 41 · PANELES DE ALCANCE (Jefe de Dep. / Vista Global) ════════════ */
+html[data-theme] .pg-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+html[data-theme] .pg-card,
+html[data-theme] button.pg-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  background: var(--panel-fondo);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--t-fast), background-color var(--t-fast), transform var(--t-fast);
+}
+html[data-theme] .pg-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+html[data-theme] .pg-card-atencion { border-color: var(--rosa-borde); }
+html[data-theme] .pg-actual { border-color: var(--rosa); }
+html[data-theme] .pg-inactivo { opacity: 0.55; }
+html[data-theme] .pg-remache {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--rosa);
+  border: 1px solid var(--rosa-borde);
+  background: var(--rosa-suave);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+html[data-theme] .pg-titulo {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+html[data-theme] .pg-titulo i { color: var(--text-secondary); }
+html[data-theme] .pg-sub { font-size: 0.74rem; color: var(--text-muted); }
+html[data-theme] .pg-metricas {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+html[data-theme] .pg-metricas b { color: var(--text-primary); font-weight: 700; }
+html[data-theme] .pg-metricas em { font-style: normal; }
+html[data-theme] .pg-metricas .pg-alerta { color: var(--rosa); }
+html[data-theme] .pg-acciones { display: flex; gap: 8px; margin-top: 2px; }
+html[data-theme] .pg-chip {
+  font-style: normal;
+  font-size: 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 3px 9px;
+  color: var(--text-secondary);
+}
+html[data-theme] .pg-chip.ok { color: var(--rosa); border-color: var(--rosa-borde); background: var(--rosa-suave); font-weight: 600; }
+html[data-theme] .pg-chip.pend { color: var(--text-secondary); }
+html[data-theme] .pg-cargando { padding: 40px; text-align: center; color: var(--text-muted); }
+html[data-theme] .pg-error { padding: 16px; color: var(--rosa); }
+html[data-theme] .pg-giro { animation: pgGiro 1s linear infinite; }
+@keyframes pgGiro { to { transform: rotate(360deg); } }
+html[data-theme] .jf-mas { margin: 8px 2px; font-size: 0.74rem; color: var(--text-muted); }
 html[data-theme] .asi-fila.es-retirado .asi-nombre { color: var(--text-muted); }
 html[data-theme] .asi-fila.es-retirado .asi-nombre em { font-style: normal; font-size: 0.72rem; }
 html[data-theme] .asi-nombre { flex: 1 1 auto; min-width: 0; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

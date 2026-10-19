@@ -735,10 +735,10 @@ const AdminManager = {
     }
   },
 
-  async switchCenter() {
+  async switchCenter(idSolicitado) {
     try {
       this._requireAdmin();
-      const centerId = document.getElementById('admin-active-center')?.value;
+      const centerId = idSolicitado || document.getElementById('admin-active-center')?.value;
       if (!this.centers[centerId] || this.centers[centerId].active === false) {
         throw new Error('Selecciona un centro activo.');
       }
