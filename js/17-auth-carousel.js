@@ -7,28 +7,22 @@
 (function () {
   'use strict';
 
+  /* Tema acuático: el login comparte el fondo oficial de la app
+     (Fondo Claro / Fondo Oscuro según el tema activo). Una sola
+     imagen con deriva lenta; el controls de carrusel se oculta. */
+  var TEMA = (function () {
+    try { return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'; }
+    catch (_) { return 'dark'; }
+  })();
   var IMAGENES = [
-    { src: 'assets/carousel/inatec-graduacion-2k.jpg', alt: 'Graduación INATEC · entrega de diplomas' },
-    { src: 'assets/carousel/inatec-clase-2k.jpg', alt: 'Aula del Tecnológico Nacional' },
-    { src: 'assets/carousel/inatec-certificados-2k.jpg', alt: 'Estudiantes egresados certificados por INATEC' },
-    { src: 'assets/carousel/inatec-docentes-ia-2k.jpg', alt: 'Docentes INATEC en formación en inteligencia artificial' },
-    { src: 'assets/carousel/inatec-tecnicas-2k.jpg', alt: 'Nuevas técnicas para la capacitación de docentes INATEC' },
-    { src: 'assets/carousel/inatec-taller-2k.jpg', alt: 'Estudiantes en taller técnico del Tecnológico Nacional' },
-    { src: 'assets/carousel/inatec-jinotega-2k.jpg', alt: 'Centro Tecnológico Marcos Ramírez, Jinotega' },
-    { src: 'assets/carousel/inatec-campus-2k.jpg', alt: 'Campus del Tecnológico Nacional' },
-    { src: 'assets/carousel/inatec-acto-2025.jpg', alt: 'Acto cultural INATEC 2025' },
-    { src: 'assets/carousel/inatec-acto-2k.jpg', alt: 'Acto de graduación INATEC' },
-    { src: 'assets/carousel/inatec-inaugura-2k.jpg', alt: 'Inauguración INATEC · label de flores' },
-    { src: 'assets/carousel/inatec-campus-banner.jpg', alt: 'Campus Virtual · SoyTecNicaragua' },
-    { src: 'assets/tn8-2-107.jpg', alt: 'Estudiantes del Tecnológico Nacional' },
-    { src: 'assets/canal2-bootcamp.png', alt: 'Bootcamp pedagógico INATEC' },
-    { src: 'assets/inatec-lanzamiento-01.jpg', alt: 'Lanzamiento de matrículas del Tecnológico Nacional' },
-    { src: 'assets/inatec-lanzamiento-08.jpg', alt: 'Oferta académica del Tecnológico Nacional' },
-    { src: 'assets/el19-inatec5.webp', alt: 'INATEC en El 19 Digital' }
+    TEMA === 'light'
+      ? { src: 'assets/fondo-claro.png', alt: 'Fondo acuático claro — tortuga y arrecife del TIC Dashboard' }
+      : { src: 'assets/fondo-oscuro.png', alt: 'Fondo acuático oscuro — tortuga y arrecife del TIC Dashboard' }
   ];
 
   var carrusel = document.getElementById('auth-carousel');
   if (!carrusel) return;
+  carrusel.classList.add('auth-carousel-solo');
 
   var capaA = document.getElementById('auth-carousel-a');
   var capaB = document.getElementById('auth-carousel-b');

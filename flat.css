@@ -3582,4 +3582,206 @@ html[data-theme] .legal-links button:focus-visible { outline: 2px solid var(--az
 html[data-theme] .legal-links em { color: var(--text-disabled); font-style: normal; }
 @media (max-width: 560px) { html[data-theme] .legal-caja { padding: 20px 16px 16px; } }
 
+/* ═══════════════════════════════════════════════════════════════════
+   44 · TEMA ACUÁTICO — Login + Intro del arranque
+   ───────────────────────────────────────────────────────────────────
+   El fondo oficial (Fondo Claro / Fondo Oscuro) entra desde la
+   pantalla de acceso: el carrusel de fotos INATEC se sustituye por
+   la imagen acuática del tema actual (mov en 17-auth-carousel.js),
+   y la intro del cargador flota como vidrio sobre el mismo fondo
+   con burbujas ascendiendo y haces de luz. Los elementos con marca
+   (cuaderno, anillo orbital, aula INATEC) se conservan.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Login: una imagen por tema, sin flechas ni barras ────────────── */
+html[data-theme] .auth-carousel-solo .auth-carousel-arrow,
+html[data-theme] .auth-carousel-solo .auth-carousel-bars { display: none !important; }
+
+/* Deriva lenta como una corriente de mar (reemplaza el zoom corto) */
+html[data-theme] .auth-carousel-solo .auth-carousel-slide.is-active img {
+  animation: oceano-deriva 34s ease-in-out infinite alternate;
+}
+@keyframes oceano-deriva {
+  from { transform: translate(-50%, -50%) scale(1); }
+  to   { transform: translate(-50.7%, -50.3%) scale(1.08); }
+}
+html[data-motion="off"] .auth-carousel-solo .auth-carousel-slide.is-active img { animation: none; }
+
+/* ── Intro del arranque: agua en vez de cuadrícula ────────────────── */
+/* El velo transparente deja ver el fondo acuático real del tema
+   (lo pinta body::before); el cuaderno queda como tarjeta de vidrio. */
+html[data-theme] .app-loading { background: transparent; }
+html[data-theme] .cargador {
+  background: var(--bg-elevated);
+  border: 1px solid var(--panel-borde);
+  border-radius: 5px;
+  padding: 34px 26px 30px;
+  box-shadow: 0 26px 64px rgba(0, 0, 0, .3);
+}
+
+/* La cuadrícula de cuaderno y sus guías ceden al agua */
+html[data-theme] .cargador-fondo {
+  background-image: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+html[data-theme] .cargador-guia-h,
+html[data-theme] .cargador-guia-v { display: none !important; }
+
+/* El vidrio del cargador se tiñe de agua profunda según el tema */
+html[data-theme="dark"] .cargador { background: rgba(7, 17, 28, .87); }
+html[data-theme="light"] .cargador { background: rgba(255, 255, 255, .94); }
+
+/* Haces de luz desde la superficie (capa 1) */
+html[data-theme] .app-loading::before {
+  content: '';
+  position: absolute; inset: -12%;
+  pointer-events: none;
+  background:
+    linear-gradient(168deg, transparent 40%, rgba(255, 255, 255, .055) 47%, transparent 56%),
+    linear-gradient(170deg, transparent 55%, rgba(255, 255, 255, .045) 63%, transparent 71%),
+    linear-gradient(172deg, transparent 28%, rgba(140, 220, 255, .05) 36%, transparent 46%);
+}
+html[data-theme]:not([data-motion="off"]) .app-loading::before {
+  animation: haces-respiro 11s ease-in-out infinite alternate;
+}
+@keyframes haces-respiro {
+  from { transform: translateX(-16px) skewX(-1.5deg); opacity: .7; }
+  to   { transform: translateX(12px)  skewX(.5deg);  opacity: 1; }
+}
+
+/* Burbujas ascendiendo (capa 2): dos tamaños en bucle perfecto.
+   El desplazamiento cubre exactamente la altura de cada tesela. */
+html[data-theme] .app-loading::after {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(3.5px at 24px 30px,   rgba(255, 255, 255, .5)  46%, rgba(255, 255, 255, .13) 76%, transparent 100%),
+    radial-gradient(10px  at 150px 120px, rgba(255, 255, 255, .3)  42%, rgba(255, 255, 255, .07) 86%, transparent 100%);
+  background-size: 240px 460px, 320px 520px;
+  background-repeat: repeat;
+}
+html[data-theme]:not([data-motion="off"]) .app-loading::after {
+  animation: burbujas-ascenso 19s linear infinite;
+}
+@keyframes burbujas-ascenso {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 -460px, 0 -520px; }
+}
+
+/* Matiz por tema: en claro, burbujas azuladas tenues y sin haces fuertes */
+html[data-theme="light"] .app-loading::after {
+  background-image:
+    radial-gradient(3.5px at 24px 30px,   rgba(1, 130, 185, .28) 46%, rgba(1, 130, 185, .07) 76%, transparent 100%),
+    radial-gradient(10px  at 150px 120px, rgba(1, 130, 185, .18) 42%, rgba(1, 130, 185, .05) 86%, transparent 100%);
+}
+html[data-theme="light"] .app-loading::before {
+  background:
+    linear-gradient(168deg, transparent 40%, rgba(255, 255, 255, .5) 47%, transparent 56%),
+    linear-gradient(170deg, transparent 55%, rgba(255, 255, 255, .35) 63%, transparent 71%);
+}
+html[data-motion="off"] .app-loading::after { display: none; }
+
+/* ── Legibilidad del ingreso en tema claro ─────────────────────────
+   Los textos del acceso son tinta clara (diseñada sobre vidrio
+   oscuro): en claro el vidrio se entinta profundo sobre el mar
+   luminoso para mantener el contraste AA en ambos temas. */
+html[data-theme="light"] .auth-card {
+  background: rgba(9, 20, 34, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 26px 64px rgba(4, 24, 46, .45);
+}
+html[data-theme="light"] .auth-brand::before { opacity: .05; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   45 · INTRO ACUÁTICA («El Vórtice del Conocimiento»)
+   ───────────────────────────────────────────────────────────────────
+   La maquinaria del intro (espiral de íconos, título, log, progreso)
+   se conserva; la escena pasa de agujero negro ROSA a vórtice de
+   ABISMO: agua profunda, discos-espuma girando, onda de chorro y
+   burbujas ascendiendo. AZUL lleva la energía; el núcleo se hunde.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Agua profunda en vez del pozo violeta */
+html[data-theme] .auth-intro {
+  background:
+    radial-gradient(ellipse at 50% 34%, rgba(2, 132, 199, .28) 0%, rgba(3, 80, 128, .16) 38%, transparent 62%),
+    radial-gradient(ellipse at 50% 40%, #07314a 0%, #051b33 52%, #02101f 100%);
+}
+
+/* Burbujas de la corriente (mismo patrón del cargador) */
+html[data-theme] .auth-intro::after {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(3.5px at 24px 30px,   rgba(255, 255, 255, .34) 46%, rgba(255, 255, 255, .08) 76%, transparent 100%),
+    radial-gradient(11px  at 170px 130px, rgba(255, 255, 255, .2)  40%, rgba(255, 255, 255, .05) 85%, transparent 100%);
+  background-size: 260px 520px, 360px 580px;
+  background-repeat: repeat;
+}
+html[data-theme]:not([data-motion="off"]) .auth-intro::after {
+  animation: burbujas-intro 22s linear infinite;
+}
+@keyframes burbujas-intro {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 -520px, 0 -580px; }
+}
+html[data-motion="off"] .auth-intro::after { display: none; }
+
+/* Horizonte = pozo del vórtice: núcleo negro con aura cian */
+html[data-theme] .ai-ag-horizonte {
+  background: radial-gradient(circle at 42% 38%, rgba(4, 26, 46, .94) 0%, #020a14 62%);
+  box-shadow:
+    0 0 26px 6px rgba(1, 165, 228, .4),
+    0 0 70px 18px rgba(1, 105, 160, .3),
+    inset 0 0 22px 8px #010810;
+  animation: ai-ag-horizonte-pulso 2.4s ease-in-out infinite;
+}
+@keyframes ai-ag-horizonte-pulso {
+  0%, 100% { box-shadow: 0 0 26px 6px rgba(1,165,228,.38), 0 0 70px 18px rgba(1,105,160,.26), inset 0 0 22px 8px #010810; }
+  50%      { box-shadow: 0 0 40px 10px rgba(1,165,228,.58), 0 0 110px 30px rgba(1,105,160,.38), inset 0 0 26px 10px #010810; }
+}
+
+/* Discos de acreción → espirales de espuma */
+html[data-theme] .ai-ag-disco {
+  background: conic-gradient(from 0deg,
+    transparent 0deg,
+    rgba(53, 181, 234, 0) 30deg,
+    rgba(53, 181, 234, .8) 100deg,
+    rgba(224, 247, 255, .95) 160deg,
+    rgba(1, 165, 228, .6) 220deg,
+    rgba(10, 90, 140, .4) 300deg,
+    transparent 360deg);
+}
+
+/* Flash del logo al absorber: chorro de espuma cian */
+html[data-theme] .ai-ag-logo { filter: drop-shadow(0 0 10px rgba(214, 240, 255, .55)); }
+@keyframes ai-ag-ultra {
+  0% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 10px rgba(214,240,255,.55)); }
+  55% { transform: translate(-50%, -50%) scale(1.18); filter: drop-shadow(0 0 34px rgba(220,246,255,.95)) brightness(1.6); }
+  100% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 18px rgba(1, 165, 228, .6)); }
+}
+
+/* Onda de choque → anillo de agua */
+html[data-theme] .ai-ag-onda {
+  border-color: rgba(53, 181, 234, .85);
+  animation: ai-ag-onda 1.05s cubic-bezier(0.16, 1, 0.3, 1) 3.05s forwards;
+}
+@keyframes ai-ag-onda {
+  0% { transform: translate(-50%, -50%) scale(.35); opacity: .95; border-color: rgba(53,181,234,.9); }
+  100% { transform: translate(-50%, -50%) scale(4.2); opacity: 0; border-color: rgba(214,240,255,.5); }
+}
+
+/* Progreso y cursor: AZUL informativo */
+html[data-theme] #ai-progress-fill {
+  background: linear-gradient(90deg, #35b5ea, #005ca9);
+  box-shadow: 0 0 12px rgba(1, 165, 228, .65);
+}
+html[data-theme] .ai-cursor {
+  background: #35b5ea;
+  box-shadow: 0 0 9px rgba(53, 181, 234, .8);
+}
+
 /* fin capa flat */

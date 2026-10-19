@@ -53,7 +53,7 @@ window.AuthIntro = (function () {
     var pct = $('ai-pct');
     if (pct) pct.textContent = '00';
     var estado = $('ai-status-text');
-    if (estado) estado.textContent = 'ABSORBIENDO CONOCIMIENTO';
+    if (estado) estado.textContent = 'CANALIZANDO CONOCIMIENTO';
 
     montarAgujero();
   }
