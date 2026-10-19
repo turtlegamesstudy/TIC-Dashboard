@@ -13,7 +13,7 @@
    ══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
-var CACHE = 'tic-dashboard-v3';
+var CACHE = 'tic-dashboard-v4';
 var SHELL = [
   './',
   './index.html',
