@@ -4328,4 +4328,51 @@ html[data-theme] .auth-intro.ai-anime.is-playing .ai-log li {
   animation: none !important;
 }
 
+/* ══ 54 · MÓVIL: login compacto, barra de una fila ═══════════════
+   En pantallas chicas lo que estorba es el alto: la marca del
+   login se lleva media pantalla y la barra superior se parte en dos
+   filas. Aquí se recortan ambas sin tocar el escritorio. */
+@media (max-width: 820px) {
+  html[data-theme] .auth-screen { padding: 12px; }
+  html[data-theme] .auth-card {
+    width: min(100%, 460px);
+    max-height: none;
+    max-height: calc(100dvh - 92px);
+    overflow-y: auto;
+  }
+  html[data-theme] .auth-brand { padding: 18px 20px 14px; }
+  html[data-theme] .auth-logo { height: 40px; }
+  html[data-theme] .auth-brand-eyebrow { margin-top: 8px; }
+  html[data-theme] .auth-brand-title { font-size: 1.3rem; }
+  html[data-theme] .auth-panel { padding: 20px 20px 16px; }
+  /* La barra superior es SIEMPRE de una fila: a la izquierda solo
+     queda el botón de menú y a la derecha las herramientas y la
+     cuenta. Sin esto la barra se partía en dos pisos. */
+  html[data-theme] .topbar { flex-wrap: nowrap; }
+  html[data-theme] .topbar-left {
+    flex: 0 0 auto;
+    width: 46px;
+    max-width: 46px;
+    overflow: hidden;
+  }
+  html[data-theme] .topbar-right { flex: 1 1 auto; min-width: 0; }
+  html[data-theme] .sync-texto { display: none; }
+}
+@media (max-width: 620px) {
+  html[data-theme] .auth-brand-slogan,
+  html[data-theme] .auth-brand-pills { display: none; }
+  html[data-theme] .auth-brand-eyebrow { margin-top: 0; }
+  html[data-theme] .auth-brand-title { margin-top: 4px; }
+  html[data-theme] .auth-description { display: none; }
+}
+/* La barra superior nunca se parte en dos filas: en móvil se
+   recorta lo que sobra en vez de desbordarse. */
+html[data-theme] .topbar-left,
+html[data-theme] .topbar-right { flex-wrap: nowrap; }
+html[data-theme] .topbar-right { overflow: hidden; }
+@media (max-width: 820px) {
+  html[data-theme] .workspace { padding: 14px 12px 28px; }
+  html[data-theme] .view-header { margin-bottom: 14px; }
+}
+
 /* fin capa flat */

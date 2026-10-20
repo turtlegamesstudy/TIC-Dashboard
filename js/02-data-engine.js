@@ -682,6 +682,66 @@
         return registro;
       },
 
+      // [FUSIÓN] Combinación de tres versiones cuando dos equipos
+      // escriben a la vez (por ejemplo, el panel abierto en el PC y en
+      // el móvil con la misma cuenta):
+      //   local  = lo que el docente acaba de cambiar
+      //   remoto = lo que hay ahora en la nube
+      //   base   = lo que ambos tenían antes del cambio
+      // Lo que el docente TOCÓ se queda con su valor; lo que no tocó
+      // se queda con el de la nube. Así el trabajo nunca se pierde:
+      // antes se descartaba entero y había que volver a subir el Excel.
+      _fusionarRegistro(coleccion, local, remoto, base) {
+        if (!local || !remoto || typeof local !== 'object' || typeof remoto !== 'object') return local;
+        const resultado = { ...remoto };
+        const base_ = (base && typeof base === 'object') ? base : {};
+        const claves = new Set([...Object.keys(base_), ...Object.keys(local)]);
+        for (const clave of claves) {
+          if (clave === 'estudiantes' && coleccion === 'grupos') {
+            resultado.estudiantes = this._fusionarEstudiantes(
+              local.estudiantes, remoto.estudiantes, base_.estudiantes);
+            continue;
+          }
+          const enBase = base_[clave];
+          const enLocal = local[clave];
+          if (this._iguales(enBase ?? null, enLocal ?? null)) continue; // no lo cambió
+          resultado[clave] = enLocal;                                   // lo cambió: gana lo suyo
+        }
+        return resultado;
+      },
+
+      _fusionarEstudiantes(locales, remotos, base) {
+        const listaRemota = Array.isArray(remotos) ? remotos : [];
+        const listaLocal = Array.isArray(locales) ? locales : [];
+        const listaBase = Array.isArray(base) ? base : [];
+        const porIdBase = new Map(listaBase.map(e => [String(e && e.id), e]));
+        const porIdLocal = new Map(listaLocal.map(e => [String(e && e.id), e]));
+        const porIdRemoto = new Map(listaRemota.map(e => [String(e && e.id), e]));
+        const salida = [];
+        const usados = new Set();
+        // Primero el orden que hay en la nube (así no se desordena la lista).
+        listaRemota.forEach(remoto => {
+          const id = String(remoto && remoto.id);
+          usados.add(id);
+          salida.push(this._estudianteFusionado(porIdLocal.get(id), remoto, porIdBase.get(id)));
+        });
+        // Después los que solo existen en lo local (el docente los añadió).
+        listaLocal.forEach(estudiante => {
+          const id = String(estudiante && estudiante.id);
+          if (usados.has(id)) return;
+          usados.add(id);
+          salida.push(estudiante);
+        });
+        return salida;
+      },
+
+      _estudianteFusionado(local, remoto, base) {
+        if (!local) return remoto;
+        if (!remoto) return local;
+        if (this._iguales(base ?? null, local ?? null)) return remoto; // no lo tocó
+        return local;                                                  // lo tocó
+      },
+
       async _mutateGroupAndSave(grupoId, mutate) {
         const grupo = this.getGrupoById(grupoId);
         if (!grupo) return null;
@@ -758,6 +818,7 @@
         }
         const next = this._serializeDatabase(this.db);
         const reference = this._centerDataReference();
+        let fusionado = false;
         try {
           for (const collection of ['grupos', 'equipos']) {
             const oldRecords = previous[collection] || {};
@@ -773,7 +834,14 @@
                 return newValue;
               }, undefined, false);
               if (!result.committed) {
-                throw Object.assign(new Error(`Otro usuario modificó el mismo registro de ${collection}. Se recargarán los datos actuales; vuelve a aplicar tu cambio.`), { code: 'app/write-conflict' });
+                /* [FUSIÓN] No se tira el trabajo: se combina lo que el
+                   docente cambió con lo que hay ahora en la nube y se
+                   escribe una sola vez. Antes esto abortaba el guardado
+                   entero y obligaba a volver a subir el Excel de notas. */
+                const remoto = (await reference.child(`${collection}/${key}`).once('value')).val() ?? null;
+                const combinado = this._fusionarRegistro(collection, newValue, remoto, oldValue);
+                await reference.child(`${collection}/${key}`).set(combinado);
+                fusionado = true;
               }
             }
           }
@@ -787,7 +855,9 @@
               return newValue;
             }, undefined, false);
             if (!result.committed) {
-              throw Object.assign(new Error('Otro usuario cambió el orden de los registros. Se actualizará la lista actual.'), { code: 'app/write-conflict' });
+              // El orden lo resuelve el último que lo cambia.
+              await reference.child(collection).set(newValue);
+              fusionado = true;
             }
           }
 
@@ -806,7 +876,8 @@
               return newValue;
             }, undefined, false);
             if (!result.committed) {
-              throw Object.assign(new Error('Otro usuario modificó esta configuración. Se recargarán los datos actuales; vuelve a aplicar tu cambio.'), { code: 'app/write-conflict' });
+              await reference.child(key).set(newValue);
+              fusionado = true;
             }
           }
 
@@ -816,9 +887,23 @@
             updatedBy: AuthManager.user.uid
           };
           await reference.update(metadata);
-          this._syncSnapshot = this._clone(next);
+          /* La foto local se recalcula desde lo que quedó REALMENTE en la
+             nube: si hubo fusión, la copia anterior ya no describe lo que
+             hay, y eso volvería a provocar conflictos falsos. */
+          try {
+            const final = await reference.once('value');
+            this._syncSnapshot = this._clone(
+              this._serializeDatabase(this._deserializeDatabase(final.val() || {})));
+          } catch (e) {
+            this._syncSnapshot = this._clone(next);
+          }
           this._guardarCacheLocal();
           this._emitirSync('local', { coleccion: 'guardado', nombre: 'Cambios guardados' });
+          if (fusionado) {
+            if (typeof UI !== 'undefined' && UI && typeof UI.showToast === 'function') {
+              UI.showToast('🔄 Se combinaron tus cambios con los que ya había en la nube (el panel estaba abierto en otro equipo). Todo quedó guardado.', 'info');
+            }
+          }
           return true;
         } catch (error) {
           if (error.code === 'app/write-conflict') {
