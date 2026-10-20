@@ -13,19 +13,52 @@
    ══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
-var CACHE = 'tic-dashboard-v7';
+var CACHE = 'tic-dashboard-v8';
 var SHELL = [
   './',
   './index.html',
   './style.css',
   './remodelacion.css',
   './flat.css',
-  './assets/logo-inatec.png',
-  './assets/logo-inatec-blanco.png',
-  './assets/fondo-profundo.gif',
-  './assets/fondo-claro.gif',
-  './assets/fondo-claro.png',
-  './assets/fondo-oscuro.png'
+  './sw.js',
+  './manifest.json',
+  'js/00-main.js',
+  'js/01-cuaderno-engine.js',
+  'js/02-data-engine.js',
+  'js/03-config-export.js',
+  'js/04-ui-core.js',
+  'js/05-message-engine.js',
+  'js/06-stats-engine.js',
+  'js/07-examenes-engine.js',
+  'js/08-informe-engine.js',
+  'js/09-equipos-engine.js',
+  'js/10-firebase-bootstrap.js',
+  'js/11-auth.js',
+  'js/12-admin-manager.js',
+  'js/13-profile-manager.js',
+  'js/14-secciones.js',
+  'js/15-permisos.js',
+  'js/16-mejoras.js',
+  'js/17-auth-carousel.js',
+  'js/18-auth-intro.js',
+  'js/19-auditoria.js',
+  'js/20-plantillas.js',
+  'js/21-reportes.js',
+  'js/22-asistencia.js',
+  'js/23-carga-diferida.js',
+  'js/24-tutorial.js',
+  'js/25-recordatorios.js',
+  'js/26-riesgo.js',
+  'js/27-jefe-panel.js',
+  'js/28-panel-global.js',
+  'js/30-legal.js',
+  'js/31-pwa.js',
+  'assets/logo-inatec.png',
+  'assets/logo-inatec-blanco.png',
+  'assets/fondo-profundo.gif',
+  'assets/fondo-claro.gif',
+  'assets/fondo-claro.png',
+  'assets/fondo-oscuro.png'
 ];
 
 self.addEventListener('install', function (evento) {

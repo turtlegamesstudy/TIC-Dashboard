@@ -12,16 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       try {
         const registro = await navigator.serviceWorker.register('sw.js');
-        // Cuando aparece una versión nueva, se activa y la pestaña se reembobilla.
-        registro.addEventListener('updatefound', () => {
-          const nuevo = registro.installing;
-          if (!nuevo) return;
-          nuevo.addEventListener('statechange', () => {
-            if (nuevo.state === 'activated') {
-              navigator.serviceWorker.controller?.postMessage('tic-actualizar');
-            }
-          });
-        });
+        /* El aviso de versión nueva es VISIBLE ahora (franja con botón
+           «Recargar»): la UX la lleva js/31-pwa.js. */
+        if (window.PWA) window.PWA.vigilar(registro);
         // Chequeo silencioso para no quedarnos pegados a una versión vieja.
         registro.update().catch(() => { });
       } catch (error) {

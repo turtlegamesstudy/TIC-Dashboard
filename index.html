@@ -363,6 +363,9 @@
           </div>
         </div>
         <div class="topbar-right" role="group" aria-label="Herramientas generales">
+          <button class="btn-icon btn-instalar-pwa" id="btn-instalar-pwa" type="button" title="Instalar la aplicación en este equipo"
+            aria-label="Instalar la aplicación en este equipo" hidden onclick="PWA.instalar()"><i class="ri-install-line"
+              aria-hidden="true"></i></button>
           <button class="btn-icon" id="btn-toggle-theme" type="button" title="Cambiar tema claro u oscuro"
             aria-label="Cambiar tema claro u oscuro" onclick="UI.toggleTheme()"><i class="ri-moon-clear-line"
               aria-hidden="true"></i></button>
@@ -981,6 +984,7 @@
   <script defer src="js/27-jefe-panel.js"></script>
   <script defer src="js/28-panel-global.js"></script>
   <script defer src="js/30-legal.js"></script>
+  <script defer src="js/31-pwa.js"></script>
   <script defer src="js/00-main.js"></script>
 </body>
 
