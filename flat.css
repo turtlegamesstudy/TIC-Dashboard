@@ -4003,4 +4003,47 @@ html[data-theme] .ai-ag-onda { border-color: rgba(224, 247, 255, .9); }
   html[data-theme] .ai-ag-horizonte::after { display: none; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   48 · ESTADÍSTICAS — selector de gráficas (una a la vez)
+   ───────────────────────────────────────────────────────────────────
+   El panel de Estadísticas ya no muestra las seis gráficas en rejilla:
+   un selector tipo chips (arriba de la rejilla) deja visible UNA sola
+   caja por pantalla. AZUL informa (chip en reposo), ROSA marca la
+   activa (acción del usuario). La preferencia se guarda por dispositivo
+   en localStorage ('tic-stats-grafica', vive en 06-stats-engine.js).
+   La caja visible ocupa todo el ancho de la rejilla (grid-column 1/-1).
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-theme] .stats-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+html[data-theme] .stats-chip {
+  appearance: none;
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+html[data-theme] .stats-chip i { font-size: 0.95rem; }
+html[data-theme] .stats-chip:hover { color: var(--text-primary); border-color: var(--text-muted); }
+html[data-theme] .stats-chip.activo {
+  background: var(--rosa);
+  border-color: var(--rosa);
+  color: #fff;
+}
+html[data-theme] .stats-chip.activo i { color: #fff; }
+/* Con una sola gráfica visible, la caja ocupa todo el ancho */
+html[data-theme] .rejilla-graficas .chart-box[data-grafica] { grid-column: 1 / -1; }
+
 /* fin capa flat */

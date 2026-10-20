@@ -492,6 +492,55 @@ const StatsEngine = {
       </section>`;
   },
 
+  /* ── Selector de gráficas: UNA a la vez ─────────────────────────
+     El usuario pidió ver una sola gráfica por pantalla y cambiar el
+     tipo con un selector. La preferencia vive en este dispositivo
+     (localStorage, igual que el tema), y las demás cajas quedan
+     ocultas con [hidden] — las animaciones arrancan al mostrarse. */
+  GRAFICAS: [
+    { clave: 'modulo',        etq: 'Promedio por módulo',   icono: 'ri-line-chart-line' },
+    { clave: 'distribucion',  etq: 'Distribución',          icono: 'ri-pie-chart-line' },
+    { clave: 'grupos',        etq: 'Estudiantes por grupo', icono: 'ri-team-line' },
+    { clave: 'estado-modulo', etq: 'Estado por módulo',     icono: 'ri-stacked-area-chart-line' },
+    { clave: 'top',           etq: 'Top 5',                 icono: 'ri-trophy-line' },
+    { clave: 'riesgo',        etq: 'En riesgo',             icono: 'ri-alarm-warning-line' }
+  ],
+
+  _claveGrafica: 'tic-stats-grafica',
+
+  _graficaActiva() {
+    let guardada = null;
+    try { guardada = localStorage.getItem(this._claveGrafica); } catch (e) { /* bloqueado */ }
+    return this.GRAFICAS.some(g => g.clave === guardada) ? guardada : 'modulo';
+  },
+
+  selectorGraficasHTML() {
+    const activa = this._graficaActiva();
+    return '<div class="stats-chips no-imprimir" role="tablist" aria-label="Tipo de gráfica">' +
+      this.GRAFICAS.map(g =>
+        '<button type="button" role="tab" class="stats-chip' + (g.clave === activa ? ' activo' : '') + '"' +
+        ' data-grafica-chip="' + g.clave + '" aria-selected="' + (g.clave === activa ? 'true' : 'false') + '"' +
+        ' onclick="StatsEngine.seleccionarGrafica(\'' + g.clave + '\')">' +
+        '<i class="' + g.icono + '" aria-hidden="true"></i>' + g.etq + '</button>'
+      ).join('') + '</div>';
+  },
+
+  seleccionarGrafica(clave) {
+    if (!this.GRAFICAS.some(g => g.clave === clave)) return;
+    try { localStorage.setItem(this._claveGrafica, clave); } catch (e) { /* bloqueado */ }
+    const vista = document.querySelector('.rejilla-graficas');
+    if (vista) {
+      vista.querySelectorAll('.chart-box[data-grafica]').forEach(caja => {
+        caja.hidden = caja.getAttribute('data-grafica') !== clave;
+      });
+    }
+    document.querySelectorAll('.stats-chip[data-grafica-chip]').forEach(chip => {
+      const activo = chip.getAttribute('data-grafica-chip') === clave;
+      chip.classList.toggle('activo', activo);
+      chip.setAttribute('aria-selected', activo ? 'true' : 'false');
+    });
+  },
+
   renderVistaEstadisticas() {
     const filtros = this.leerFiltros();
     let d = null;
@@ -630,10 +679,11 @@ const StatsEngine = {
       <section class="bloque-analisis" aria-label="Gráficas principales">
         <div class="bloque-titulo">
           <h2><i class="ri-bar-chart-box-line" aria-hidden="true"></i> Visualizaciones</h2>
-          <span class="bloque-nota">Todas responden a los filtros de arriba</span>
+          <span class="bloque-nota">Una a la vez · cambia el tipo con el selector</span>
         </div>
+        ${this.selectorGraficasHTML()}
         <div class="rejilla-graficas">
-          <div class="chart-box">
+          <div class="chart-box" data-grafica="modulo"${this._graficaActiva() === 'modulo' ? '' : ' hidden'}>
             <h3><i class="ri-line-chart-line"></i> Promedio por Módulo ${UI.ayudaHTML('promedioModulo')}</h3>
             ${d.porModulo.some(m=>m.cuentaPromedios>0)
               ? this._graficaSVG(
@@ -644,7 +694,7 @@ const StatsEngine = {
             ${d.porModulo.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:16px;">Sin módulos.</div>' : ''}
           </div>
 
-          <div class="chart-box">
+          <div class="chart-box" data-grafica="distribucion"${this._graficaActiva() === 'distribucion' ? '' : ' hidden'}>
             <h3><i class="ri-pie-chart-line" style="color: var(--neon-purple);"></i> Distribución General ${UI.ayudaHTML('estudiantes')}</h3>
             <div style="display: flex; flex-direction: column; gap: var(--s-6); margin-top: var(--s-2);">
               ${this.doughnutSVG(d.activos, d.totalEst, '#0a0a0a', 'Estudiantes Activos', `${d.activos} de ${d.totalEst} matriculados`, { filtro: { clave: 'estado', valor: 'Activo' } })}
@@ -653,7 +703,7 @@ const StatsEngine = {
             </div>
           </div>
 
-          <div class="chart-box">
+          <div class="chart-box" data-grafica="grupos"${this._graficaActiva() === 'grupos' ? '' : ' hidden'}>
             <h3><i class="ri-team-line" style="color: var(--neon-cyan);"></i> Estudiantes por Grupo ${UI.ayudaHTML('grupos')}</h3>
             ${d.porGrupo.map(g => `
               <div class="bar-h" data-grafico
@@ -671,7 +721,7 @@ const StatsEngine = {
             ${d.porGrupo.length===0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">No hay grupos con este filtro.</div>' : ''}
           </div>
 
-          <div class="chart-box">
+          <div class="chart-box" data-grafica="estado-modulo"${this._graficaActiva() === 'estado-modulo' ? '' : ' hidden'}>
             <h3><i class="ri-stacked-area-chart-line"></i> Estado por Módulo ${UI.ayudaHTML('cobertura')}</h3>
             ${this._graficaSVG([
                 { nombre: 'Con notas', tono: 'rosa', apilada: true, data: d.porModulo.map(m => m.conNotas),
@@ -686,7 +736,7 @@ const StatsEngine = {
               230, '', null)}
           </div>
 
-          <div class="chart-box">
+          <div class="chart-box" data-grafica="top"${this._graficaActiva() === 'top' ? '' : ' hidden'}>
             <h3><i class="ri-trophy-line" style="color: #0a0a0a;"></i> Top 5 — Mejores Promedios ${UI.ayudaHTML('rendimiento')}</h3>
             ${top5.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px;">Sin datos de calificaciones.</div>' : top5.map((e,i) => `
               <div class="rank-row">
@@ -700,7 +750,7 @@ const StatsEngine = {
             `).join('')}
           </div>
 
-          <div class="chart-box">
+          <div class="chart-box" data-grafica="riesgo"${this._graficaActiva() === 'riesgo' ? '' : ' hidden'}>
             <h3><i class="ri-alarm-warning-line" style="color: var(--neon-red);"></i> En Riesgo — Promedio &lt; 60 ${UI.ayudaHTML('enRiesgo')}</h3>
             ${riesgo.length === 0 && sinNotasList.length === 0 ? '<div style="color:var(--text-muted);text-align:center;padding:20px;">🎉 No hay estudiantes en riesgo.</div>' : ''}
             ${riesgo.map((e,i) => `
