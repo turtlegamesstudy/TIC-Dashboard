@@ -335,6 +335,16 @@ Secciones.registrarVarias([
     alMostrar: () => UI.filtrarDirectorioEstudiantes()
   },
   {
+    id: 'ficha-estudiante',
+    etiqueta: 'Ficha del Estudiante',
+    titulo: 'Ficha 360 del estudiante',
+    icono: 'ri-id-card-line',
+    grupo: 'Académico',
+    orden: 45,
+    render: Secciones.desdeHTML(() => FichaEstudiante.renderVista()),
+    alMostrar: () => FichaEstudiante.iniciar()
+  },
+  {
     id: 'cuaderno-docente',
     etiqueta: 'Cuaderno Docente',
     icono: 'ri-file-excel-2-line',

@@ -13,7 +13,7 @@
    ══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
-var CACHE = 'tic-dashboard-v9';
+var CACHE = 'tic-dashboard-v10';
 var SHELL = [
   './',
   './index.html',
@@ -53,6 +53,7 @@ var SHELL = [
   'js/28-panel-global.js',
   'js/30-legal.js',
   'js/31-pwa.js',
+  'js/32-ficha-estudiante.js',
   'assets/logo-inatec.png',
   'assets/logo-inatec-blanco.png',
   'assets/fondo-profundo.gif',
