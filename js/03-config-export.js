@@ -134,5 +134,31 @@
         this.save(cfg);
         UI.showToast("✅ Configuración de exportación guardada.");
         UI.cerrarModalConfigExport();
+      },
+
+      /* Aplica al libro ya construido las opciones que no se pueden
+         fijar celda a celda al volcar los datos:
+           · bold   → «Todo en negrita»
+           · dataBg → «Relleno en celdas de datos» (solo celdas con
+             borde, para no pintar títulos ni encabezados)
+         Se salta si el libro es de impresión oficial (blanco y negro,
+         sin rellenos), que ya trae su propio formato. */
+      aplicarAWorkbook(wb) {
+        const cfg = this.load();
+        if (!wb || typeof wb.eachSheet !== 'function') return;
+        if (wb.__impresionOficial) return;
+        if (!cfg.bold && !cfg.dataBg) return;
+        const rellenoDatos = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+        wb.eachSheet(ws => {
+          ws.eachRow({ includeEmpty: false }, row => {
+            row.eachCell({ includeEmpty: false }, cell => {
+              if (cfg.bold) cell.font = Object.assign({}, cell.font, { bold: true });
+              if (cfg.dataBg && !cell.fill) {
+                const borde = cell.border || {};
+                if (borde.top || borde.bottom || borde.left || borde.right) cell.fill = rellenoDatos;
+              }
+            });
+          });
+        });
       }
     };

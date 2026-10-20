@@ -449,7 +449,12 @@ Secciones.registrarVarias([
           if (!Permisos.exigir('cargarBase')) return;
           const input = document.getElementById('db-file-input');
           if (input) input.click();
-          else UI.showToast('Usa el botón «Cargar DB.json» de la barra superior.');
+          else UI.showToast('Recarga la página para poder cargar la base.');
+        } },
+      { id: 'recargar', etiqueta: 'Recargar base compartida', icono: 'ri-refresh-line',
+        accion: () => {
+          if (!Permisos.exigir('descargarBase')) return;
+          DataEngine.recargarBase().catch(error => UI.showToast(error.message || 'No se pudo recargar la base.', 'error'));
         } }
     ]
   }

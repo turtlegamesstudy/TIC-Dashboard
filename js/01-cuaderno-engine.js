@@ -1063,6 +1063,9 @@ const CuadernoEngine = {
       wb.creator = 'TIC Dashboard';
       wb.created = new Date();
     }
+    // El formato «listo para imprimir» es blanco y negro oficial: no se
+    // le aplica la configuración de exportación del usuario.
+    if (listoParaImprimir) wb.__impresionOficial = true;
     // Prefijo para nombres de hoja cuando se combinan varios grupos
     const _sp = sheetPrefix;
 
@@ -2778,6 +2781,9 @@ const CuadernoEngine = {
   },
 
   exportarWorkbookEnXlsx(wb, fileName, mensajeExito) {
+    if (typeof ConfigExport !== 'undefined' && ConfigExport && typeof ConfigExport.aplicarAWorkbook === 'function') {
+      ConfigExport.aplicarAWorkbook(wb);
+    }
     // [OPT] El usuario ve "generando…" en lugar de una ventana que
     // parece congelada mientras ExcelJS serializa el libro completo.
     UI.showLoading('Generando el archivo de Excel…', 'exportacion');
@@ -3400,6 +3406,10 @@ const CuadernoEngine = {
         if (esPdf) {
           if (this.exportarWorkbookAPDF(wb, `${nombreBase}.pdf`)) exportados++;
         } else {
+          if (listoParaImprimir && wb) wb.__impresionOficial = true;
+          if (typeof ConfigExport !== 'undefined' && ConfigExport && typeof ConfigExport.aplicarAWorkbook === 'function') {
+            ConfigExport.aplicarAWorkbook(wb);
+          }
           const buffer = await wb.xlsx.writeBuffer();
           const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
           this.descargarBlob(blob, `${nombreBase}.xlsx`);
@@ -3470,6 +3480,9 @@ const CuadernoEngine = {
       return;
     }
     try {
+      if (typeof ConfigExport !== 'undefined' && ConfigExport && typeof ConfigExport.aplicarAWorkbook === 'function') {
+        ConfigExport.aplicarAWorkbook(wb);
+      }
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       this.descargarBlob(blob, `Cuadernos_Docentes_Todos.xlsx`);
