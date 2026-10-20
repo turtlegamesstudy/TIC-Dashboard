@@ -1,0 +1,33 @@
+# Despliega el TIC Dashboard a Firebase Hosting (sitio "tictool")
+# automáticamente cada vez que se haga push a main.
+#
+# Requiere UN solo secreto en GitHub:
+#   FIREBASE_SERVICE_ACCOUNT_TICTOOL = contenido COMPLETO del JSON
+#   de la cuenta de servicio (Consola Firebase → ⚙️ Configuración del
+#   proyecto → Cuentas de servicio → Generar nueva clave privada).
+
+name: Deploy a Firebase Hosting (tictool)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permite dispararlo a mano desde la pestaña Actions
+
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy a hosting:tictool (sitio en vivo)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TICTOOL }}'
+          projectId: ina-tions
+          channelId: live
+          targetId: tictool
