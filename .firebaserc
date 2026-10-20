@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "ina-tions"
-  }
+  },
+  "targets": {
+    "ina-tions": {
+      "hosting": {
+        "tictool": [
+          "tictool"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

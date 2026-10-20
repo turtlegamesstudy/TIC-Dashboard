@@ -8,8 +8,8 @@
     projectId: 'ina-tions',
     storageBucket: 'ina-tions.firebasestorage.app',
     messagingSenderId: '887758000401',
-    appId: '1:887758000401:web:effcd6cceacd30dfe33cb0',
-    measurementId: 'G-ZKYE27E58N'
+    appId: '1:887758000401:web:af54786b7870e8fce33cb0',
+    measurementId: 'G-H5JSGDBG4K'
   };
 
   try {

@@ -4,5 +4,22 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "hosting": {
+    "target": "tictool",
+    "public": ".",
+    "ignore": [
+      ".git/**",
+      ".venv/**",
+      "_verif/**",
+      "tests/**",
+      "TIC_Dashboard_DB_2026-09-02.json",
+      "firebase-debug.log",
+      "firebase-storage-cors.json",
+      "FIREBASE_SETUP.md",
+      "COPYING.txt",
+      "plantilla_informe_avance.docx",
+      "test-vista-perfil.html"
+    ]
   }
 }
