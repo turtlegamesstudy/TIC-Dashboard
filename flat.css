@@ -4399,10 +4399,11 @@ html[data-theme] .ai-ray {
   mix-blend-mode: screen;
 }
 html[data-theme] .ai-bubble {
-  position: absolute; bottom: -16vh;
+  position: absolute; left: 0; top: 0;
   border-radius: 50%;
   background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.92), rgba(170,225,255,.22) 46%, rgba(170,225,255,.05) 72%);
   box-shadow: 0 0 12px rgba(180,230,255,.4);
+  will-change: transform, opacity;
 }
 html[data-theme] .ai-vortex { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
 html[data-theme] .ai-particle {
@@ -4445,6 +4446,61 @@ html[data-theme] .auth-intro.ai-anime.is-playing .ai-letter,
 html[data-theme] .auth-intro.ai-anime.is-playing .ai-sub,
 html[data-theme] .auth-intro.ai-anime.is-playing .ai-log li {
   animation: none !important;
+}
+
+/* ══ 56 · CINEMÁTICA v7: EL MAR, LA TORTUGA Y EL 3D ═════════════
+   El mar se dibuja con trazos SVG (anime.setDashoffset) y luego las
+   olas nadan; la tortuga recorre una trayectoria real (anime.path);
+   el título entra girando en 3D de verdad. */
+html[data-theme] .ai-mar {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 28vh;
+  overflow: visible;
+}
+html[data-theme] .ai-ola {
+  fill: none;
+  stroke: rgba(170,230,255,.8);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 6px rgba(120,200,255,.55));
+}
+html[data-theme] .ai-ola-2 { stroke: rgba(140,210,255,.55); }
+html[data-theme] .ai-ola-3 { stroke: rgba(110,190,255,.38); }
+
+/* Las rutas solo existen para que anime.path() pueda medirlas. */
+html[data-theme] .ai-rutas {
+  position: absolute;
+  width: 0; height: 0;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-theme] .ai-tortuga-wrap {
+  position: absolute;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  will-change: transform;
+}
+html[data-theme] .ai-tortuga {
+  width: 190px; height: 120px;
+  margin-left: -95px;
+  margin-top: -60px;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .45));
+}
+html[data-theme] .ai-aleta { transform-box: fill-box; transform-origin: 96% 50%; }
+html[data-theme] .ai-aleta-der { transform-origin: 4% 50%; }
+html[data-theme] .ai-aleta-tras-izq { transform-origin: 96% 20%; }
+html[data-theme] .ai-aleta-tras-der { transform-origin: 4% 20%; }
+
+/* El título gira en 3D de verdad: hace falta perspectiva en el
+   contenedor y el eje X en cada letra. */
+html[data-theme] .ai-title-mask { perspective: 700px; }
+html[data-theme] .ai-letter {
+  transform-origin: 50% 100%;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 /* fin capa flat */
