@@ -1539,6 +1539,11 @@ const UI = {
       if (seccion) {
         seccion.render(workspace);
         if (typeof seccion.alMostrar === 'function') seccion.alMostrar(workspace);
+        // El panel cobra vida: cabecera, bloques, filas y tarjetas
+        // entran escalonados (respetando «Opciones → Animaciones»).
+        if (typeof Anims !== 'undefined' && Anims && typeof Anims.animarVista === 'function') {
+          Anims.animarVista(workspace);
+        }
       } else {
         // Id sin registrar: se pinta un marcador en lugar de romper.
         const etiquetaId = (typeof Secciones !== 'undefined')

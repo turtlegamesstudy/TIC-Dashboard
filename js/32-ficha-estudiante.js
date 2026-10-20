@@ -225,7 +225,7 @@ window.FichaEstudiante = (function () {
       <div class="ficha-stat">
         <i class="${icono}" aria-hidden="true"></i>
         <div>
-          <strong>${valor}</strong>
+          <strong data-anim-contar>${valor}</strong>
           <small>${titulo}</small>
           ${nota ? `<em>${nota}</em>` : ''}
         </div>

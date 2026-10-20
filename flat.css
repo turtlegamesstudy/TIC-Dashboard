@@ -4301,4 +4301,31 @@ html[data-theme] .topbar-account .avatar {
   html[data-theme] .topbar-account .avatar { width: 30px; height: 30px; }
 }
 
+/* ══ 53 · ANIMACIONES (Anime.js) ═════════════════════════════════
+   El panel se anima con Anime.js (js/vendor/anime.min.js, alojado
+   local para que la PWA siga funcionando sin internet). Aquí solo
+   viven las reglas que el motor necesita: el soporte 3D de las
+   tarjetas y el «opt out» de la intro cuando mandan las líneas de
+   tiempo de Anime.js. */
+html[data-theme] .anim-tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: box-shadow .28s ease;
+}
+html[data-theme] .anim-tilt:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .16);
+}
+@media (hover: none) {
+  html[data-theme] .anim-tilt { transform-style: flat; will-change: auto; }
+}
+
+/* Intro: cuando hay Anime.js el texto lo manda la línea de tiempo.
+   Si no se apagan las animaciones CSS, las dos pelearían por el
+   mismo transform y el título saldría a medio hacer. */
+html[data-theme] .auth-intro.ai-anime.is-playing .ai-letter,
+html[data-theme] .auth-intro.ai-anime.is-playing .ai-sub,
+html[data-theme] .auth-intro.ai-anime.is-playing .ai-log li {
+  animation: none !important;
+}
+
 /* fin capa flat */

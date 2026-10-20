@@ -19,6 +19,7 @@ window.AuthIntro = (function () {
   var rafId = null;
   var cierreTimer = null;
   var escuchasActivas = false;
+  var lineaTexto = null;
 
   var RETRASO_PROGRESO = 3200;
   var DURACION = 5600;
@@ -56,6 +57,47 @@ window.AuthIntro = (function () {
     if (estado) estado.textContent = 'CANALIZANDO CONOCIMIENTO';
 
     montarAgujero();
+    prepararLineaAnime();
+  }
+
+  /* ── Fase textual con Anime.js ───────────────────────────────
+     El agujero negro sigue siendo arte en CSS; lo que entra con
+     Anime.js es la aparición del título, el subtítulo y el registro
+     de arranque: escalonados, con giro en X y con rebote. */
+  function prepararLineaAnime() {
+    if (typeof window.anime !== 'function' || reducido) return;
+    if (!overlay) overlay = $('auth-intro');
+    if (!overlay) return;
+    var a = window.anime;
+    var letras = overlay.querySelectorAll('.ai-letter');
+    if (!letras.length) return;
+
+    overlay.classList.add('ai-anime');
+    var sub = overlay.querySelector('.ai-sub');
+    var registro = overlay.querySelectorAll('.ai-log li');
+
+    var linea = a.timeline({ autoplay: false, easing: 'cubicBezier(.16, 1, .3, 1)' });
+    linea
+      .add({
+        targets: letras,
+        translateY: ['118%', '0%'],
+        opacity: [0, 1],
+        filter: ['blur(10px)', 'blur(0px)'],
+        duration: 900,
+        delay: a.stagger(46)
+      })
+      .add({ targets: sub, translateY: [16, 0], opacity: [0, 1], duration: 560, easing: 'easeOutQuart' }, '-=520')
+      .add({
+        targets: registro,
+        translateX: [-32, 0],
+        opacity: [0, 1],
+        duration: 560,
+        delay: a.stagger(150),
+        easing: 'easeOutExpo'
+      }, '-=360');
+
+    lineaTexto = linea;
+    setTimeout(function () { if (lineaTexto) lineaTexto.play(); }, 3000);
   }
 
   /* Construye una sola vez la escena del agujero negro: discos de
@@ -135,6 +177,21 @@ window.AuthIntro = (function () {
     if (!overlay || overlay.hidden) { finalizarPromesa(); return; }
     if (overlay.classList.contains('is-exit')) return;
     limpiar();
+    // Salida: el núcleo se aleja y se difumina (Anime.js) mientras el
+    // velo del CSS termina de cerrar.
+    if (typeof window.anime === 'function' && !reducido) {
+      var nucleo = overlay.querySelector('.ai-core');
+      if (nucleo) {
+        window.anime({
+          targets: nucleo,
+          scale: 1.09,
+          opacity: 0,
+          filter: 'blur(10px)',
+          duration: 700,
+          easing: 'easeInQuad'
+        });
+      }
+    }
     overlay.classList.add('is-exit');
     cierreTimer = setTimeout(function () {
       overlay.hidden = true;
